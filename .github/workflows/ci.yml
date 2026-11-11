@@ -51,3 +51,34 @@ jobs:
 
       - name: Build / Compilar
         run: npm run build
+
+  # Runs every SQL migration and test against a throwaway PostgreSQL 17 (same major version as Supabase).
+  # The password below belongs to a temporary container that only lives during this job: it is not a secret.
+  # Corre cada migración y prueba SQL contra un PostgreSQL 17 descartable (misma versión mayor que Supabase).
+  # La contraseña de abajo es de un contenedor temporal que solo vive durante este job: no es un secreto.
+  database:
+    name: SQL migrations and security tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: ci-throwaway
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: ci-throwaway
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run migrations and SQL tests / Correr migraciones y pruebas SQL
+        run: bash scripts/db/ci-sql-tests.sh
