@@ -1,0 +1,53 @@
+# Continuous integration: runs on every push to main and on every pull request.
+# Integración continua: corre en cada push a main y en cada pull request.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: the workflow only reads the repository.
+# Mínimo privilegio: el workflow solo lee el repositorio.
+permissions:
+  contents: read
+
+# A newer run on the same branch cancels the older one.
+# Una corrida más nueva en la misma rama cancela la anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, typecheck, tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies / Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck / Verificar tipos
+        run: npm run typecheck
+
+      - name: Lint / Análisis estático
+        run: npm run lint
+
+      # Tests run in a non-UTC timezone on purpose: code that silently depends on
+      # the machine's local time fails here instead of in production.
+      # Los tests corren en una zona horaria distinta de UTC a propósito: el código
+      # que dependa en silencio de la hora local falla acá y no en producción.
+      - name: Unit tests / Pruebas unitarias
+        run: npm test
+        env:
+          TZ: America/Argentina/Buenos_Aires
+
+      - name: Build / Compilar
+        run: npm run build
