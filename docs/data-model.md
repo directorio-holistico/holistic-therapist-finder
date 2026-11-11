@@ -93,6 +93,9 @@ Sample therapies and locations live in `supabase/seed/dev-seed.sql` and are neve
 ## People access (commit 10)
 `people` and `person_roles`: `anon` has no grant. `authenticated` reads only their own person row and roles; an admin (checked by `is_admin()`, a `SECURITY DEFINER` function with fixed `search_path`, executable only by `authenticated`) reads all. Nobody writes these tables through the API, so a user cannot give themselves a role. Erased people keep the row, anonymized (`erased_at` set, no email, no login link), enforced by a constraint.
 
+## Profile access (commit 11)
+`therapist_profiles`, `profile_therapies`, `profile_languages`, `profile_service_modes`, `profile_session_formats`: `anon` has no grant (public profiles will come through two `security_invoker` views, later). `authenticated` reads only their own profile and links; an admin reads all. Nobody writes them through the API: the therapist changes a profile only through a revision that an admin approves. A trigger (`therapist_profiles_guard`) additionally stops API roles from inserting profiles or changing `person_id`, `status_id`, `approved_at` and `status_reason`, so a write grant or policy added by mistake later cannot expose them. The base location must be a city, and a published profile needs `approved_at`.
+
 ## 8. Known risks
 - High: a script harvesting phones. Mitigation: "Show contact" button, WhatsApp link after `reveal_contact`, rate limit per origin.
 - High: the public views are everything `anon` can see; anonymous-access tests are required before closing any security change.
