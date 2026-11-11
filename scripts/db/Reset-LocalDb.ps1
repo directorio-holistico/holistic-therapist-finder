@@ -80,6 +80,13 @@ try {
   if (-not $migrations) {
     Write-Host "No migrations yet / Todavia no hay migraciones."
   }
+
+  # Development sample data (never used in production) / Datos de ejemplo de desarrollo (nunca en produccion)
+  $seed = Join-Path $repoRoot "supabase\seed\dev-seed.sql"
+  if (Test-Path -LiteralPath $seed) {
+    Write-Host "Applying dev seed / Aplicando datos de ejemplo: dev-seed.sql"
+    Invoke-Psql @("-d", $DbName, "-f", $seed)
+  }
   Write-Host "Done / Listo."
 } finally {
   Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue

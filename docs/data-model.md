@@ -86,6 +86,10 @@ Lowest rate of the audience that applies to the visitor (group 1: own country; g
 
 Writes by `anon` happen only through `log_search`, `reveal_contact` and the report function, each granted individually, with a fixed `search_path` and `session_user` checks. Privilege fields (status, approval, suspension) are protected by a trigger.
 
+## Catalog access (commit 8)
+Public catalogs (`languages`, `currencies`, `service_modes`, `session_formats`, `rate_audiences`, `location_levels`, `therapies` + translations, `locations` + translations): `anon` and `authenticated` can read **active rows only** (`authenticated` reads all, for the future admin panel). Internal catalogs (`contact_types`, `profile_statuses`, `revision_statuses`, `roles`): `authenticated` read only; `anon` has no grant. Nobody writes catalogs through the API: they change through migrations. Admin write policies arrive with the admin panel (they need `people` and `person_roles`). `service_role` has no grants on catalogs until a server feature needs them.
+Sample therapies and locations live in `supabase/seed/dev-seed.sql` and are never applied to production.
+
 ## 8. Known risks
 - High: a script harvesting phones. Mitigation: "Show contact" button, WhatsApp link after `reveal_contact`, rate limit per origin.
 - High: the public views are everything `anon` can see; anonymous-access tests are required before closing any security change.
@@ -97,4 +101,4 @@ Writes by `anon` happen only through `log_search`, `reveal_contact` and the repo
 ---
 
 ## Resumen en español
-El modelo tiene 34 tablas: 14 catálogos, 12 de núcleo (persona, perfil vigente, terapias con tarifas, contactos, revisiones, moderación, aceptaciones) y 8 de operación (búsquedas sin resultado, revelado de contacto, denuncias, términos restringidos, huellas, ajustes, límite de pedidos, auditoría). El terapeuta nunca escribe sobre el perfil vigente: todo cambio es una revisión que aprueba el administrador. El público solo lee dos vistas; teléfono y mail salen únicamente por el botón "Ver contacto". Al eliminar un perfil se borra todo y queda solo una huella irreversible durante un año. La versión completa en español está en el Project (`terapeutas-modelo-datos-20261111_v03.md`).
+El modelo tiene 34 tablas: 14 catálogos, 12 de núcleo (persona, perfil vigente, terapias con tarifas, contactos, revisiones, moderación, aceptaciones) y 8 de operación (búsquedas sin resultado, revelado de contacto, denuncias, términos restringidos, huellas, ajustes, límite de pedidos, auditoría). El terapeuta nunca escribe sobre el perfil vigente: todo cambio es una revisión que aprueba el administrador. El público solo lee dos vistas; teléfono y mail salen únicamente por el botón "Ver contacto". Al eliminar un perfil se borra todo y queda solo una huella irreversible durante un año. Los catálogos se leen sin cuenta (solo filas activas) y no se escriben por la API: cambian por migración. La versión completa en español está en el Project (`terapeutas-modelo-datos-20261111_v03.md`).
