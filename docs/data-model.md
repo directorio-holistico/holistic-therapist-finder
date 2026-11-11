@@ -96,6 +96,9 @@ Sample therapies and locations live in `supabase/seed/dev-seed.sql` and are neve
 ## Profile access (commit 11)
 `therapist_profiles`, `profile_therapies`, `profile_languages`, `profile_service_modes`, `profile_session_formats`: `anon` has no grant (public profiles will come through two `security_invoker` views, later). `authenticated` reads only their own profile and links; an admin reads all. Nobody writes them through the API: the therapist changes a profile only through a revision that an admin approves. A trigger (`therapist_profiles_guard`) additionally stops API roles from inserting profiles or changing `person_id`, `status_id`, `approved_at` and `status_reason`, so a write grant or policy added by mistake later cannot expose them. The base location must be a city, and a published profile needs `approved_at`.
 
+## Rates, contacts and settings (commit 12)
+`profile_therapy_rates` and `profile_contacts`: same access as the other profile tables (own / admin read, no writes, nothing for `anon`). Phones and emails never reach `anon`; the only way out will be `reveal_contact`. A published profile must have a phone, cannot lose it, and `accepts_whatsapp` only applies to the phone. Rates: amount >= 0, decimals limited by the currency (CLP has none), one currency per audience within a profile. `app_settings`: `authenticated` reads public keys, an admin reads all and may change **only the `value` column** (a column-level grant, validated by a CHECK); keys are added by migration. `max_therapies_per_profile` (default 4) is enforced by a trigger.
+
 ## 8. Known risks
 - High: a script harvesting phones. Mitigation: "Show contact" button, WhatsApp link after `reveal_contact`, rate limit per origin.
 - High: the public views are everything `anon` can see; anonymous-access tests are required before closing any security change.

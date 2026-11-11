@@ -19,10 +19,15 @@ insert into public.person_roles (person_id, role_id)
 -- Dos perfiles creados por el dueño (como hará el servidor): A publicado, B sin publicar.
 insert into public.therapist_profiles (id, person_id, status_id, location_id, headline, approved_at)
   select '20000000-0000-0000-0000-0000000000a1', '10000000-0000-0000-0000-0000000000a1',
-         (select id from public.profile_statuses where code = 'published'),
+         (select id from public.profile_statuses where code = 'unpublished'),
          (select l.id from public.locations l join public.location_levels ll on ll.id = l.level_id
             where ll.code = 'city' order by l.id limit 1),
          'Perfil de ejemplo A', now();
+-- a published profile needs a phone: add it, then publish / un perfil publicado necesita teléfono: se agrega y se publica
+insert into public.profile_contacts (profile_id, contact_type_id, value)
+  values ('20000000-0000-0000-0000-0000000000a1', (select id from public.contact_types where code = 'phone'), '+54 351 555 0101');
+update public.therapist_profiles set status_id = (select id from public.profile_statuses where code = 'published')
+  where id = '20000000-0000-0000-0000-0000000000a1';
 insert into public.therapist_profiles (id, person_id, status_id, headline)
   select '20000000-0000-0000-0000-0000000000b2', '10000000-0000-0000-0000-0000000000b2',
          (select id from public.profile_statuses where code = 'unpublished'), 'Perfil de ejemplo B';
