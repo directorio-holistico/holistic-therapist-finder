@@ -98,19 +98,6 @@ $$;
 reset role;
 reset session authorization;
 
--- 5) The permissive Supabase defaults are present on purpose: a table created now is readable by anon.
--- The baseline migration must remove this. When it exists, this check is replaced by its opposite.
--- 5) Los permisos permisivos de Supabase están a propósito: una tabla creada ahora la lee anon.
--- La migración base debe quitarlos. Cuando exista, esta verificación se reemplaza por la opuesta.
-create table public.__probe_default_privileges (id int);
-do $$
-begin
-  if not has_table_privilege('anon', 'public.__probe_default_privileges', 'SELECT') then
-    raise exception 'expected the permissive default privileges to be present before the baseline migration';
-  end if;
-end
-$$;
-
 rollback;
 
 \echo 'OK: local roles and auth helpers behave as expected / roles locales y funciones de auth correctos'

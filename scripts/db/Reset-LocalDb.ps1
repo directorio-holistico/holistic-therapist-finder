@@ -75,7 +75,7 @@ try {
     Sort-Object Name
   foreach ($m in $migrations) {
     Write-Host "Applying migration / Aplicando migracion: $($m.Name)"
-    Invoke-Psql @("-d", $DbName, "-f", $m.FullName)
+    Invoke-Psql @("-d", $DbName, "-1", "-f", $m.FullName)
   }
   if (-not $migrations) {
     Write-Host "No migrations yet / Todavia no hay migraciones."
