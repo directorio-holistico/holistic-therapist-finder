@@ -38,10 +38,14 @@ begin
     end if;
   end loop;
   -- nobody but the owner writes catalogs / nadie salvo el dueño escribe catálogos
+  -- the only table-level write grant is restricted_terms for authenticated (its policies limit it to admins)
+  -- el único permiso de escritura de tabla es restricted_terms para authenticated (sus políticas lo limitan a admins)
   if exists (
     select 1 from information_schema.role_table_grants
     where table_schema = 'public' and grantee in ('anon', 'authenticated', 'service_role')
-      and privilege_type in ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE')) then
+      and privilege_type in ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE')
+      and not (table_name = 'restricted_terms' and grantee = 'authenticated'
+               and privilege_type in ('INSERT', 'UPDATE', 'DELETE'))) then
     raise exception 'an API role can write to a public table';
   end if;
 end

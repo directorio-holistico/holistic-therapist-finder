@@ -140,16 +140,20 @@ begin
 end
 $$;
 
--- 4) The only column an API role may write is app_settings.value / La única columna escribible es app_settings.value
+-- 4) Column-level write grants are an explicit allow-list / Los permisos de escritura por columna son una lista blanca explícita
 do $$
 begin
   if exists (
     select 1 from information_schema.role_column_grants
     where table_schema = 'public' and grantee in ('anon', 'authenticated', 'service_role')
       and privilege_type in ('INSERT', 'UPDATE')
-      and not (table_name = 'app_settings' and column_name = 'value' and privilege_type = 'UPDATE' and grantee = 'authenticated')
+      and table_name <> 'restricted_terms'  -- table-level write grant (admin-only policies), reported here as column grants
+      and not (grantee = 'authenticated' and (
+            (table_name = 'app_settings' and column_name = 'value' and privilege_type = 'UPDATE')
+         or (table_name = 'profile_revisions' and column_name in ('profile_id', 'payload', 'suggested_therapy') and privilege_type = 'INSERT')
+         or (table_name = 'profile_revisions' and column_name in ('payload', 'suggested_therapy') and privilege_type = 'UPDATE')))
   ) then
-    raise exception 'an API role has a column-level write grant outside app_settings.value';
+    raise exception 'an API role has a column-level write grant outside the allow-list (app_settings.value, draft columns of profile_revisions)';
   end if;
 end
 $$;

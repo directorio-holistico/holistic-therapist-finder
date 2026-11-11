@@ -102,6 +102,9 @@ Sample therapies and locations live in `supabase/seed/dev-seed.sql` and are neve
 ## Initial therapy catalog (commit 13)
 The initial catalog is a migration: 13 active therapies (energy and mind-body, plus quantum therapy, family constellations and akashic records) and 10 loaded but **hidden** ones (health practices regulated in many countries, or that sell products), pending a business decision. Only names are stored (in Spanish); descriptions are not, because Phase 1 has no description field and some wording would collide with the "no cure claims" rule. Visitors see only active therapies.
 
+## Revisions, moderation and restricted terms (commit 14)
+`profile_revisions`: the therapist reads their own and inserts/edits **drafts** of their own profile, only the columns `profile_id`, `payload` and `suggested_therapy` (column-level grants + RLS + a guard trigger). Workflow fields (status, flagged terms, priority, due date, rejection reason, closing date) are written only by server functions (next commit). One open revision per profile; nobody deletes revisions through the API. A rejection always carries its reason, and the therapist can read it. `moderation_events`: admin reads, nobody writes through the API; the action is the status it moved to. `restricted_terms`: admin reads and writes (the four policies); terms are stored lower case without accents and matched as whole words. **Restricted terms flag a revision, they never block it**: `find_restricted_terms(text)` lets a logged-in therapist check a text in advance and still send it; the admin sees the flagged terms in the queue. The starter list is provisional until the owner validates it.
+
 ## 8. Known risks
 - High: a script harvesting phones. Mitigation: "Show contact" button, WhatsApp link after `reveal_contact`, rate limit per origin.
 - High: the public views are everything `anon` can see; anonymous-access tests are required before closing any security change.
