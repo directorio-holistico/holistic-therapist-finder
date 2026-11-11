@@ -47,6 +47,7 @@ grant usage on schema auth to anon, authenticated, service_role;
 create table if not exists auth.users (
   id uuid primary key,
   email text,
+  email_confirmed_at timestamptz,
   created_at timestamptz not null default now()
 );
 
