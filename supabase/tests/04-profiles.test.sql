@@ -155,8 +155,10 @@ $$;
 reset role;
 reset session authorization;
 
--- 5) Visitor (anon): denied on every table, even for published profiles.
--- 5) Visitante (anon): denegado en todas las tablas, incluso para perfiles publicados.
+-- 5) Visitor (anon): since the public views (commit 19) anon reads a few columns of published profiles; the full
+--    tables stay closed ("select *" needs every column). The exact exposure is tested in test 12.
+-- 5) Visitante (anon): desde las vistas públicas (commit 19) lee pocas columnas de perfiles publicados; las tablas
+--    completas siguen cerradas ("select *" exige todas las columnas). La exposición exacta se prueba en el test 12.
 set session authorization authenticator;
 set role anon;
 select set_config('request.jwt.claims', '', true);
@@ -165,11 +167,11 @@ declare
   t text;
   denied boolean;
 begin
-  foreach t in array array['therapist_profiles', 'profile_therapies', 'profile_languages', 'profile_service_modes', 'profile_session_formats'] loop
+  foreach t in array array['therapist_profiles'] loop  -- the child tables expose all their columns, only for published rows (test 12)
     denied := false;
-    begin execute format('select 1 from public.%I limit 1', t);
+    begin execute format('select * from public.%I limit 1', t);
     exception when insufficient_privilege then denied := true; end;
-    if not denied then raise exception 'anon could read %', t; end if;
+    if not denied then raise exception 'anon could read all columns of %', t; end if;
   end loop;
 end
 $$;

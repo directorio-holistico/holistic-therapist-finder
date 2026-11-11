@@ -26,7 +26,8 @@ do $$
 declare
   allowed text[] := array[
     'languages', 'currencies', 'service_modes', 'session_formats', 'rate_audiences',
-    'location_levels', 'therapies', 'therapy_translations', 'locations', 'location_translations'];
+    'location_levels', 'therapies', 'therapy_translations', 'locations', 'location_translations',
+    'public_profile_cards', 'public_profile_detail'];  -- the 2 public views (commit 19) / las 2 vistas públicas
   r record;
 begin
   for r in

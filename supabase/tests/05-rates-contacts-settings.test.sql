@@ -262,7 +262,8 @@ $$;
 reset role;
 reset session authorization;
 
--- 8) Visitor (anon): denied everywhere / Visitante (anon): denegado en todo
+-- 8) Visitor (anon): full tables denied; since commit 19 a few columns of published rows are public (tested in test 12)
+-- 8) Visitante (anon): tablas completas denegadas; desde el commit 19 hay pocas columnas públicas (se prueban en el test 12)
 set session authorization authenticator;
 set role anon;
 select set_config('request.jwt.claims', '', true);
@@ -271,11 +272,14 @@ declare
   t text;
   denied boolean;
 begin
-  foreach t in array array['profile_therapy_rates', 'profile_contacts', 'app_settings'] loop
+  foreach t in array array['profile_contacts', 'app_settings'] loop  -- rates expose all their columns, only for published rows (test 12)
     denied := false;
-    begin execute format('select 1 from public.%I limit 1', t); exception when insufficient_privilege then denied := true; end;
-    if not denied then raise exception 'anon could read %', t; end if;
+    begin execute format('select * from public.%I limit 1', t); exception when insufficient_privilege then denied := true; end;
+    if not denied then raise exception 'anon could read all columns of %', t; end if;
   end loop;
+  denied := false;
+  begin perform 1 from public.app_settings limit 1; exception when insufficient_privilege then denied := true; end;
+  if not denied then raise exception 'anon could read app_settings'; end if;
 end
 $$;
 reset role;
