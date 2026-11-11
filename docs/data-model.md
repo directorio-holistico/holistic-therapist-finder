@@ -99,6 +99,9 @@ Sample therapies and locations live in `supabase/seed/dev-seed.sql` and are neve
 ## Rates, contacts and settings (commit 12)
 `profile_therapy_rates` and `profile_contacts`: same access as the other profile tables (own / admin read, no writes, nothing for `anon`). Phones and emails never reach `anon`; the only way out will be `reveal_contact`. A published profile must have a phone, cannot lose it, and `accepts_whatsapp` only applies to the phone. Rates: amount >= 0, decimals limited by the currency (CLP has none), one currency per audience within a profile. `app_settings`: `authenticated` reads public keys, an admin reads all and may change **only the `value` column** (a column-level grant, validated by a CHECK); keys are added by migration. `max_therapies_per_profile` (default 4) is enforced by a trigger.
 
+## Initial therapy catalog (commit 13)
+The initial catalog is a migration: 13 active therapies (energy and mind-body, plus quantum therapy, family constellations and akashic records) and 10 loaded but **hidden** ones (health practices regulated in many countries, or that sell products), pending a business decision. Only names are stored (in Spanish); descriptions are not, because Phase 1 has no description field and some wording would collide with the "no cure claims" rule. Visitors see only active therapies.
+
 ## 8. Known risks
 - High: a script harvesting phones. Mitigation: "Show contact" button, WhatsApp link after `reveal_contact`, rate limit per origin.
 - High: the public views are everything `anon` can see; anonymous-access tests are required before closing any security change.
