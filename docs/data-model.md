@@ -90,6 +90,9 @@ Writes by `anon` happen only through `log_search`, `reveal_contact` and the repo
 Public catalogs (`languages`, `currencies`, `service_modes`, `session_formats`, `rate_audiences`, `location_levels`, `therapies` + translations, `locations` + translations): `anon` and `authenticated` can read **active rows only** (`authenticated` reads all, for the future admin panel). Internal catalogs (`contact_types`, `profile_statuses`, `revision_statuses`, `roles`): `authenticated` read only; `anon` has no grant. Nobody writes catalogs through the API: they change through migrations. Admin write policies arrive with the admin panel (they need `people` and `person_roles`). `service_role` has no grants on catalogs until a server feature needs them.
 Sample therapies and locations live in `supabase/seed/dev-seed.sql` and are never applied to production.
 
+## People access (commit 10)
+`people` and `person_roles`: `anon` has no grant. `authenticated` reads only their own person row and roles; an admin (checked by `is_admin()`, a `SECURITY DEFINER` function with fixed `search_path`, executable only by `authenticated`) reads all. Nobody writes these tables through the API, so a user cannot give themselves a role. Erased people keep the row, anonymized (`erased_at` set, no email, no login link), enforced by a constraint.
+
 ## 8. Known risks
 - High: a script harvesting phones. Mitigation: "Show contact" button, WhatsApp link after `reveal_contact`, rate limit per origin.
 - High: the public views are everything `anon` can see; anonymous-access tests are required before closing any security change.
