@@ -68,10 +68,16 @@ $allowed = @("currencies", "languages", "location_levels", "location_translation
              "service_modes", "session_formats", "therapies", "therapy_translations", "public_profile_cards", "public_profile_detail")
 foreach ($t in $allowed) { Check "read $t" (Get-Status "GET" "$base/${t}?select=*&limit=1") $true }
 
-# 2) Tables with column-level access: reading all columns must be refused / Tablas con permiso por columna: leer todo se rechaza
-$columnOnly = @("therapist_profiles", "profile_contacts", "profile_languages", "profile_service_modes", "profile_session_formats",
-                "profile_therapies", "profile_therapy_rates")
+# 2) Tables where anon has only SOME columns: reading all columns (select=*) must be refused.
+#    Tablas donde anon tiene solo ALGUNAS columnas: leer todas (select=*) se rechaza.
+$columnOnly = @("therapist_profiles", "profile_contacts")
 foreach ($t in $columnOnly) { Check "read ALL columns of $t" (Get-Status "GET" "$base/${t}?select=*&limit=1") $false }
+
+# 2b) Tables where anon has ALL columns by design (every column is public); rows are limited to published profiles by RLS.
+#     select=* answers 2xx here: that is correct. Tablas donde anon tiene TODAS las columnas por diseno (todas son publicas);
+#     las filas se limitan a perfiles publicados por RLS. select=* responde 2xx: es lo correcto.
+$allColumnsPublic = @("profile_languages", "profile_service_modes", "profile_session_formats", "profile_therapies", "profile_therapy_rates")
+foreach ($t in $allColumnsPublic) { Check "read $t (all columns public, rows by RLS)" (Get-Status "GET" "$base/${t}?select=*&limit=1") $true }
 
 # 3) Every other table: refused / Toda otra tabla: rechazada
 $others = @("app_settings", "audit_log", "contact_reveals", "contact_types", "erasure_fingerprints", "legal_document_types",
