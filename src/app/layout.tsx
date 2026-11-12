@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
+import { SITE_NAME, SITE_SLOGAN } from "@/lib/site";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Directorio de terapeutas holísticos",
-  description:
-    "Encontrá terapeutas holísticos por terapia, país, ciudad y modo de atención.",
+  title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
+  description: `${SITE_SLOGAN}. Encontrá terapeutas holísticos por terapia, país, ciudad y modo de atención.`,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
