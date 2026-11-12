@@ -3,8 +3,8 @@
 
 import { describe, expect, it } from "vitest";
 import { formatDate, formatMoney } from "../src/lib/format";
-import { labelRateAudience, labelServiceMode } from "../src/lib/labels";
-import { parseRatesFrom, splitByGroup, toCard, type SearchCard } from "../src/lib/search";
+import { joinWithY, labelRateAudience, labelServiceMode } from "../src/lib/labels";
+import { orderTherapies, parseRatesFrom, splitByGroup, toCard, type SearchCard } from "../src/lib/search";
 import { MAX_PAGE, buildSearchHref, locationIdOf, parseSearchQuery } from "../src/lib/search-query";
 
 describe("parseSearchQuery", () => {
@@ -95,5 +95,43 @@ describe("rows to cards", () => {
     const groups = splitByGroup([make("a", 1), make("b", 1), make("c", 3)]);
     expect(groups.map((g) => [g.group, g.cards.map((c) => c.profileId)])).toEqual([[1, ["a", "b"]], [3, ["c"]]]);
     expect(splitByGroup([])).toEqual([]);
+  });
+});
+
+describe("orderTherapies", () => {
+  const ids = [1, 2, 3];
+  const names = ["Reiki", "Constelaciones familiares", "LNT® - La Nueva Terapia"];
+
+  it("is alphabetical when no therapy was searched", () => {
+    expect(orderTherapies(ids, names)).toEqual(["Constelaciones familiares", "LNT® - La Nueva Terapia", "Reiki"]);
+  });
+
+  it("puts the searched therapy first and keeps the rest alphabetical (A B C searching B -> B A C)", () => {
+    expect(orderTherapies(ids, names, 1)).toEqual(["Reiki", "Constelaciones familiares", "LNT® - La Nueva Terapia"]);
+    expect(orderTherapies(ids, names, 3)).toEqual(["LNT® - La Nueva Terapia", "Constelaciones familiares", "Reiki"]);
+  });
+
+  it("keeps the order when the searched therapy is already first or is not on the card", () => {
+    expect(orderTherapies(ids, names, 2)).toEqual(["Constelaciones familiares", "LNT® - La Nueva Terapia", "Reiki"]);
+    expect(orderTherapies(ids, names, 99)).toEqual(["Constelaciones familiares", "LNT® - La Nueva Terapia", "Reiki"]);
+  });
+
+  it("falls back to alphabetical when ids and names are not aligned or are missing", () => {
+    expect(orderTherapies([1], names, 1)).toEqual(["Constelaciones familiares", "LNT® - La Nueva Terapia", "Reiki"]);
+    expect(orderTherapies(null, null, 1)).toEqual([]);
+  });
+
+  it("toCard applies it", () => {
+    const card = toCard({ profile_id: "p", display_name: "Ana", therapy_ids: ids, therapy_names: names }, 1);
+    expect(card?.therapies[0]).toBe("Reiki");
+  });
+});
+
+describe("joinWithY", () => {
+  it("lowercases every label after the first", () => {
+    expect(joinWithY(["Presencial", "A distancia"])).toBe("Presencial y a distancia");
+    expect(joinWithY(["Individual", "Grupal"])).toBe("Individual y grupal");
+    expect(joinWithY(["Presencial"])).toBe("Presencial");
+    expect(joinWithY([])).toBe("");
   });
 });

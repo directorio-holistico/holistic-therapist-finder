@@ -2,7 +2,7 @@
 // Un resultado. Los datos de contacto NO están acá: se muestran solo con la revelación de contacto (commit posterior).
 
 import { formatDate, formatMoney } from "@/lib/format";
-import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
+import { joinWithY, labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
 import type { SearchCard } from "@/lib/search";
 
 function RatesLine({ card }: { card: SearchCard }) {
@@ -42,8 +42,8 @@ export function ProfileCard({ card }: { card: SearchCard }) {
       )}
       <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
         {[
-          card.serviceModes.map(labelServiceMode).join(" y "),
-          card.sessionFormats.map(labelSessionFormat).join(" y "),
+          joinWithY(card.serviceModes.map(labelServiceMode)),
+          joinWithY(card.sessionFormats.map(labelSessionFormat)),
           card.languages.length > 0 ? `Idiomas: ${card.languages.map(labelLanguage).join(", ")}` : "",
         ]
           .filter(Boolean)

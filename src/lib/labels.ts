@@ -23,3 +23,9 @@ export const SEARCH_GROUP_TITLES: Record<number, string> = {
   2: "Atienden a distancia en tu país",
   3: "Atienden a distancia desde otros países",
 };
+
+// Joins labels with " y ": only the first keeps its capital letter ("Presencial y a distancia").
+// Une etiquetas con " y ": solo la primera conserva la mayúscula ("Presencial y a distancia").
+export function joinWithY(labels: readonly string[]): string {
+  return labels.map((label, index) => (index === 0 ? label : label.charAt(0).toLowerCase() + label.slice(1))).join(" y ");
+}

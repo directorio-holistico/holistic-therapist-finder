@@ -41,6 +41,7 @@ export type SearchRow = {
   city_name?: string | null;
   region_name?: string | null;
   country_name?: string | null;
+  therapy_ids?: number[] | null;
   therapy_names?: string[] | null;
   service_modes?: string[] | null;
   session_formats?: string[] | null;
@@ -66,7 +67,25 @@ export function parseRatesFrom(value: unknown): RateFrom[] {
     .sort((a, b) => (a.audience === "own_country" ? -1 : b.audience === "own_country" ? 1 : a.audience.localeCompare(b.audience)));
 }
 
-export function toCard(row: SearchRow): SearchCard | null {
+// Therapies of a card: alphabetical (Spanish), but the therapy the visitor searched for goes first (A, B, C searching B -> B, A, C).
+// ids and names come aligned from the database (both ordered by id). If they are not aligned, names are kept alphabetical.
+// Terapias de una tarjeta: alfabético (español), pero la terapia buscada va primera (A, B, C buscando B -> B, A, C).
+// Los ids y los nombres vienen alineados de la base (ambos ordenados por id). Si no lo están, queda el orden alfabético.
+export function orderTherapies(
+  ids: readonly number[] | null | undefined,
+  names: readonly string[] | null | undefined,
+  searchedId: number | null = null,
+): string[] {
+  const list = names ?? [];
+  const aligned = ids != null && ids.length === list.length;
+  const items = list.map((name, index) => ({ name, id: aligned ? (ids[index] ?? null) : null }));
+  items.sort((a, b) => a.name.localeCompare(b.name, "es"));
+  const first = searchedId === null ? -1 : items.findIndex((item) => item.id === searchedId);
+  if (first > 0) items.unshift(...items.splice(first, 1));
+  return items.map((item) => item.name);
+}
+
+export function toCard(row: SearchRow, searchedTherapyId: number | null = null): SearchCard | null {
   if (!row.profile_id || !row.display_name) return null;
   const place = [row.city_name, row.region_name, row.country_name].filter((part): part is string => Boolean(part)).join(", ");
   return {
@@ -75,7 +94,7 @@ export function toCard(row: SearchRow): SearchCard | null {
     displayName: row.display_name,
     headline: row.headline ?? null,
     place,
-    therapies: row.therapy_names ?? [],
+    therapies: orderTherapies(row.therapy_ids, row.therapy_names, searchedTherapyId),
     serviceModes: row.service_modes ?? [],
     sessionFormats: row.session_formats ?? [],
     languages: row.languages ?? [],
@@ -108,7 +127,7 @@ export async function searchProfiles(client: Client, input: SearchInput): Promis
   });
   if (error) throw new Error(`Search failed / La búsqueda falló: ${error.message}`);
   const rows: SearchRow[] = data ?? [];
-  const cards = rows.map(toCard).filter((card): card is SearchCard => card !== null);
+  const cards = rows.map((row) => toCard(row, input.therapyId)).filter((card): card is SearchCard => card !== null);
   const total = rows.length > 0 ? Number(rows[0]?.total_count ?? rows.length) : 0;
   return { cards, total };
 }
