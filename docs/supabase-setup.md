@@ -38,6 +38,17 @@ It asks for the **public anon key** (Project Settings > API Keys). Every line mu
 2. In the SQL editor run the script in section "First administrator SQL" below with your real data. **Do not save it in the repo.**
 3. Changes made in the SQL editor appear in the audit log with a null role: expected.
 
+### 4b. Isolation test with 2 fictitious therapists
+1. Dashboard > Authentication > Users > add 2 fictitious users (for example `therapist-a@example.test`, `therapist-b@example.test`) with a password, **Auto Confirm User** checked. Keep the passwords in your password manager.
+2. Run `.\scripts\db\Test-RemoteIsolation.ps1 -ProjectRef <ref>`. It asks for the anon key and the three logins (administrator + A + B), registers A and B with `register_therapist` and checks that nobody sees or edits what is not theirs. Every line must say PASS.
+3. Clean up (the test data must not stay): in the SQL editor run the block below, then delete the two users in Authentication > Users. Audit log rows of the test remain (they hold only ids and column names, no personal values).
+```sql
+begin;
+delete from public.people where email in ('therapist-a@example.test', 'therapist-b@example.test');
+select count(*) as people_left from public.people;
+commit;
+```
+
 ### 5. Keys and environment variables
 - `anon` key (public) and project URL: Vercel and `.env.local`.
 - `service_role` key: only in server environment variables (Vercel, `.env.local`). Never in the repo, never in the browser. If it leaks, rotate it in the dashboard.
@@ -86,6 +97,11 @@ Comando en la sección en inglés. Pide la **clave pública anon** (Project Sett
 1. Dashboard > Authentication > Users > agregar el usuario del administrador.
 2. En el editor SQL correr el script de "First administrator SQL" con tus datos reales. **No guardarlo en el repo.**
 3. Los cambios hechos en el editor SQL aparecen en la auditoría con rol nulo: es lo esperado.
+
+### 4b. Prueba de aislamiento con 2 terapeutas ficticios
+1. Dashboard > Authentication > Users > agregá 2 usuarios ficticios (por ejemplo `therapist-a@example.test`, `therapist-b@example.test`) con contraseña y **Auto Confirm User** tildado. Guardá las contraseñas en tu gestor.
+2. Corré `.\scripts\db\Test-RemoteIsolation.ps1 -ProjectRef <ref>`. Pide la clave anon y los tres ingresos (administrador + A + B), registra a A y B con `register_therapist` y comprueba que nadie ve ni edita lo que no es suyo. Todas las líneas deben decir PASS.
+3. Limpieza (los datos de prueba no deben quedar): en el editor SQL corré el bloque de arriba y después borrá los dos usuarios en Authentication > Users. Las filas de auditoría de la prueba quedan (solo guardan ids y nombres de columnas, no valores personales).
 
 ### 5. Claves y variables de entorno
 - Clave `anon` (pública) y URL del proyecto: Vercel y `.env.local`.
