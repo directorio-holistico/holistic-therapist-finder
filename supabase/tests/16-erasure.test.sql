@@ -104,7 +104,7 @@ declare
   a1 uuid := '10000000-0000-0000-0000-0000000004a1'; a3 uuid := '10000000-0000-0000-0000-0000000004a3'; ad uuid := '10000000-0000-0000-0000-0000000004ad';
   got text; q text; failed int := 0; good text := current_setting('test.fp_a1');
 begin
-  select string_agg(contact_type || '=' || value, ',' order by contact_type, value) into got from public.erasure_material(a1);
+  select string_agg(contact_type || '=' || value, ',' order by contact_type collate "C", value collate "C") into got from public.erasure_material(a1);
   if got <> 'email=canario-a1-pro@example.test,email=canario-a1@example.test,phone=543515550001' then raise exception 'material a1: %', got; end if;
   select string_agg(contact_type || '=' || value, ',') into got from public.erasure_material(a3);
   if got <> 'email=canario-a3@example.test' then raise exception 'material a3 (no profile): %', got; end if;
