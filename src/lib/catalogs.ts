@@ -20,13 +20,26 @@ export type CatalogOption = { id: number; name: string };
 type Item = { id: number; code?: string | null };
 type NameRow = { id: number; name: string };
 
+// Therapies listed first, in this order, before the alphabetical rest. Owner decision 12/11/2026: the launch test is
+// with LNT therapists. Empty this list to go back to a fully alphabetical list.
+// Terapias que van primero, en este orden, antes del resto alfabético. Decisión del titular (12/11/2026): la prueba de
+// lanzamiento es con terapeutas de LNT. Vaciar esta lista devuelve el orden totalmente alfabético.
+export const THERAPIES_LISTED_FIRST: readonly string[] = ["lnt_schwiderski"];
+
 // Pure: joins items with their names (fallback: the code, then the id) and sorts by name using Spanish rules,
-// so "Ávila" sorts with the A's. / Pura: une ítems con sus nombres (si falta: el código, luego el id) y ordena en español.
-export function buildOptions(items: readonly Item[], names: readonly NameRow[]): CatalogOption[] {
+// so "Ávila" sorts with the A's. Items whose code is in listFirst go first, in that order.
+// Pura: une ítems con sus nombres (si falta: el código, luego el id) y ordena en español. Los ítems cuyo código está en
+// listFirst van primero, en ese orden.
+export function buildOptions(items: readonly Item[], names: readonly NameRow[], listFirst: readonly string[] = []): CatalogOption[] {
   const byId = new Map(names.map((row) => [row.id, row.name]));
+  const rank = (item: Item): number => {
+    const position = item.code ? listFirst.indexOf(item.code) : -1;
+    return position === -1 ? listFirst.length : position;
+  };
   return items
-    .map((item) => ({ id: item.id, name: byId.get(item.id) ?? item.code ?? String(item.id) }))
-    .sort((a, b) => a.name.localeCompare(b.name, CATALOG_LANGUAGE_CODE) || a.id - b.id);
+    .map((item) => ({ id: item.id, name: byId.get(item.id) ?? item.code ?? String(item.id), rank: rank(item) }))
+    .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name, CATALOG_LANGUAGE_CODE) || a.id - b.id)
+    .map(({ id, name }) => ({ id, name }));
 }
 
 function fail(what: string, message: string): never {
@@ -65,6 +78,7 @@ export async function listTherapies(client: Client): Promise<CatalogOption[]> {
   return buildOptions(
     items,
     (translations.data ?? []).map((row) => ({ id: row.therapy_id, name: row.name })),
+    THERAPIES_LISTED_FIRST,
   );
 }
 

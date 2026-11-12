@@ -2,7 +2,7 @@
 // Lectura de catálogos: unión/orden puros, y la forma de las consultas (con un cliente falso; sin red).
 
 import { describe, expect, it } from "vitest";
-import { buildOptions, listLocations, listTherapies } from "../src/lib/catalogs";
+import { THERAPIES_LISTED_FIRST, buildOptions, listLocations, listTherapies } from "../src/lib/catalogs";
 
 type Call = { table: string; steps: Array<[string, ...unknown[]]> };
 
@@ -62,18 +62,45 @@ describe("buildOptions", () => {
   });
 });
 
+describe("buildOptions with listed-first codes", () => {
+  const items = [{ id: 1, code: "reiki" }, { id: 2, code: "lnt_schwiderski" }, { id: 3, code: "akashic" }, { id: 4, code: "otra" }];
+  const names = [
+    { id: 1, name: "Reiki" }, { id: 2, name: "LNT® - La Nueva Terapia - Método Schwiderski" },
+    { id: 3, name: "Registros akáshicos" }, { id: 4, name: "Aromaterapia" },
+  ];
+
+  it("puts the listed-first codes before the alphabetical rest", () => {
+    expect(buildOptions(items, names, ["lnt_schwiderski"]).map((o) => o.id)).toEqual([2, 4, 3, 1]);
+  });
+
+  it("respects the order of the list when there are several", () => {
+    expect(buildOptions(items, names, ["reiki", "lnt_schwiderski"]).map((o) => o.id)).toEqual([1, 2, 4, 3]);
+  });
+
+  it("an unknown code in the list changes nothing; no list means fully alphabetical", () => {
+    expect(buildOptions(items, names, ["no_existe"]).map((o) => o.id)).toEqual([4, 2, 3, 1]);
+    expect(buildOptions(items, names).map((o) => o.id)).toEqual([4, 2, 3, 1]);
+  });
+
+  it("the site lists LNT first today", () => {
+    expect(THERAPIES_LISTED_FIRST).toEqual(["lnt_schwiderski"]);
+  });
+});
+
 describe("listTherapies", () => {
   it("reads each table on its own (no nested join) and merges the Spanish names", async () => {
     const { client, calls } = fakeClient({
       languages: [{ id: 1 }],
-      therapies: [{ id: 10, code: "reiki" }, { id: 11, code: "biodescodificacion" }],
+      therapies: [{ id: 10, code: "reiki" }, { id: 11, code: "biodescodificacion" }, { id: 12, code: "lnt_schwiderski" }],
       therapy_translations: [
         { therapy_id: 10, name: "Reiki" },
         { therapy_id: 11, name: "Biodescodificación" },
+        { therapy_id: 12, name: "LNT® - La Nueva Terapia - Método Schwiderski" },
       ],
     });
     const result = await listTherapies(client);
     expect(result).toEqual([
+      { id: 12, name: "LNT® - La Nueva Terapia - Método Schwiderski" },
       { id: 11, name: "Biodescodificación" },
       { id: 10, name: "Reiki" },
     ]);
