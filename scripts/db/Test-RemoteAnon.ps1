@@ -68,6 +68,12 @@ $allowed = @("currencies", "languages", "location_levels", "location_translation
              "service_modes", "session_formats", "therapies", "therapy_translations", "public_profile_cards", "public_profile_detail")
 foreach ($t in $allowed) { Check "read $t" (Get-Status "GET" "$base/${t}?select=*&limit=1") $true }
 
+# 1b) New columns of commit 33: visible to visitors through the views and as column grants; person_id stays hidden.
+#     Columnas nuevas del commit 33: visibles para los visitantes por las vistas y por permiso de columna; person_id sigue oculto.
+Check "read rates columns of public_profile_cards" (Get-Status "GET" "$base/public_profile_cards?select=rates_confirmed_at,rates_current,is_pinned&limit=1") $true
+Check "read is_pinned, rates_confirmed_at of therapist_profiles" (Get-Status "GET" "$base/therapist_profiles?select=is_pinned,rates_confirmed_at&limit=1") $true
+Check "read person_id of therapist_profiles" (Get-Status "GET" "$base/therapist_profiles?select=person_id&limit=1") $false
+
 # 2) Tables where anon has only SOME columns: reading all columns (select=*) must be refused.
 #    Tablas donde anon tiene solo ALGUNAS columnas: leer todas (select=*) se rechaza.
 $columnOnly = @("therapist_profiles", "profile_contacts")
@@ -101,6 +107,16 @@ $zeroUuid = "00000000-0000-0000-0000-000000000000"
 $zeroHash = "0" * 64
 Check "call reveal_contact(uuid)" (Get-Status "POST" "$base/rpc/reveal_contact" ('{"p_profile_id":"' + $zeroUuid + '"}')) $false
 Check "call reveal_contact_limited(uuid, hash)" (Get-Status "POST" "$base/rpc/reveal_contact_limited" ('{"p_profile_id":"' + $zeroUuid + '","p_origin_hash":"' + $zeroHash + '"}')) $false
+
+# 6) Commit 33 functions: the three for logged-in users are refused to anon; the two for visitors answer.
+#    Funciones del commit 33: las tres para usuarios con sesion se rechazan a anon; las dos para visitantes responden.
+Check "call update_my_rates(jsonb)" (Get-Status "POST" "$base/rpc/update_my_rates" '{"p_rates":[]}') $false
+Check "call confirm_my_rates()" (Get-Status "POST" "$base/rpc/confirm_my_rates" "{}") $false
+Check "call set_profile_pinned(uuid, boolean)" (Get-Status "POST" "$base/rpc/set_profile_pinned" ('{"p_profile_id":"' + $zeroUuid + '","p_pinned":true}')) $false
+Check "call rates_validity_months() (visitors)" (Get-Status "POST" "$base/rpc/rates_validity_months" "{}") $true
+# therapy id 1 (the first active therapy) and location id 1 (the first country) are assumed from the seed migrations
+# se asumen el id 1 de terapia (la primera activa) y el id 1 de ubicacion (el primer pais) de las migraciones de carga
+Check "call search_profiles(1, 1) (visitors)" (Get-Status "POST" "$base/rpc/search_profiles" '{"p_therapy_id":1,"p_location_id":1}') $true
 
 if ($failures -gt 0) { throw "$failures check(s) failed: do NOT publish / $failures comprobacion(es) fallaron: NO publicar." }
 Write-Host "Anonymous access is as designed / El acceso anonimo es el disenado." -ForegroundColor Green
