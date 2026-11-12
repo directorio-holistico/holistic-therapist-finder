@@ -1,5 +1,9 @@
 -- Contact reveal: only published profiles, only private contacts, daily counter, no leaks to other roles.
 -- Revelado de contacto: solo perfiles publicados, solo contactos privados, contador diario, sin fugas a otros roles.
+-- Since commit 24 the visitor-facing door is reveal_contact_limited(profile, origin_hash), executable by service_role only;
+-- reveal_contact itself is closed to every API role (the origin limit is tested in 17-rate-limit).
+-- Desde el commit 24 la puerta es reveal_contact_limited(perfil, hash_origen), solo para service_role;
+-- reveal_contact queda cerrada para todo rol de la API (el límite por origen se prueba en 17-rate-limit).
 -- Run after Reset-LocalDb.ps1 (needs the dev seed) / Ejecutar después de Reset-LocalDb.ps1 (usa el seed).
 
 begin;
@@ -36,10 +40,15 @@ begin
     raise exception 'contact_reveals must carry no personal or identifying column';
   end if;
   if not (select prosecdef from pg_proc where oid = 'public.reveal_contact(uuid)'::regprocedure) then raise exception 'reveal_contact must be SECURITY DEFINER'; end if;
-  if not has_function_privilege('anon', 'public.reveal_contact(uuid)', 'execute') then raise exception 'anon must execute reveal_contact'; end if;
-  if has_function_privilege('authenticated', 'public.reveal_contact(uuid)', 'execute')
+  if has_function_privilege('anon', 'public.reveal_contact(uuid)', 'execute')
+     or has_function_privilege('authenticated', 'public.reveal_contact(uuid)', 'execute')
      or has_function_privilege('service_role', 'public.reveal_contact(uuid)', 'execute') then
-    raise exception 'only anon may execute reveal_contact';
+    raise exception 'no API role may execute reveal_contact directly (commit 24)';
+  end if;
+  if has_function_privilege('anon', 'public.reveal_contact_limited(uuid, text)', 'execute')
+     or has_function_privilege('authenticated', 'public.reveal_contact_limited(uuid, text)', 'execute')
+     or not has_function_privilege('service_role', 'public.reveal_contact_limited(uuid, text)', 'execute') then
+    raise exception 'reveal_contact_limited must be executable by service_role only';
   end if;
   if has_function_privilege('anon', 'public.purge_expired_contact_reveals()', 'execute')
      or has_function_privilege('authenticated', 'public.purge_expired_contact_reveals()', 'execute')
@@ -50,26 +59,41 @@ begin
   if exists (select 1 from public.contact_types where code = 'website' and is_private) then raise exception 'website must not be private'; end if;
 end $$;
 
--- 2) AS ANON / COMO ANON
+-- 2) AS service_role, the only door / COMO service_role, la única puerta
 set session authorization authenticator;
-set role anon;
+set role service_role;
 select set_config('request.jwt.claims', '', true);
 do $$
 declare got text; n int;
 begin
   select string_agg(contact_type || '=' || value || '/' || accepts_whatsapp, ',' order by contact_type) into got
-    from public.reveal_contact('20000000-0000-0000-0000-0000000002a1');
+    from public.reveal_contact_limited('20000000-0000-0000-0000-0000000002a1', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
   if got <> 'email=canary-a1@example.test/false,phone=+54 351 555 0001/true' then raise exception 'reveal a1: %', got; end if;
   -- website never comes out here (it is already public in the view) / la web no sale por acá
   select string_agg(contact_type || '=' || value || '/' || accepts_whatsapp, ',' order by contact_type) into got
-    from public.reveal_contact('20000000-0000-0000-0000-0000000002a2');
+    from public.reveal_contact_limited('20000000-0000-0000-0000-0000000002a2', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
   if got <> 'phone=+54 351 555 0002/false' then raise exception 'reveal a2: %', got; end if;
   -- paused, unknown and null: no rows / pausado, inexistente y nulo: sin filas
-  select count(*) into n from public.reveal_contact('20000000-0000-0000-0000-0000000002a3'); if n <> 0 then raise exception 'paused profile revealed'; end if;
-  select count(*) into n from public.reveal_contact('99999999-9999-9999-9999-999999999999'); if n <> 0 then raise exception 'unknown profile revealed'; end if;
-  select count(*) into n from public.reveal_contact(null); if n <> 0 then raise exception 'null profile revealed'; end if;
-  perform * from public.reveal_contact('20000000-0000-0000-0000-0000000002a1');  -- a1 second time / a1 segunda vez
-  -- no direct access to private contacts or to the counters / sin acceso directo
+  select count(*) into n from public.reveal_contact_limited('20000000-0000-0000-0000-0000000002a3', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'); if n <> 0 then raise exception 'paused profile revealed'; end if;
+  select count(*) into n from public.reveal_contact_limited('99999999-9999-9999-9999-999999999999', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'); if n <> 0 then raise exception 'unknown profile revealed'; end if;
+  select count(*) into n from public.reveal_contact_limited(null, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'); if n <> 0 then raise exception 'null profile revealed'; end if;
+  perform * from public.reveal_contact_limited('20000000-0000-0000-0000-0000000002a1', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');  -- a1 second time / a1 segunda vez
+end $$;
+reset role;
+reset session authorization;
+
+-- 2b) AS ANON: no door at all, no direct reads / COMO ANON: ninguna puerta, ninguna lectura directa
+set session authorization authenticator;
+set role anon;
+select set_config('request.jwt.claims', '', true);
+do $$
+declare n int;
+begin
+  begin perform * from public.reveal_contact('20000000-0000-0000-0000-0000000002a1'); raise exception 'anon ran reveal_contact';
+  exception when insufficient_privilege then null; end;
+  begin perform * from public.reveal_contact_limited('20000000-0000-0000-0000-0000000002a1', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'); raise exception 'anon ran reveal_contact_limited';
+  exception when insufficient_privilege then null; end;
+    -- no direct access to private contacts or to the counters / sin acceso directo
   select count(*) into n from public.profile_contacts where profile_id = '20000000-0000-0000-0000-0000000002a1';
   if n <> 1 then raise exception 'anon sees % contacts of a1 directly (only the website expected)', n; end if;
   begin perform 1 from public.contact_reveals; raise exception 'anon read contact_reveals';
@@ -104,11 +128,11 @@ begin
   update public.contact_types set is_active = false where code = 'email';
 end $$;
 set session authorization authenticator;
-set role anon;
+set role service_role;
 select set_config('request.jwt.claims', '', true);
 do $$
 begin
-  if (select string_agg(contact_type, ',') from public.reveal_contact('20000000-0000-0000-0000-0000000002a1')) <> 'phone' then
+  if (select string_agg(contact_type, ',') from public.reveal_contact_limited('20000000-0000-0000-0000-0000000002a1', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')) <> 'phone' then
     raise exception 'a deactivated contact type was revealed';
   end if;
 end $$;
@@ -116,11 +140,11 @@ reset role;
 reset session authorization;
 update public.contact_types set is_active = false where code = 'phone';
 set session authorization authenticator;
-set role anon;
+set role service_role;
 select set_config('request.jwt.claims', '', true);
 do $$
 begin
-  if exists (select 1 from public.reveal_contact('20000000-0000-0000-0000-0000000002a2')) then raise exception 'revealed with every private type deactivated'; end if;
+  if exists (select 1 from public.reveal_contact_limited('20000000-0000-0000-0000-0000000002a2', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')) then raise exception 'revealed with every private type deactivated'; end if;
 end $$;
 reset role;
 reset session authorization;
@@ -140,6 +164,8 @@ select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000
 do $$
 begin
   begin perform * from public.reveal_contact('20000000-0000-0000-0000-0000000002a2'); raise exception 'authenticated ran reveal_contact';
+  exception when insufficient_privilege then null; end;
+  begin perform * from public.reveal_contact_limited('20000000-0000-0000-0000-0000000002a2', 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'); raise exception 'authenticated ran reveal_contact_limited';
   exception when insufficient_privilege then null; end;
   if (select count(*) from public.contact_reveals) <> 0 then raise exception 'a therapist sees the counters'; end if;
   begin insert into public.contact_reveals (profile_id, day) values ('20000000-0000-0000-0000-0000000002a1', current_date); raise exception 'authenticated wrote counters';
