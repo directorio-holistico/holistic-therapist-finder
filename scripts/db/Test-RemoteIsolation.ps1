@@ -77,11 +77,13 @@ function Invoke-Api {
 }
 
 function Get-Rows {
-  param($Response)
+  # Counts rows without ConvertFrom-Json: Windows PowerShell 5.1 returns a JSON array as ONE object, so @(...).Count is always 1.
+  # Cuenta filas sin ConvertFrom-Json: Windows PowerShell 5.1 devuelve un arreglo JSON como UN solo objeto, y @(...).Count da siempre 1.
+  param($Response, [string]$Field = "id")
   if ($Response.Status -lt 200 -or $Response.Status -ge 300) { return -1 }
   $c = $Response.Content.Trim()
   if ($c -eq "" -or $c -eq "[]") { return 0 }
-  return @($c | ConvertFrom-Json).Count
+  return [regex]::Matches($c, '"' + $Field + '"\s*:').Count
 }
 
 $failures = 0
@@ -125,8 +127,8 @@ $fb = Invoke-Api $tB "GET" "therapist_profiles?select=id"
 Check "A sees exactly 1 profile (own) / A ve 1 solo perfil (el suyo)" ((Get-Rows $fa) -eq 1) "rows $(Get-Rows $fa)"
 Check "B sees exactly 1 profile (own) / B ve 1 solo perfil (el suyo)" ((Get-Rows $fb) -eq 1) "rows $(Get-Rows $fb)"
 if ((Get-Rows $fa) -eq 1 -and (Get-Rows $fb) -eq 1) {
-  $idA = (@($fa.Content | ConvertFrom-Json))[0].id
-  $idB = (@($fb.Content | ConvertFrom-Json))[0].id
+  $idA = [regex]::Match($fa.Content, '"id"\s*:\s*"([0-9a-fA-F-]{36})"').Groups[1].Value
+  $idB = [regex]::Match($fb.Content, '"id"\s*:\s*"([0-9a-fA-F-]{36})"').Groups[1].Value
   Check "profile ids differ / los perfiles son distintos" ($idA -ne $idB)
   $cross = Invoke-Api $tA "GET" ("therapist_profiles?select=id&id=eq." + $idB)
   Check "A cannot read B's profile by id / A no lee el perfil de B por id" ((Get-Rows $cross) -eq 0) "rows $(Get-Rows $cross)"
@@ -142,7 +144,7 @@ Check "A cannot insert into people / A no inserta en people" ($w3.Status -lt 200
 $au = Invoke-Api $tA "GET" "audit_log?select=id"
 Check "A cannot read the audit log / A no lee la auditoria" ((Get-Rows $au) -le 0) "rows $(Get-Rows $au)"
 $ps = Invoke-Api $tA "GET" "app_settings?select=key&is_public=eq.false"
-Check "A cannot read private settings / A no lee ajustes privados" ((Get-Rows $ps) -le 0) "rows $(Get-Rows $ps)"
+Check "A cannot read private settings / A no lee ajustes privados" ((Get-Rows $ps "key") -le 0) "rows $(Get-Rows $ps "key")"
 $z = "00000000-0000-0000-0000-000000000000"
 $f1 = Invoke-Api $tA "POST" "rpc/reveal_contact" ('{"p_profile_id":"' + $z + '"}')
 Check "A cannot call reveal_contact / A no llama reveal_contact" ($f1.Status -lt 200 -or $f1.Status -ge 300) "status $($f1.Status)"
