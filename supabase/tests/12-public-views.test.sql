@@ -62,12 +62,12 @@ begin
   end loop;
   select string_agg(column_name, ',' order by ordinal_position) into cols from information_schema.columns
     where table_schema = 'public' and table_name = 'public_profile_cards';
-  if cols <> 'profile_id,display_name,photo_path,headline,zone,approved_at,city_id,city_name,region_id,region_name,country_id,country_name,country_iso,therapy_ids,therapy_names,service_modes,session_formats,languages,rates_from' then
+  if cols <> 'profile_id,display_name,photo_path,headline,zone,approved_at,city_id,city_name,region_id,region_name,country_id,country_name,country_iso,therapy_ids,therapy_names,service_modes,session_formats,languages,rates_from,rates_confirmed_at,rates_current,is_pinned' then
     raise exception 'the columns of public_profile_cards changed: %', cols;
   end if;
   select string_agg(column_name, ',' order by ordinal_position) into cols from information_schema.columns
     where table_schema = 'public' and table_name = 'public_profile_detail';
-  if cols <> 'profile_id,display_name,photo_path,headline,zone,approved_at,city_id,city_name,region_id,region_name,country_id,country_name,country_iso,therapy_ids,therapy_names,service_modes,session_formats,languages,rates_from,practice_start_year,website,therapies_detail' then
+  if cols <> 'profile_id,display_name,photo_path,headline,zone,approved_at,city_id,city_name,region_id,region_name,country_id,country_name,country_iso,therapy_ids,therapy_names,service_modes,session_formats,languages,rates_from,rates_confirmed_at,rates_current,is_pinned,practice_start_year,website,therapies_detail' then
     raise exception 'the columns of public_profile_detail changed: %', cols;
   end if;
 end
@@ -88,8 +88,9 @@ begin
     'profile_therapy_rates.amount:SELECT', 'profile_therapy_rates.currency_id:SELECT', 'profile_therapy_rates.profile_id:SELECT',
     'profile_therapy_rates.rate_audience_id:SELECT', 'profile_therapy_rates.therapy_id:SELECT',
     'therapist_profiles.approved_at:SELECT', 'therapist_profiles.display_name:SELECT', 'therapist_profiles.headline:SELECT',
-    'therapist_profiles.id:SELECT', 'therapist_profiles.location_id:SELECT', 'therapist_profiles.photo_path:SELECT',
-    'therapist_profiles.practice_start_year:SELECT', 'therapist_profiles.zone:SELECT'];
+    'therapist_profiles.id:SELECT', 'therapist_profiles.is_pinned:SELECT', 'therapist_profiles.location_id:SELECT',
+    'therapist_profiles.photo_path:SELECT', 'therapist_profiles.practice_start_year:SELECT',
+    'therapist_profiles.rates_confirmed_at:SELECT', 'therapist_profiles.zone:SELECT'];
   -- column grants that belong to table-level grants (the catalogs and views) are listed by the table-level view of the standard
   got := array(select g from unnest(got) g where split_part(g, '.', 1) = any (array['profile_contacts', 'profile_languages', 'profile_service_modes',
     'profile_session_formats', 'profile_therapies', 'profile_therapy_rates', 'therapist_profiles']));
