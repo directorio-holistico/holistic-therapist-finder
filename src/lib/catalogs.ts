@@ -107,3 +107,87 @@ export async function listLocations(client: Client, parentId: number | null): Pr
     (translations.data ?? []).map((row) => ({ id: row.location_id, name: row.name })),
   );
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Catalogs for the therapist profile form / Catálogos para el formulario de perfil del terapeuta
+// ---------------------------------------------------------------------------------------------------------------------
+
+export type CodedOption = { id: number; code: string };
+export type ChildOption = CatalogOption & { parentId: number };
+export type LocationTree = { countries: CatalogOption[]; regions: ChildOption[]; cities: ChildOption[] };
+export type FormCatalogs = {
+  languages: CodedOption[];
+  serviceModes: CodedOption[];
+  sessionFormats: CodedOption[];
+  contactTypes: CodedOption[];
+};
+
+type CodedRow = { id: number; code: string };
+const toCoded = (what: string, result: { data: CodedRow[] | null; error: { message: string } | null }): CodedOption[] => {
+  if (result.error) fail(what, result.error.message);
+  return (result.data ?? []).map((row) => ({ id: row.id, code: row.code }));
+};
+
+export async function listFormCatalogs(client: Client): Promise<FormCatalogs> {
+  // One explicit query per table keeps the types exact (no table-name unions). / Una consulta explícita por tabla mantiene los tipos exactos.
+  const [languages, serviceModes, sessionFormats, contactTypes] = await Promise.all([
+    client.from("languages").select("id, code").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
+    client.from("service_modes").select("id, code").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
+    client.from("session_formats").select("id, code").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
+    client.from("contact_types").select("id, code").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
+  ]);
+  return {
+    languages: toCoded("languages / idiomas", languages),
+    serviceModes: toCoded("service modes / modos de atención", serviceModes),
+    sessionFormats: toCoded("session formats / formatos de sesión", sessionFormats),
+    contactTypes: toCoded("contact types / tipos de contacto", contactTypes),
+  };
+}
+
+// Pure: groups children under their parents, named and sorted. / Pura: agrupa hijos bajo sus padres, con nombre y ordenados.
+export function buildChildOptions(items: readonly { id: number; parent_id: number | null }[], names: readonly NameRow[]): ChildOption[] {
+  const parentById = new Map(items.map((item) => [item.id, item.parent_id]));
+  return buildOptions(items, names)
+    .map((option) => ({ ...option, parentId: parentById.get(option.id) ?? 0 }))
+    .filter((option) => option.parentId !== 0);
+}
+
+// The whole country > region > city tree in a few calls (rows are read in pages below the 1,000-row cap of the API).
+// Fine for the launch size (a few hundred rows); a world-wide catalog will need a search box instead.
+// Todo el árbol país > región > ciudad en pocas llamadas (se lee por páginas bajo el tope de 1.000 filas de la API).
+// Alcanza para el tamaño de lanzamiento (unos cientos de filas); un catálogo mundial necesitará un buscador.
+export async function listLocationTree(client: Client): Promise<LocationTree> {
+  const languageId = await getLanguageId(client);
+  const levels = await client.from("location_levels").select("id, code").limit(50);
+  if (levels.error) fail("location levels / niveles de ubicación", levels.error.message);
+  const levelId = (code: string) => levels.data?.find((row) => row.code === code)?.id;
+
+  const rows: { id: number; parent_id: number | null; level_id: number }[] = [];
+  for (let from = 0; ; from += MAX_ROWS) {
+    const page = await client.from("locations").select("id, parent_id, level_id").eq("is_active", true).order("id").range(from, from + MAX_ROWS - 1);
+    if (page.error) fail("locations / ubicaciones", page.error.message);
+    rows.push(...(page.data ?? []));
+    if ((page.data?.length ?? 0) < MAX_ROWS) break;
+  }
+
+  const names: NameRow[] = [];
+  const ids = rows.map((row) => row.id);
+  for (let start = 0; start < ids.length; start += 200) {
+    const chunk = ids.slice(start, start + 200);
+    const translations = await client
+      .from("location_translations")
+      .select("location_id, name")
+      .eq("language_id", languageId)
+      .in("location_id", chunk)
+      .limit(MAX_ROWS);
+    if (translations.error) fail("location names / nombres de ubicaciones", translations.error.message);
+    names.push(...(translations.data ?? []).map((row) => ({ id: row.location_id, name: row.name })));
+  }
+
+  const ofLevel = (code: string) => rows.filter((row) => row.level_id === levelId(code));
+  return {
+    countries: buildOptions(ofLevel("country"), names),
+    regions: buildChildOptions(ofLevel("region"), names),
+    cities: buildChildOptions(ofLevel("city"), names),
+  };
+}

@@ -1,0 +1,187 @@
+"use client";
+
+import Link from "next/link";
+import { useActionState, useState } from "react";
+import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
+import { labelLanguage, labelServiceMode, labelSessionFormat } from "@/lib/labels";
+import type { FormDefaults } from "@/lib/profile-form";
+import { saveProfile, type EditState } from "./actions";
+
+const INITIAL: EditState = { status: "idle", message: "", fields: [], flagged: [] };
+const FIELD = "w-full rounded-md border border-zinc-400 bg-white p-3 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100";
+const LABEL = "font-medium text-zinc-900 dark:text-zinc-100";
+const HELP = "text-sm text-zinc-600 dark:text-zinc-400";
+
+type Props = {
+  defaults: FormDefaults;
+  catalogs: FormCatalogs;
+  countries: CatalogOption[];
+  regions: ChildOption[];
+  cities: ChildOption[];
+  initialCountryId: number | null;
+  initialRegionId: number | null;
+  missingCity: { regionId: number; cityName: string } | null;
+  lastRejection: string | null;
+};
+
+function CheckGroup({ legend, name, options, selected, label }: {
+  legend: string; name: string; options: { id: number; code: string }[]; selected: number[]; label: (code: string) => string;
+}) {
+  return (
+    <fieldset className="grid gap-2">
+      <legend className={LABEL}>{legend}</legend>
+      {options.map((option) => (
+        <label key={option.id} className="flex items-center gap-3 text-zinc-800 dark:text-zinc-200">
+          <input type="checkbox" name={name} value={option.id} defaultChecked={selected.includes(option.id)} className="h-5 w-5" />
+          {label(option.code)}
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
+export function ProfileForm({ defaults, catalogs, countries, regions, cities, initialCountryId, initialRegionId, missingCity, lastRejection }: Props) {
+  const [state, action, pending] = useActionState(saveProfile, INITIAL);
+  const [countryId, setCountryId] = useState<number | null>(initialCountryId);
+  const [regionId, setRegionId] = useState<number | null>(initialRegionId);
+  const [cityMissing, setCityMissing] = useState<boolean>(missingCity !== null);
+  const regionOptions = regions.filter((region) => region.parentId === countryId);
+  const cityOptions = cities.filter((city) => city.parentId === regionId);
+  const invalid = (field: string) => state.status === "error" && state.fields.includes(field);
+
+  if (state.status === "submitted") {
+    return (
+      <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700" role="status">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{state.message}</h2>
+        <p className="mt-1 text-zinc-700 dark:text-zinc-300">Te avisamos cuando esté revisado. Mientras tanto no podés cambiarlo.</p>
+        {state.flagged.length > 0 && (
+          <p className="mt-2 text-zinc-700 dark:text-zinc-300">
+            Ojo: encontramos palabras que suelen rechazarse ({state.flagged.join(", ")}). No promete cura ni trata enfermedades: si querés, corregilas y volvé a enviar cuando te respondamos.
+          </p>
+        )}
+        <Link href="/mi-perfil" className="mt-3 inline-block underline">Volver a mi perfil</Link>
+      </section>
+    );
+  }
+
+  return (
+    <form action={action} className="mt-6 grid gap-6" noValidate>
+      {lastRejection && (
+        <p role="note" className="rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
+          Tu última revisión fue rechazada: {lastRejection}
+        </p>
+      )}
+
+      <section className="grid gap-4" aria-labelledby="sec-datos">
+        <h2 id="sec-datos" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tus datos</h2>
+        <div className="grid gap-1">
+          <label htmlFor="displayName" className={LABEL}>Nombre que se muestra</label>
+          <input id="displayName" name="displayName" type="text" required maxLength={80} defaultValue={defaults.displayName}
+            aria-invalid={invalid("displayName")} className={FIELD} />
+        </div>
+        <div className="grid gap-1">
+          <label htmlFor="headline" className={LABEL}>Frase de presentación (opcional)</label>
+          <textarea id="headline" name="headline" rows={3} maxLength={280} defaultValue={defaults.headline}
+            aria-describedby="headline-help" aria-invalid={invalid("headline")} className={FIELD} />
+          <p id="headline-help" className={HELP}>Hasta 280 caracteres. No prometas curas ni hables de enfermedades.</p>
+        </div>
+        <div className="grid gap-1">
+          <label htmlFor="practiceStartYear" className={LABEL}>Año en que empezaste a atender (opcional)</label>
+          <input id="practiceStartYear" name="practiceStartYear" type="number" inputMode="numeric" min={1900} max={2100}
+            defaultValue={defaults.practiceStartYear} aria-invalid={invalid("practiceStartYear")} className={FIELD} />
+        </div>
+      </section>
+
+      <section className="grid gap-4" aria-labelledby="sec-lugar">
+        <h2 id="sec-lugar" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Dónde atendés</h2>
+        <div className="grid gap-1">
+          <label htmlFor="countryId" className={LABEL}>País</label>
+          <select id="countryId" value={countryId ?? ""} className={FIELD}
+            onChange={(event) => { setCountryId(event.target.value ? Number(event.target.value) : null); setRegionId(null); }}>
+            <option value="">Elegí un país</option>
+            {countries.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
+          </select>
+        </div>
+        <div className="grid gap-1">
+          <label htmlFor="regionId" className={LABEL}>Región</label>
+          <select id="regionId" name="regionId" value={regionId ?? ""} disabled={countryId === null} aria-invalid={invalid("regionId")} className={FIELD}
+            onChange={(event) => setRegionId(event.target.value ? Number(event.target.value) : null)}>
+            <option value="">Elegí una región</option>
+            {regionOptions.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
+          </select>
+        </div>
+        {!cityMissing && (
+          <div className="grid gap-1">
+            <label htmlFor="cityId" className={LABEL}>Ciudad</label>
+            <select key={regionId ?? "none"} id="cityId" name="cityId" defaultValue={defaults.cityId ?? ""} disabled={regionId === null} aria-invalid={invalid("cityId")} className={FIELD}>
+              <option value="">Elegí una ciudad</option>
+              {cityOptions.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
+            </select>
+          </div>
+        )}
+        <label className="flex items-start gap-3 text-zinc-800 dark:text-zinc-200">
+          <input type="checkbox" name="cityMissing" checked={cityMissing} onChange={(event) => setCityMissing(event.target.checked)} className="mt-1 h-5 w-5" />
+          <span>Mi ciudad no está en la lista</span>
+        </label>
+        {cityMissing && (
+          <div className="grid gap-1">
+            <label htmlFor="cityName" className={LABEL}>Escribí tu ciudad</label>
+            <input id="cityName" name="cityName" type="text" maxLength={80} defaultValue={missingCity?.cityName ?? ""}
+              aria-describedby="cityName-help" aria-invalid={invalid("cityName")} className={FIELD} />
+            <p id="cityName-help" className={HELP}>La agregamos nosotros. Tu perfil se publica cuando la ciudad esté cargada; no frena tu alta.</p>
+          </div>
+        )}
+        <div className="grid gap-1">
+          <label htmlFor="zone" className={LABEL}>Zona o barrio (opcional)</label>
+          <input id="zone" name="zone" type="text" maxLength={80} defaultValue={defaults.zone} className={FIELD} />
+        </div>
+      </section>
+
+      <section className="grid gap-4" aria-labelledby="sec-atencion">
+        <h2 id="sec-atencion" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Cómo atendés</h2>
+        <CheckGroup legend="Modo de atención" name="serviceModes" options={catalogs.serviceModes} selected={defaults.serviceModes} label={labelServiceMode} />
+        <CheckGroup legend="Formato de sesión" name="sessionFormats" options={catalogs.sessionFormats} selected={defaults.sessionFormats} label={labelSessionFormat} />
+        <CheckGroup legend="Idiomas de atención" name="languages" options={catalogs.languages} selected={defaults.languages} label={labelLanguage} />
+      </section>
+
+      <section className="grid gap-4" aria-labelledby="sec-contacto">
+        <h2 id="sec-contacto" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Cómo te contactan</h2>
+        <p className={HELP}>Tu teléfono y tu mail solo se muestran cuando alguien aprieta &quot;Ver contacto&quot;.</p>
+        <div className="grid gap-1">
+          <label htmlFor="phone" className={LABEL}>Teléfono</label>
+          <input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" required maxLength={40}
+            defaultValue={defaults.phone} aria-invalid={invalid("phone")} className={FIELD} />
+        </div>
+        <label className="flex items-center gap-3 text-zinc-800 dark:text-zinc-200">
+          <input type="checkbox" name="phoneWhatsapp" defaultChecked={defaults.phoneWhatsapp} className="h-5 w-5" />
+          Atiendo WhatsApp en este número
+        </label>
+        <div className="grid gap-1">
+          <label htmlFor="email" className={LABEL}>Mail de contacto (opcional)</label>
+          <input id="email" name="email" type="email" inputMode="email" autoComplete="email" maxLength={254}
+            defaultValue={defaults.email} aria-invalid={invalid("email")} className={FIELD} />
+        </div>
+        <div className="grid gap-1">
+          <label htmlFor="website" className={LABEL}>Página web (opcional)</label>
+          <input id="website" name="website" type="url" inputMode="url" maxLength={300}
+            defaultValue={defaults.website} aria-invalid={invalid("website")} className={FIELD} />
+        </div>
+      </section>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button type="submit" name="intent" value="save" disabled={pending}
+          className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 disabled:opacity-60 dark:text-zinc-100">
+          {pending ? "Guardando…" : "Guardar borrador"}
+        </button>
+        <button type="submit" name="intent" value="submit" disabled={pending}
+          className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900">
+          {pending ? "Enviando…" : "Enviar a revisión"}
+        </button>
+      </div>
+      <p role={state.status === "error" ? "alert" : "status"} aria-live="polite"
+        className={state.status === "error" ? "text-red-700 dark:text-red-400" : "text-zinc-800 dark:text-zinc-200"}>
+        {state.message}
+      </p>
+    </form>
+  );
+}

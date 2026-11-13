@@ -59,6 +59,7 @@ async function Account() {
             Estado: <strong>{STATUS_LABELS[status?.code ?? ""] ?? "—"}</strong>
             {profile.approved_at ? ` · aprobado el ${formatDate(profile.approved_at)}` : ""}
           </p>
+          <Link href="/mi-perfil/editar" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">Editar mi perfil</Link>
         </section>
       )}
       <form action={signOut} className="mt-6">
