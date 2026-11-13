@@ -1,6 +1,6 @@
-// Keeps the login session fresh. It runs ONLY on the login and account pages: the public search never goes through here,
+// Keeps the login session fresh. It runs ONLY on the login, account and admin pages: the public search never goes through here,
 // so it stays fast and cacheable. It calls getUser(), which asks the auth server to validate the token.
-// Mantiene fresca la sesión. Corre SOLO en las páginas de ingreso y de cuenta: la búsqueda pública no pasa por acá, así
+// Mantiene fresca la sesión. Corre SOLO en las páginas de ingreso, de cuenta y de administración: la búsqueda pública no pasa por acá, así
 // sigue rápida y cacheable. Llama a getUser(), que le pide al servidor de autenticación validar el token.
 
 import { createServerClient } from "@supabase/ssr";
@@ -28,5 +28,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/ingresar", "/mi-perfil/:path*", "/auth/:path*"],
+  matcher: ["/ingresar", "/mi-perfil/:path*", "/auth/:path*", "/admin/:path*"],
 };
