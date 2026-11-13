@@ -218,7 +218,7 @@ begin
   if (select count(*) from public.service_modes) <> 2 then raise exception 'service_modes must have 2 rows'; end if;
   if (select count(*) from public.session_formats) <> 2 then raise exception 'session_formats must have 2 rows'; end if;
   if (select count(*) from public.rate_audiences) <> 2 then raise exception 'rate_audiences must have 2 rows'; end if;
-  if (select count(*) from public.contact_types) <> 3 then raise exception 'contact_types must have 3 rows'; end if;
+  if (select count(*) from public.contact_types) <> 4 then raise exception 'contact_types must have 4 rows (phone, email, website, instagram)'; end if;
 end
 $$;
 

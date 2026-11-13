@@ -35,7 +35,8 @@ export function contactTypeIds(catalogs: FormCatalogs): ContactTypeIds | null {
   const phone = id(CONTACT_CODES.phone);
   const email = id(CONTACT_CODES.email);
   const website = id(CONTACT_CODES.website);
-  return phone && email && website ? { phone, email, website } : null;
+  const instagram = id(CONTACT_CODES.instagram);
+  return phone && email && website && instagram ? { phone, email, website, instagram } : null;
 }
 
 export async function loadProfileEditor(client: Client): Promise<EditorData> {
@@ -61,7 +62,7 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
 
   const [catalogs, tree] = await Promise.all([listFormCatalogs(client), listLocationTree(client)]);
   const contactTypes = contactTypeIds(catalogs);
-  if (!contactTypes) fail("contact types / tipos de contacto", "phone, email and website must exist / deben existir");
+  if (!contactTypes) fail("contact types / tipos de contacto", "phone, email, website and instagram must exist (apply the latest migrations) / deben existir (aplicá las últimas migraciones)");
 
   // Start from the live profile; a draft in progress replaces it. / Se parte del perfil vigente; un borrador en curso lo reemplaza.
   let defaults: FormDefaults;
@@ -89,6 +90,7 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
       phoneWhatsapp: contact(contactTypes.phone)?.accepts_whatsapp ?? false,
       email: contact(contactTypes.email)?.value ?? "",
       website: contact(contactTypes.website)?.value ?? "",
+      instagram: contact(contactTypes.instagram)?.value ?? "",
     };
   }
 

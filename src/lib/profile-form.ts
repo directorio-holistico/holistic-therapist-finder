@@ -17,7 +17,7 @@ export const LIMITS = {
 } as const;
 
 // Contact type codes used by the form (the ids come from the catalog). / Códigos de tipo de contacto del formulario.
-export const CONTACT_CODES = { phone: "phone", email: "email", website: "website" } as const;
+export const CONTACT_CODES = { phone: "phone", email: "email", website: "website", instagram: "instagram" } as const;
 
 const oneLine = (value: string) => value.replace(/\s+/g, " ").trim();
 const emptyToNull = (value: string) => (value === "" ? null : value);
@@ -35,6 +35,17 @@ const idList = (message: string) =>
 export function phoneIsValid(value: string): boolean {
   return /^\+?[0-9 ()-]+$/.test(value) && value.replace(/[^0-9]/g, "").length >= 6 && value.replace(/[^0-9]/g, "").length <= 15;
 }
+
+// Instagram: the user name only. Accepts "@user", "user" or a profile link and keeps "user" in lower case (the database stores
+// exactly that format). / Instagram: solo el usuario. Acepta "@usuario", "usuario" o un enlace y deja "usuario" en minúsculas.
+export function normalizeInstagram(raw: string): string {
+  const withoutLink = raw
+    .trim()
+    .replace(/^(?:https?:\/\/)?(?:www\.)?instagram\.com\//i, "")
+    .replace(/^@+/, "");
+  return (withoutLink.split(/[?#/]/)[0] ?? "").toLowerCase();
+}
+export const instagramIsValid = (value: string) => /^[a-z0-9._]{1,30}$/.test(value);
 
 export function buildProfileFormSchema(maxYear: number) {
   return z
@@ -77,6 +88,11 @@ export function buildProfileFormSchema(maxYear: number) {
         .transform(emptyToNull)
         .transform((value) => (value !== null && !/^https?:\/\//i.test(value) ? `https://${value}` : value))
         .refine((value) => value === null || /^https?:\/\/[^ ]+$/.test(value), "Web inválida: debe empezar con http:// o https://."),
+      instagram: z
+        .string()
+        .transform(normalizeInstagram)
+        .transform(emptyToNull)
+        .refine((value) => value === null || instagramIsValid(value), "Instagram inválido: solo tu usuario (letras, números, punto y guion bajo, hasta 30)."),
     })
     .superRefine((value, ctx) => {
       if (value.cityMissing) {
@@ -120,10 +136,11 @@ export function readProfileForm(formData: FormData, maxYear: number) {
     phoneWhatsapp: formData.get("phoneWhatsapp") === "on",
     email: text(formData.get("email")),
     website: text(formData.get("website")),
+    instagram: text(formData.get("instagram")),
   });
 }
 
-export type ContactTypeIds = { phone: number; email: number; website: number };
+export type ContactTypeIds = { phone: number; email: number; website: number; instagram: number };
 
 export type ProfilePayload = {
   display_name: string;
@@ -149,6 +166,7 @@ export function buildPayload(values: ProfileFormValues, contactTypes: ContactTyp
   ];
   if (values.email !== null) contacts.push({ contact_type_id: contactTypes.email, value: values.email, accepts_whatsapp: false });
   if (values.website !== null) contacts.push({ contact_type_id: contactTypes.website, value: values.website, accepts_whatsapp: false });
+  if (values.instagram !== null) contacts.push({ contact_type_id: contactTypes.instagram, value: values.instagram, accepts_whatsapp: false });
   return {
     display_name: values.displayName,
     headline: values.headline,
@@ -177,11 +195,12 @@ export type FormDefaults = {
   phoneWhatsapp: boolean;
   email: string;
   website: string;
+  instagram: string;
 };
 
 export const EMPTY_DEFAULTS: FormDefaults = {
   displayName: "", headline: "", zone: "", practiceStartYear: "", cityId: null,
-  languages: [], serviceModes: [], sessionFormats: [], phone: "", phoneWhatsapp: false, email: "", website: "",
+  languages: [], serviceModes: [], sessionFormats: [], phone: "", phoneWhatsapp: false, email: "", website: "", instagram: "",
 };
 
 const payloadSchema = z.object({
@@ -214,6 +233,7 @@ export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeI
     phoneWhatsapp: contact(contactTypes.phone)?.accepts_whatsapp ?? false,
     email: contact(contactTypes.email)?.value ?? "",
     website: contact(contactTypes.website)?.value ?? "",
+    instagram: contact(contactTypes.instagram)?.value ?? "",
   };
 }
 

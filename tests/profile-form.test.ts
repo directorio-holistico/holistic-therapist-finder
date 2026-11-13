@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildChildOptions } from "@/lib/catalogs";
-import { buildPayload, defaultsFromPayload, EMPTY_DEFAULTS, phoneIsValid, readProfileForm } from "@/lib/profile-form";
+import { buildPayload, defaultsFromPayload, EMPTY_DEFAULTS, instagramIsValid, normalizeInstagram, phoneIsValid, readProfileForm } from "@/lib/profile-form";
 
 const YEAR = 2026;
-const TYPES = { phone: 1, email: 2, website: 3 };
+const TYPES = { phone: 1, email: 2, website: 3, instagram: 4 };
 
 function form(fields: Record<string, string | string[]>): FormData {
   const data = new FormData();
@@ -78,6 +78,32 @@ describe("profile form", () => {
   it("ignores unreadable numbers instead of trusting them", () => {
     const parsed = readProfileForm(form({ ...VALID, languages: ["1", "x", "-3", "1.5"] }), YEAR);
     expect(parsed.success && parsed.data.languages).toEqual([1]);
+  });
+});
+
+describe("instagram", () => {
+  it("keeps only the user name, in lower case", () => {
+    for (const raw of ["@Ana.Terapias", "ana.terapias", " https://www.instagram.com/Ana.Terapias/?hl=es ", "instagram.com/ana.terapias#x"]) {
+      expect(normalizeInstagram(raw), raw).toBe("ana.terapias");
+    }
+    expect(normalizeInstagram("   ")).toBe("");
+  });
+
+  it("validates the format the database enforces", () => {
+    expect(instagramIsValid("ana_30.x")).toBe(true);
+    expect(instagramIsValid("a".repeat(30))).toBe(true);
+    expect(instagramIsValid("a".repeat(31))).toBe(false);
+    expect(instagramIsValid("con espacio")).toBe(false);
+    expect(instagramIsValid("ñandú")).toBe(false);
+  });
+
+  it("is optional, becomes a public contact and rejects garbage", () => {
+    const none = readProfileForm(form(VALID), YEAR);
+    expect(none.success && none.data.instagram).toBeNull();
+    const ok = readProfileForm(form({ ...VALID, instagram: "@Ana.Terapias" }), YEAR);
+    if (!ok.success) throw new Error("must parse");
+    expect(buildPayload(ok.data, TYPES).contacts.at(-1)).toEqual({ contact_type_id: 4, value: "ana.terapias", accepts_whatsapp: false });
+    expect(readProfileForm(form({ ...VALID, instagram: "no valido!" }), YEAR).success).toBe(false);
   });
 });
 
