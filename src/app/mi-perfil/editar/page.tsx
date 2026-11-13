@@ -17,7 +17,7 @@ async function Editor() {
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
-  const data = await loadProfileEditor(supabase);
+  const data = await loadProfileEditor(supabase, auth.user.id);
 
   if (data.kind === "no-account") redirect("/mi-perfil/alta");
   if (data.kind === "blocked") {

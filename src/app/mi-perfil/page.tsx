@@ -30,12 +30,14 @@ async function Account() {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
 
-  const { data: person, error: personError } = await supabase.from("people").select("id, full_name").maybeSingle();
+  // An administrator can read every row of people and therapist_profiles: filter by the logged-in person.
+  // Un administrador puede leer todas las filas de people y therapist_profiles: se filtra por la persona ingresada.
+  const { data: person, error: personError } = await supabase.from("people").select("id, full_name").eq("auth_user_id", auth.user.id).maybeSingle();
   if (personError) throw new Error(`Could not read the account / No se pudo leer la cuenta: ${personError.message}`);
 
   // No joins under RLS: each table is read on its own. / Sin joins bajo RLS: cada tabla se lee por separado.
   const { data: profile, error: profileError } = person
-    ? await supabase.from("therapist_profiles").select("id, status_id, display_name, headline, approved_at").maybeSingle()
+    ? await supabase.from("therapist_profiles").select("id, status_id, display_name, headline, approved_at").eq("person_id", person.id).maybeSingle()
     : { data: null, error: null };
   if (profileError) throw new Error(`Could not read the profile / No se pudo leer el perfil: ${profileError.message}`);
   const { data: status } = profile

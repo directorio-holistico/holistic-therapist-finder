@@ -54,10 +54,18 @@ export function audienceIds(catalogs: FormCatalogs): AudienceIds | null {
   return own && other ? { own, other } : null;
 }
 
-export async function loadProfileEditor(client: Client): Promise<EditorData> {
+// An administrator can READ every row of these tables (policy *_select_admin), so every "my own data" query is filtered by the
+// logged-in person explicitly: without the filter, an administrator who is also a therapist would get several rows.
+// Un administrador puede LEER todas las filas de estas tablas (política *_select_admin), por eso cada consulta de "mis datos"
+// se filtra explícitamente por la persona ingresada: sin el filtro, un administrador que también es terapeuta recibiría varias filas.
+export async function loadProfileEditor(client: Client, authUserId: string): Promise<EditorData> {
+  const person = await client.from("people").select("id").eq("auth_user_id", authUserId).maybeSingle();
+  if (person.error) fail("the account / la cuenta", person.error.message);
+  if (!person.data) return { kind: "no-account" };
   const profile = await client
     .from("therapist_profiles")
     .select("id, status_id, display_name, headline, zone, practice_start_year, location_id")
+    .eq("person_id", person.data.id)
     .maybeSingle();
   if (profile.error) fail("the profile / el perfil", profile.error.message);
   if (!profile.data) return { kind: "no-account" };
@@ -67,7 +75,7 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
   const statusCode = status.data?.code ?? "";
   if (statusCode === "suspended" || statusCode === "erased") return { kind: "blocked", status: statusCode };
 
-  const open = await client.from("profile_revisions").select("id, status_id, payload").is("closed_at", null).maybeSingle();
+  const open = await client.from("profile_revisions").select("id, status_id, payload").eq("profile_id", profile.data.id).is("closed_at", null).maybeSingle();
   if (open.error) fail("the open revision / la revisión abierta", open.error.message);
   if (open.data) {
     const revisionStatus = await client.from("revision_statuses").select("code").eq("id", open.data.status_id).maybeSingle();
@@ -129,7 +137,7 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
     };
   }
 
-  const request = await client.from("location_requests").select("region_id, city_name").is("resolved_at", null).maybeSingle();
+  const request = await client.from("location_requests").select("region_id, city_name").eq("profile_id", profile.data.id).is("resolved_at", null).maybeSingle();
   if (request.error) fail("the city request / el pedido de ciudad", request.error.message);
   const missingCity = request.data ? { regionId: request.data.region_id, cityName: request.data.city_name } : null;
 
@@ -140,6 +148,7 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
   const rejected = await client
     .from("profile_revisions")
     .select("rejection_reason")
+    .eq("profile_id", profile.data.id)
     .not("rejection_reason", "is", null)
     .order("decided_at", { ascending: false })
     .limit(1);

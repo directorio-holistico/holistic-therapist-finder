@@ -16,7 +16,7 @@ async function Gate() {
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
-  const { data: person, error } = await supabase.from("people").select("id").maybeSingle();
+  const { data: person, error } = await supabase.from("people").select("id").eq("auth_user_id", auth.user.id).maybeSingle();
   if (error) throw new Error(`Could not read the account / No se pudo leer la cuenta: ${error.message}`);
   if (person) redirect("/mi-perfil");
   return <RegisterForm suggestedName="" />;
