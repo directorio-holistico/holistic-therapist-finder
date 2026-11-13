@@ -8,7 +8,7 @@ import { z } from "zod";
 export const CONTROLLER_NAME = "Eduardo Ariel Vega";
 // Legal address of the controller (null = still to complete; the pages say so).
 // Domicilio legal del responsable (null = por completar; las páginas lo dicen).
-export const CONTROLLER_ADDRESS: string | null = "Ramos Mejía 408, Cinco Saltos, Río Negro, Argentina";
+export const CONTROLLER_ADDRESS: string | null = "Cinco Saltos, Río Negro, Argentina";
 
 export const RETENTION = {
   unmetSearchesMonths: 12,
