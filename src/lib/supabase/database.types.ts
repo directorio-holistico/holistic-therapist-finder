@@ -1496,7 +1496,9 @@ export type Database = {
           country_iso: string | null
           country_name: string | null
           display_name: string | null
+          facebook: string | null
           headline: string | null
+          instagram: string | null
           is_pinned: boolean | null
           languages: string[] | null
           photo_path: string | null
@@ -1512,7 +1514,9 @@ export type Database = {
           therapies_detail: Json | null
           therapy_ids: number[] | null
           therapy_names: string[] | null
+          tiktok: string | null
           website: string | null
+          youtube: string | null
           zone: string | null
         }
         Relationships: [

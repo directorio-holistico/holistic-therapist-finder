@@ -36,7 +36,12 @@ export function contactTypeIds(catalogs: FormCatalogs): ContactTypeIds | null {
   const email = id(CONTACT_CODES.email);
   const website = id(CONTACT_CODES.website);
   const instagram = id(CONTACT_CODES.instagram);
-  return phone && email && website && instagram ? { phone, email, website, instagram } : null;
+  const facebook = id(CONTACT_CODES.facebook);
+  const tiktok = id(CONTACT_CODES.tiktok);
+  const youtube = id(CONTACT_CODES.youtube);
+  return phone && email && website && instagram && facebook && tiktok && youtube
+    ? { phone, email, website, instagram, facebook, tiktok, youtube }
+    : null;
 }
 
 export async function loadProfileEditor(client: Client): Promise<EditorData> {
@@ -62,7 +67,7 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
 
   const [catalogs, tree] = await Promise.all([listFormCatalogs(client), listLocationTree(client)]);
   const contactTypes = contactTypeIds(catalogs);
-  if (!contactTypes) fail("contact types / tipos de contacto", "phone, email, website and instagram must exist (apply the latest migrations) / deben existir (aplicá las últimas migraciones)");
+  if (!contactTypes) fail("contact types / tipos de contacto", "phone, email, website, instagram, facebook, tiktok and youtube must exist (apply the latest migrations) / deben existir (aplicá las últimas migraciones)");
 
   // Start from the live profile; a draft in progress replaces it. / Se parte del perfil vigente; un borrador en curso lo reemplaza.
   let defaults: FormDefaults;
@@ -91,6 +96,9 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
       email: contact(contactTypes.email)?.value ?? "",
       website: contact(contactTypes.website)?.value ?? "",
       instagram: contact(contactTypes.instagram)?.value ?? "",
+      facebook: contact(contactTypes.facebook)?.value ?? "",
+      tiktok: contact(contactTypes.tiktok)?.value ?? "",
+      youtube: contact(contactTypes.youtube)?.value ?? "",
     };
   }
 

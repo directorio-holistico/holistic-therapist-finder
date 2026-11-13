@@ -146,7 +146,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
 
       <section className="grid gap-4" aria-labelledby="sec-contacto">
         <h2 id="sec-contacto" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Cómo te contactan</h2>
-        <p className={HELP}>Tu teléfono y tu mail solo se muestran cuando alguien aprieta &quot;Ver contacto&quot;. La web y el Instagram son públicos.</p>
+        <p className={HELP}>Tu teléfono y tu mail solo se muestran cuando alguien aprieta &quot;Ver contacto&quot;. La web y tus redes son públicas.</p>
         <div className="grid gap-1">
           <label htmlFor="phone" className={LABEL}>Teléfono</label>
           <input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" required maxLength={40}
@@ -171,6 +171,24 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
           <input id="instagram" name="instagram" type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={80}
             defaultValue={defaults.instagram} aria-describedby="instagram-help" aria-invalid={invalid("instagram")} className={FIELD} />
           <p id="instagram-help" className={HELP}>Solo tu usuario, por ejemplo ana.terapias. Es público: lo ve cualquiera en tu perfil.</p>
+        </div>
+        <div className="grid gap-1">
+          <label htmlFor="facebook" className={LABEL}>Facebook (opcional)</label>
+          <input id="facebook" name="facebook" type="text" inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={300}
+            defaultValue={defaults.facebook} aria-describedby="facebook-help" aria-invalid={invalid("facebook")} className={FIELD} />
+          <p id="facebook-help" className={HELP}>El enlace de tu página o perfil, por ejemplo facebook.com/anaterapias.</p>
+        </div>
+        <div className="grid gap-1">
+          <label htmlFor="tiktok" className={LABEL}>TikTok (opcional)</label>
+          <input id="tiktok" name="tiktok" type="text" inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={300}
+            defaultValue={defaults.tiktok} aria-describedby="tiktok-help" aria-invalid={invalid("tiktok")} className={FIELD} />
+          <p id="tiktok-help" className={HELP}>Tu usuario o el enlace de tu perfil, por ejemplo @ana.terapias.</p>
+        </div>
+        <div className="grid gap-1">
+          <label htmlFor="youtube" className={LABEL}>YouTube (opcional)</label>
+          <input id="youtube" name="youtube" type="text" inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={300}
+            defaultValue={defaults.youtube} aria-describedby="youtube-help" aria-invalid={invalid("youtube")} className={FIELD} />
+          <p id="youtube-help" className={HELP}>Tu @canal o el enlace de tu canal, por ejemplo youtube.com/@anaterapias.</p>
         </div>
       </section>
 

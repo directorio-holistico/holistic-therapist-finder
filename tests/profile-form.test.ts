@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildChildOptions } from "@/lib/catalogs";
-import { buildPayload, defaultsFromPayload, EMPTY_DEFAULTS, instagramIsValid, normalizeInstagram, phoneIsValid, readProfileForm } from "@/lib/profile-form";
+import { buildPayload, defaultsFromPayload, EMPTY_DEFAULTS, instagramIsValid, normalizeInstagram, normalizeSocialLink, phoneIsValid, readProfileForm, socialLinkIsValid } from "@/lib/profile-form";
 
 const YEAR = 2026;
-const TYPES = { phone: 1, email: 2, website: 3, instagram: 4 };
+const TYPES = { phone: 1, email: 2, website: 3, instagram: 4, facebook: 5, tiktok: 6, youtube: 7 };
 
 function form(fields: Record<string, string | string[]>): FormData {
   const data = new FormData();
@@ -104,6 +104,52 @@ describe("instagram", () => {
     if (!ok.success) throw new Error("must parse");
     expect(buildPayload(ok.data, TYPES).contacts.at(-1)).toEqual({ contact_type_id: 4, value: "ana.terapias", accepts_whatsapp: false });
     expect(readProfileForm(form({ ...VALID, instagram: "no valido!" }), YEAR).success).toBe(false);
+  });
+});
+
+describe("facebook, tiktok and youtube", () => {
+  it("rebuilds a clean https link from a link, a link without scheme or a user name", () => {
+    expect(normalizeSocialLink("facebook", "anaterapias")).toBe("https://www.facebook.com/anaterapias");
+    expect(normalizeSocialLink("facebook", "http://WWW.Facebook.com/AnaTerapias/?fbclid=abc#x")).toBe("https://www.facebook.com/AnaTerapias/");
+    expect(normalizeSocialLink("facebook", "facebook.com/profile.php?id=123&ref=x")).toBe("https://facebook.com/profile.php?id=123&ref=x");
+    expect(normalizeSocialLink("tiktok", "@Ana.Terapias")).toBe("https://www.tiktok.com/@Ana.Terapias");
+    expect(normalizeSocialLink("tiktok", "https://www.tiktok.com/@ana.terapias?lang=es")).toBe("https://www.tiktok.com/@ana.terapias");
+    expect(normalizeSocialLink("youtube", "@anaterapias")).toBe("https://www.youtube.com/@anaterapias");
+    expect(normalizeSocialLink("youtube", "youtube.com/@anaterapias/")).toBe("https://youtube.com/@anaterapias/");
+    expect(normalizeSocialLink("youtube", "   ")).toBe("");
+  });
+
+  it("accepts only the profile pages of those sites", () => {
+    expect(socialLinkIsValid("facebook", "https://www.facebook.com/anaterapias")).toBe(true);
+    expect(socialLinkIsValid("tiktok", "https://www.tiktok.com/@ana.terapias")).toBe(true);
+    expect(socialLinkIsValid("youtube", "https://www.youtube.com/@anaterapias")).toBe(true);
+    expect(socialLinkIsValid("youtube", "https://www.youtube.com/channel/UC1234567890123456789012")).toBe(true);
+    // other sites, look-alike hosts, user-info tricks, plain http, videos, spaces
+    for (const bad of [
+      "https://facebook.com.evil.test/x", "https://evil.test/facebook.com/x", "https://facebook.com@evil.test/x", "http://www.facebook.com/x",
+      "https://www.facebook.com/", "https://facebook.com/a b",
+    ]) expect(socialLinkIsValid("facebook", bad), bad).toBe(false);
+    for (const bad of ["https://www.tiktok.com/@a", "https://www.tiktok.com/@ana/video/123", "https://vm.tiktok.com/abc", "https://tiktok.com.evil.test/@ana"]) {
+      expect(socialLinkIsValid("tiktok", bad), bad).toBe(false);
+    }
+    for (const bad of ["https://www.youtube.com/watch?v=abc", "https://youtu.be/abc", "https://www.youtube.com/@ab", "https://youtube.com.evil.test/@ana"]) {
+      expect(socialLinkIsValid("youtube", bad), bad).toBe(false);
+    }
+  });
+
+  it("are optional, become public contacts and reject other sites or text with spaces", () => {
+    const none = readProfileForm(form(VALID), YEAR);
+    expect(none.success && [none.data.facebook, none.data.tiktok, none.data.youtube]).toEqual([null, null, null]);
+    const ok = readProfileForm(form({ ...VALID, facebook: "anaterapias", tiktok: "@ana.terapias", youtube: "@anaterapias" }), YEAR);
+    if (!ok.success) throw new Error("must parse");
+    expect(buildPayload(ok.data, TYPES).contacts.slice(1)).toEqual([
+      { contact_type_id: 5, value: "https://www.facebook.com/anaterapias", accepts_whatsapp: false },
+      { contact_type_id: 6, value: "https://www.tiktok.com/@ana.terapias", accepts_whatsapp: false },
+      { contact_type_id: 7, value: "https://www.youtube.com/@anaterapias", accepts_whatsapp: false },
+    ]);
+    expect(readProfileForm(form({ ...VALID, facebook: "https://evil.test/anaterapias" }), YEAR).success).toBe(false);
+    expect(readProfileForm(form({ ...VALID, tiktok: "ana terapias" }), YEAR).success).toBe(false);
+    expect(readProfileForm(form({ ...VALID, youtube: "https://www.youtube.com/watch?v=abc" }), YEAR).success).toBe(false);
   });
 });
 

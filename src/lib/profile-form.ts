@@ -17,7 +17,9 @@ export const LIMITS = {
 } as const;
 
 // Contact type codes used by the form (the ids come from the catalog). / Códigos de tipo de contacto del formulario.
-export const CONTACT_CODES = { phone: "phone", email: "email", website: "website", instagram: "instagram" } as const;
+export const CONTACT_CODES = {
+  phone: "phone", email: "email", website: "website", instagram: "instagram", facebook: "facebook", tiktok: "tiktok", youtube: "youtube",
+} as const;
 
 const oneLine = (value: string) => value.replace(/\s+/g, " ").trim();
 const emptyToNull = (value: string) => (value === "" ? null : value);
@@ -46,6 +48,54 @@ export function normalizeInstagram(raw: string): string {
   return (withoutLink.split(/[?#/]/)[0] ?? "").toLowerCase();
 }
 export const instagramIsValid = (value: string) => /^[a-z0-9._]{1,30}$/.test(value);
+
+// Facebook, TikTok and YouTube: stored as the profile LINK (https only, only these sites, profile pages only). The form accepts a
+// pasted link, a link without "https://" or just the user name, and rebuilds the clean link; the database checks the same shape.
+// Facebook, TikTok y YouTube: se guarda el ENLACE del perfil (solo https, solo esos sitios, solo páginas de perfil). El formulario
+// acepta un enlace pegado, un enlace sin "https://" o solo el usuario, y rearma el enlace limpio; la base verifica la misma forma.
+export type SocialKind = "facebook" | "tiktok" | "youtube";
+
+const SOCIAL_VALID: Record<SocialKind, RegExp> = {
+  facebook: /^https:\/\/(www\.|m\.)?(facebook\.com|fb\.com)\/[^ ]+$/,
+  tiktok: /^https:\/\/(www\.)?tiktok\.com\/@[A-Za-z0-9._]{2,24}\/?$/,
+  youtube: /^https:\/\/(www\.|m\.)?youtube\.com\/(@[A-Za-z0-9._-]{3,30}|channel\/UC[A-Za-z0-9_-]{22}|c\/[A-Za-z0-9._-]+|user\/[A-Za-z0-9._-]+)\/?$/,
+};
+const SOCIAL_FROM_HANDLE: Record<SocialKind, (handle: string) => string> = {
+  facebook: (handle) => `https://www.facebook.com/${handle}`,
+  tiktok: (handle) => `https://www.tiktok.com/@${handle}`,
+  youtube: (handle) => `https://www.youtube.com/@${handle}`,
+};
+const SOCIAL_HOST = /^(?:https?:\/\/)?(?:[a-z0-9-]+\.)?(?:facebook\.com|fb\.com|tiktok\.com|youtube\.com)(?:[/?#]|$)/i;
+
+export function normalizeSocialLink(kind: SocialKind, raw: string): string {
+  const input = raw.trim();
+  if (input === "" || /\s/.test(input)) return input;
+  const hasScheme = /^https?:\/\//i.test(input);
+  const candidate = hasScheme ? input : SOCIAL_HOST.test(input) ? `https://${input}` : SOCIAL_FROM_HANDLE[kind](input.replace(/^@+/, ""));
+  let url: URL;
+  try {
+    url = new URL(candidate);
+  } catch {
+    return input;
+  }
+  // tracking parameters and fragments are dropped; Facebook's profile.php needs its id / se quitan parámetros de seguimiento
+  const keepSearch = kind === "facebook" && url.pathname.toLowerCase() === "/profile.php" ? url.search : "";
+  return `https://${url.hostname.toLowerCase()}${url.pathname}${keepSearch}`;
+}
+export const socialLinkIsValid = (kind: SocialKind, value: string) => SOCIAL_VALID[kind].test(value);
+
+const SOCIAL_MESSAGES: Record<SocialKind, string> = {
+  facebook: "Facebook inválido: pegá el enlace de tu página o perfil (facebook.com/…).",
+  tiktok: "TikTok inválido: pegá el enlace de tu perfil (tiktok.com/@usuario) o solo tu usuario.",
+  youtube: "YouTube inválido: pegá el enlace de tu canal (youtube.com/@canal) o solo tu @canal.",
+};
+const socialField = (kind: SocialKind) =>
+  z
+    .string()
+    .transform((value) => normalizeSocialLink(kind, value))
+    .pipe(z.string().max(LIMITS.contactValue, "El enlace es demasiado largo."))
+    .transform(emptyToNull)
+    .refine((value) => value === null || socialLinkIsValid(kind, value), SOCIAL_MESSAGES[kind]);
 
 export function buildProfileFormSchema(maxYear: number) {
   return z
@@ -93,6 +143,9 @@ export function buildProfileFormSchema(maxYear: number) {
         .transform(normalizeInstagram)
         .transform(emptyToNull)
         .refine((value) => value === null || instagramIsValid(value), "Instagram inválido: solo tu usuario (letras, números, punto y guion bajo, hasta 30)."),
+      facebook: socialField("facebook"),
+      tiktok: socialField("tiktok"),
+      youtube: socialField("youtube"),
     })
     .superRefine((value, ctx) => {
       if (value.cityMissing) {
@@ -137,10 +190,13 @@ export function readProfileForm(formData: FormData, maxYear: number) {
     email: text(formData.get("email")),
     website: text(formData.get("website")),
     instagram: text(formData.get("instagram")),
+    facebook: text(formData.get("facebook")),
+    tiktok: text(formData.get("tiktok")),
+    youtube: text(formData.get("youtube")),
   });
 }
 
-export type ContactTypeIds = { phone: number; email: number; website: number; instagram: number };
+export type ContactTypeIds = { phone: number; email: number; website: number; instagram: number; facebook: number; tiktok: number; youtube: number };
 
 export type ProfilePayload = {
   display_name: string;
@@ -167,6 +223,9 @@ export function buildPayload(values: ProfileFormValues, contactTypes: ContactTyp
   if (values.email !== null) contacts.push({ contact_type_id: contactTypes.email, value: values.email, accepts_whatsapp: false });
   if (values.website !== null) contacts.push({ contact_type_id: contactTypes.website, value: values.website, accepts_whatsapp: false });
   if (values.instagram !== null) contacts.push({ contact_type_id: contactTypes.instagram, value: values.instagram, accepts_whatsapp: false });
+  if (values.facebook !== null) contacts.push({ contact_type_id: contactTypes.facebook, value: values.facebook, accepts_whatsapp: false });
+  if (values.tiktok !== null) contacts.push({ contact_type_id: contactTypes.tiktok, value: values.tiktok, accepts_whatsapp: false });
+  if (values.youtube !== null) contacts.push({ contact_type_id: contactTypes.youtube, value: values.youtube, accepts_whatsapp: false });
   return {
     display_name: values.displayName,
     headline: values.headline,
@@ -196,11 +255,15 @@ export type FormDefaults = {
   email: string;
   website: string;
   instagram: string;
+  facebook: string;
+  tiktok: string;
+  youtube: string;
 };
 
 export const EMPTY_DEFAULTS: FormDefaults = {
   displayName: "", headline: "", zone: "", practiceStartYear: "", cityId: null,
   languages: [], serviceModes: [], sessionFormats: [], phone: "", phoneWhatsapp: false, email: "", website: "", instagram: "",
+  facebook: "", tiktok: "", youtube: "",
 };
 
 const payloadSchema = z.object({
@@ -234,6 +297,9 @@ export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeI
     email: contact(contactTypes.email)?.value ?? "",
     website: contact(contactTypes.website)?.value ?? "",
     instagram: contact(contactTypes.instagram)?.value ?? "",
+    facebook: contact(contactTypes.facebook)?.value ?? "",
+    tiktok: contact(contactTypes.tiktok)?.value ?? "",
+    youtube: contact(contactTypes.youtube)?.value ?? "",
   };
 }
 
