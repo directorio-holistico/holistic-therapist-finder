@@ -2,6 +2,7 @@
 // "Mi perfil", SOLO LECTURA (paso 1). Hay que estar ingresado; la base (RLS) devuelve solo las filas propias.
 
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -47,7 +48,8 @@ async function Account() {
       {!person || !profile ? (
         <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tu alta todavía no está completa</h2>
-          <p className="mt-1 text-zinc-700 dark:text-zinc-300">Tu cuenta ya existe. El formulario para completar tu perfil llega en el próximo paso.</p>
+          <p className="mt-1 text-zinc-700 dark:text-zinc-300">Tu mail ya está verificado. Falta crear tu perfil de terapeuta.</p>
+          <Link href="/mi-perfil/alta" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">Crear mi perfil</Link>
         </section>
       ) : (
         <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
