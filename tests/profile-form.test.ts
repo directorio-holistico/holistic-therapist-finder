@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { buildChildOptions } from "@/lib/catalogs";
-import { buildPayload, defaultsFromPayload, EMPTY_DEFAULTS, instagramIsValid, normalizeInstagram, normalizeSocialLink, phoneIsValid, readProfileForm, socialLinkIsValid } from "@/lib/profile-form";
+import {
+  buildPayload, defaultsFromPayload, EMPTY_DEFAULTS, instagramIsValid, normalizeInstagram, normalizeSocialLink, parseAmount, phoneIsValid, readProfileForm, socialLinkIsValid,
+} from "@/lib/profile-form";
 
 const YEAR = 2026;
 const TYPES = { phone: 1, email: 2, website: 3, instagram: 4, facebook: 5, tiktok: 6, youtube: 7 };
+const AUD = { own: 1, other: 2 };
+const CURRENCIES = new Map([[1, 2], [2, 0]]); // 1 = ARS (2 decimals), 2 = CLP (0 decimals)
 
 function form(fields: Record<string, string | string[]>): FormData {
   const data = new FormData();
@@ -20,6 +24,7 @@ const VALID = {
   serviceModes: ["1", "2"],
   sessionFormats: ["1"],
   phone: "+54 299 555 0101",
+  therapyId_0: "10",
 };
 
 describe("profile form", () => {
@@ -35,7 +40,7 @@ describe("profile form", () => {
   });
 
   it("requires name, phone, a city and at least one language, mode and format", () => {
-    for (const missing of ["displayName", "phone", "cityId", "languages", "serviceModes", "sessionFormats"]) {
+    for (const missing of ["displayName", "phone", "cityId", "languages", "serviceModes", "sessionFormats", "therapyId_0"]) {
       const fields: Record<string, string | string[]> = { ...VALID };
       delete fields[missing];
       expect(readProfileForm(form(fields), YEAR).success, missing).toBe(false);
@@ -72,7 +77,7 @@ describe("profile form", () => {
     expect(readProfileForm(form({ ...rest, cityMissing: "on", regionId: "3" }), YEAR).success).toBe(false);
     const ok = readProfileForm(form({ ...rest, cityMissing: "on", regionId: "3", cityName: " Villa  Regina " }), YEAR);
     expect(ok.success).toBe(true);
-    if (ok.success) expect(buildPayload(ok.data, TYPES).location_id).toBeNull();
+    if (ok.success) expect(buildPayload(ok.data, TYPES, AUD).location_id).toBeNull();
   });
 
   it("ignores unreadable numbers instead of trusting them", () => {
@@ -102,7 +107,7 @@ describe("instagram", () => {
     expect(none.success && none.data.instagram).toBeNull();
     const ok = readProfileForm(form({ ...VALID, instagram: "@Ana.Terapias" }), YEAR);
     if (!ok.success) throw new Error("must parse");
-    expect(buildPayload(ok.data, TYPES).contacts.at(-1)).toEqual({ contact_type_id: 4, value: "ana.terapias", accepts_whatsapp: false });
+    expect(buildPayload(ok.data, TYPES, AUD).contacts.at(-1)).toEqual({ contact_type_id: 4, value: "ana.terapias", accepts_whatsapp: false });
     expect(readProfileForm(form({ ...VALID, instagram: "no valido!" }), YEAR).success).toBe(false);
   });
 });
@@ -142,7 +147,7 @@ describe("facebook, tiktok and youtube", () => {
     expect(none.success && [none.data.facebook, none.data.tiktok, none.data.youtube]).toEqual([null, null, null]);
     const ok = readProfileForm(form({ ...VALID, facebook: "anaterapias", tiktok: "@ana.terapias", youtube: "@anaterapias" }), YEAR);
     if (!ok.success) throw new Error("must parse");
-    expect(buildPayload(ok.data, TYPES).contacts.slice(1)).toEqual([
+    expect(buildPayload(ok.data, TYPES, AUD).contacts.slice(1)).toEqual([
       { contact_type_id: 5, value: "https://www.facebook.com/anaterapias", accepts_whatsapp: false },
       { contact_type_id: 6, value: "https://www.tiktok.com/@ana.terapias", accepts_whatsapp: false },
       { contact_type_id: 7, value: "https://www.youtube.com/@anaterapias", accepts_whatsapp: false },
@@ -153,13 +158,72 @@ describe("facebook, tiktok and youtube", () => {
   });
 });
 
+describe("therapies and rates", () => {
+  const withTherapies = (fields: Record<string, string>) => readProfileForm(form({ ...VALID, ...fields }), YEAR, CURRENCIES);
+
+  it("reads amounts the way people write them", () => {
+    expect(parseAmount("15000")).toBe(15000);
+    expect(parseAmount("15.000")).toBe(15000);
+    expect(parseAmount("15.000,50")).toBe(15000.5);
+    expect(parseAmount("15000,5")).toBe(15000.5);
+    expect(parseAmount("15.5")).toBe(15.5);
+    expect(parseAmount("  ")).toBeNull();
+    for (const bad of ["abc", "15 mil", "-5", "1,2,3", "12.34.56", "$100"]) expect(parseAmount(bad), bad).toBeNaN();
+  });
+
+  it("needs at least one therapy and drops the empty rows", () => {
+    const none = withTherapies({ therapyId_0: "" });
+    expect(none.success).toBe(false);
+    const ok = withTherapies({ therapyId_1: "11", minutes_1: "60" });
+    expect(ok.success && ok.data.therapies).toEqual([
+      { therapyId: 10, minutes: null, rateOwn: null, rateOther: null },
+      { therapyId: 11, minutes: 60, rateOwn: null, rateOther: null },
+    ]);
+  });
+
+  it("rejects half filled rows, repeated therapies and bad durations", () => {
+    expect(withTherapies({ therapyId_1: "", minutes_1: "30" }).success).toBe(false);
+    expect(withTherapies({ therapyId_1: "10" }).success).toBe(false);
+    for (const minutes of ["4", "481", "abc", "1.5"]) expect(withTherapies({ minutes_0: minutes }).success, minutes).toBe(false);
+    expect(withTherapies({ minutes_0: "5" }).success && withTherapies({ minutes_0: "480" }).success).toBe(true);
+  });
+
+  it("needs a currency for any rate, and respects its decimals", () => {
+    expect(withTherapies({ rateOwn_0: "15000" }).success).toBe(false);
+    expect(withTherapies({ rateOwn_0: "15000", currencyOwn: "9" }).success).toBe(false);
+    expect(withTherapies({ rateOwn_0: "15000,50", currencyOwn: "1" }).success).toBe(true);
+    expect(withTherapies({ rateOwn_0: "15000,50", currencyOwn: "2" }).success).toBe(false);
+    expect(withTherapies({ rateOwn_0: "0", currencyOwn: "1" }).success).toBe(false);
+    expect(withTherapies({ rateOwn_0: "100000001", currencyOwn: "1" }).success).toBe(false);
+    // a currency without any amount is simply ignored / una moneda sin montos se ignora
+    const ignored = withTherapies({ currencyOwn: "1" });
+    expect(ignored.success && ignored.data.currencyOwn).toBeNull();
+  });
+
+  it("builds the payload the database expects and refills the form from it", () => {
+    const parsed = withTherapies({ minutes_0: "60", rateOwn_0: "15.000", rateOther_0: "40", currencyOwn: "1", currencyOther: "1", therapyId_1: "11", rateOwn_1: "9000" });
+    if (!parsed.success) throw new Error("must parse");
+    const payload = buildPayload(parsed.data, TYPES, AUD);
+    expect(payload.therapies).toEqual([
+      { therapy_id: 10, session_minutes: 60, rates: [{ rate_audience_id: 1, amount: 15000, currency_id: 1 }, { rate_audience_id: 2, amount: 40, currency_id: 1 }] },
+      { therapy_id: 11, session_minutes: null, rates: [{ rate_audience_id: 1, amount: 9000, currency_id: 1 }] },
+    ]);
+    const back = defaultsFromPayload(payload, TYPES, AUD);
+    expect(back.therapies).toHaveLength(4);
+    expect(back.therapies[0]).toEqual({ therapyId: 10, minutes: "60", rateOwn: "15000", rateOther: "40" });
+    expect(back.therapies[2]).toEqual({ therapyId: null, minutes: "", rateOwn: "", rateOther: "" });
+    expect(back.currencyOwn).toBe(1);
+    expect(back.currencyOther).toBe(1);
+  });
+});
+
 describe("payload", () => {
   it("uses only the keys the database knows and puts the phone first", () => {
     const parsed = readProfileForm(form({ ...VALID, email: "a@b.co", phoneWhatsapp: "on", languages: ["2", "1", "2"] }), YEAR);
     if (!parsed.success) throw new Error("must parse");
-    const payload = buildPayload(parsed.data, TYPES);
+    const payload = buildPayload(parsed.data, TYPES, AUD);
     expect(Object.keys(payload).sort()).toEqual([
-      "contacts", "display_name", "headline", "languages", "location_id", "practice_start_year", "service_modes", "session_formats", "zone",
+      "contacts", "display_name", "headline", "languages", "location_id", "practice_start_year", "service_modes", "session_formats", "therapies", "zone",
     ]);
     expect(payload.languages).toEqual([1, 2]);
     expect(payload.contacts).toEqual([
@@ -171,10 +235,10 @@ describe("payload", () => {
   it("round-trips through defaultsFromPayload and survives garbage", () => {
     const parsed = readProfileForm(form({ ...VALID, headline: "Hola", zone: "Centro", practiceStartYear: "2015" }), YEAR);
     if (!parsed.success) throw new Error("must parse");
-    const back = defaultsFromPayload(buildPayload(parsed.data, TYPES), TYPES);
+    const back = defaultsFromPayload(buildPayload(parsed.data, TYPES, AUD), TYPES, AUD);
     expect(back).toMatchObject({ displayName: "Lucía Ferrante", headline: "Hola", zone: "Centro", practiceStartYear: "2015", cityId: 7, phone: "+54 299 555 0101" });
-    expect(defaultsFromPayload("basura", TYPES)).toEqual(EMPTY_DEFAULTS);
-    expect(defaultsFromPayload({ languages: "no" }, TYPES)).toEqual(EMPTY_DEFAULTS);
+    expect(defaultsFromPayload("basura", TYPES, AUD)).toEqual(EMPTY_DEFAULTS);
+    expect(defaultsFromPayload({ languages: "no" }, TYPES, AUD)).toEqual(EMPTY_DEFAULTS);
   });
 });
 

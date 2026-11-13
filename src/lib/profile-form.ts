@@ -14,7 +14,65 @@ export const LIMITS = {
   cityName: 80,
   contactValue: 300,
   earliestYear: 1900,
+  minMinutes: 5,
+  maxMinutes: 480,
+  maxAmount: 100_000_000,
 } as const;
+
+// How many therapies the form offers. The database enforces the real limit (setting max_therapies_per_profile, 4 at launch).
+// Cuántas terapias ofrece el formulario. La base impone el límite real (ajuste max_therapies_per_profile, 4 al lanzar).
+export const MAX_THERAPIES = 4;
+
+// Rates are for two audiences (codes of the rate_audiences catalog). / Las tarifas son para dos audiencias (códigos del catálogo).
+export const AUDIENCE_CODES = { own: "own_country", other: "other_countries" } as const;
+export type AudienceIds = { own: number; other: number };
+
+// "15000", "15.000", "15.000,50", "15000,5" or "15.5" -> number. Empty -> null. Anything else -> NaN.
+// A dot followed by exactly three digits is a thousands separator (Argentine style).
+// "15000", "15.000", "15.000,50", "15000,5" o "15.5" -> número. Vacío -> null. Cualquier otra cosa -> NaN.
+// Un punto seguido de exactamente tres dígitos es separador de miles (estilo argentino).
+export function parseAmount(raw: string): number | null {
+  const value = raw.replace(/\s+/g, "");
+  if (value === "") return null;
+  if (/^\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(value)) return Number(value.replace(/\./g, "").replace(",", "."));
+  if (/^\d+([.,]\d{1,2})?$/.test(value)) return Number(value.replace(",", "."));
+  return Number.NaN;
+}
+
+export type TherapySlotInput = { therapyId: number | null; minutes: string; rateOwn: string; rateOther: string };
+export type TherapySlot = { therapyId: number; minutes: number | null; rateOwn: number | null; rateOther: number | null };
+type SlotResult = { skip: true } | { skip: false; value: TherapySlot } | { skip: false; error: { message: string; field: string } };
+
+// One row of the therapies block: empty rows are skipped; a half filled row is an error. / Una fila del bloque de terapias.
+export function readTherapySlot(slot: TherapySlotInput, index: number): SlotResult {
+  const minutesText = slot.minutes.trim();
+  const own = parseAmount(slot.rateOwn);
+  const other = parseAmount(slot.rateOther);
+  if (slot.therapyId === null) {
+    if (minutesText === "" && own === null && other === null) return { skip: true };
+    return { skip: false, error: { message: "Elegí la terapia de esa fila, o vaciala.", field: `therapyId_${index}` } };
+  }
+  let minutes: number | null = null;
+  if (minutesText !== "") {
+    minutes = /^\d{1,3}$/.test(minutesText) ? Number(minutesText) : Number.NaN;
+    if (!(minutes >= LIMITS.minMinutes && minutes <= LIMITS.maxMinutes)) {
+      return { skip: false, error: { message: `Duración: entre ${LIMITS.minMinutes} y ${LIMITS.maxMinutes} minutos.`, field: `minutes_${index}` } };
+    }
+  }
+  const rates: [string, number | null][] = [[`rateOwn_${index}`, own], [`rateOther_${index}`, other]];
+  for (const [field, amount] of rates) {
+    if (amount === null) continue;
+    if (Number.isNaN(amount)) return { skip: false, error: { message: "Tarifa inválida: usá solo números (por ejemplo 15000 o 15000,50).", field } };
+    if (amount <= 0) return { skip: false, error: { message: "La tarifa debe ser mayor que cero. Si no querés mostrarla, dejala vacía.", field } };
+    if (amount > LIMITS.maxAmount) return { skip: false, error: { message: "La tarifa es demasiado alta.", field } };
+  }
+  return { skip: false, value: { therapyId: slot.therapyId, minutes, rateOwn: own, rateOther: other } };
+}
+
+const hasDecimals = (amount: number, minorUnits: number) => {
+  const scaled = amount * 10 ** minorUnits;
+  return Math.abs(scaled - Math.round(scaled)) > 1e-6;
+};
 
 // Contact type codes used by the form (the ids come from the catalog). / Códigos de tipo de contacto del formulario.
 export const CONTACT_CODES = {
@@ -97,7 +155,7 @@ const socialField = (kind: SocialKind) =>
     .transform(emptyToNull)
     .refine((value) => value === null || socialLinkIsValid(kind, value), SOCIAL_MESSAGES[kind]);
 
-export function buildProfileFormSchema(maxYear: number) {
+export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: ReadonlyMap<number, number> = new Map()) {
   return z
     .object({
       displayName: z
@@ -146,8 +204,49 @@ export function buildProfileFormSchema(maxYear: number) {
       facebook: socialField("facebook"),
       tiktok: socialField("tiktok"),
       youtube: socialField("youtube"),
+      therapies: z.array(z.object({ therapyId: z.number().int().positive().nullable(), minutes: z.string(), rateOwn: z.string(), rateOther: z.string() })).max(MAX_THERAPIES),
+      currencyOwn: z.number().int().positive().nullable(),
+      currencyOther: z.number().int().positive().nullable(),
     })
     .superRefine((value, ctx) => {
+      // therapies and rates / terapias y tarifas
+      const slots = value.therapies.map((slot, index) => readTherapySlot(slot, index));
+      const seen = new Set<number>();
+      let ownAmounts = false;
+      let otherAmounts = false;
+      slots.forEach((slot, index) => {
+        if (slot.skip) return;
+        if ("error" in slot) {
+          ctx.addIssue({ code: "custom", message: slot.error.message, path: [slot.error.field] });
+          return;
+        }
+        if (seen.has(slot.value.therapyId)) ctx.addIssue({ code: "custom", message: "Repetiste una terapia: cada una va una sola vez.", path: [`therapyId_${index}`] });
+        seen.add(slot.value.therapyId);
+        ownAmounts ||= slot.value.rateOwn !== null;
+        otherAmounts ||= slot.value.rateOther !== null;
+      });
+      if (slots.every((slot) => slot.skip)) {
+        ctx.addIssue({ code: "custom", message: "Elegí al menos una terapia.", path: ["therapyId_0"] });
+      }
+      const checkCurrency = (used: boolean, currencyId: number | null, field: string, audience: string, pick: (slot: TherapySlot) => number | null) => {
+        if (!used) return;
+        const minor = currencyId === null ? undefined : currencyMinorUnits.get(currencyId);
+        if (minor === undefined) {
+          ctx.addIssue({ code: "custom", message: `Elegí la moneda de la tarifa para ${audience}.`, path: [field] });
+          return;
+        }
+        for (const slot of slots) {
+          if (slot.skip || "error" in slot) continue;
+          const amount = pick(slot.value);
+          if (amount !== null && hasDecimals(amount, minor)) {
+            ctx.addIssue({ code: "custom", message: "Esa moneda no admite tantos decimales.", path: [field] });
+            return;
+          }
+        }
+      };
+      checkCurrency(ownAmounts, value.currencyOwn, "currencyOwn", "residentes en tu país", (slot) => slot.rateOwn);
+      checkCurrency(otherAmounts, value.currencyOther, "currencyOther", "personas de otros países", (slot) => slot.rateOther);
+
       if (value.cityMissing) {
         if (value.regionId === null) ctx.addIssue({ code: "custom", message: "Elegí la región de tu ciudad.", path: ["regionId"] });
         if (value.cityName === null || value.cityName.length < 2) {
@@ -156,6 +255,20 @@ export function buildProfileFormSchema(maxYear: number) {
       } else if (value.cityId === null) {
         ctx.addIssue({ code: "custom", message: "Elegí tu ciudad, o marcá que no está en la lista.", path: ["cityId"] });
       }
+    })
+    // after validation: the rows become clean values (empty rows dropped; a currency without amounts is ignored)
+    // después de validar: las filas pasan a valores limpios (se descartan las vacías; una moneda sin montos se ignora)
+    .transform((value) => {
+      const therapies = value.therapies.flatMap((slot, index) => {
+        const read = readTherapySlot(slot, index);
+        return !read.skip && "value" in read ? [read.value] : [];
+      });
+      return {
+        ...value,
+        therapies,
+        currencyOwn: therapies.some((slot) => slot.rateOwn !== null) ? value.currencyOwn : null,
+        currencyOther: therapies.some((slot) => slot.rateOther !== null) ? value.currencyOther : null,
+      };
     });
 }
 
@@ -172,8 +285,14 @@ function toIntList(values: FormDataEntryValue[]): number[] {
 }
 const text = (value: FormDataEntryValue | null) => (typeof value === "string" ? value : "");
 
-export function readProfileForm(formData: FormData, maxYear: number) {
-  return buildProfileFormSchema(maxYear).safeParse({
+export function readProfileForm(formData: FormData, maxYear: number, currencyMinorUnits: ReadonlyMap<number, number> = new Map()) {
+  const therapies = Array.from({ length: MAX_THERAPIES }, (_, index) => ({
+    therapyId: toInt(formData.get(`therapyId_${index}`)),
+    minutes: text(formData.get(`minutes_${index}`)),
+    rateOwn: text(formData.get(`rateOwn_${index}`)),
+    rateOther: text(formData.get(`rateOther_${index}`)),
+  }));
+  return buildProfileFormSchema(maxYear, currencyMinorUnits).safeParse({
     displayName: text(formData.get("displayName")),
     headline: text(formData.get("headline")),
     zone: text(formData.get("zone")),
@@ -193,6 +312,9 @@ export function readProfileForm(formData: FormData, maxYear: number) {
     facebook: text(formData.get("facebook")),
     tiktok: text(formData.get("tiktok")),
     youtube: text(formData.get("youtube")),
+    therapies,
+    currencyOwn: toInt(formData.get("currencyOwn")),
+    currencyOther: toInt(formData.get("currencyOther")),
   });
 }
 
@@ -208,6 +330,7 @@ export type ProfilePayload = {
   service_modes: number[];
   session_formats: number[];
   contacts: { contact_type_id: number; value: string; accepts_whatsapp: boolean }[];
+  therapies: { therapy_id: number; session_minutes: number | null; rates: { rate_audience_id: number; amount: number; currency_id: number }[] }[];
 };
 
 const unique = (ids: number[]) => [...new Set(ids)].sort((a, b) => a - b);
@@ -216,7 +339,7 @@ const unique = (ids: number[]) => [...new Set(ids)].sort((a, b) => a - b);
 // null and the city travels in location_requests (the administrator adds it before approving).
 // El payload de la revisión (claves que conocen submit_revision / apply_revision_payload). Si la ciudad no está en la lista,
 // location_id va en null y la ciudad viaja en location_requests (el administrador la carga antes de aprobar).
-export function buildPayload(values: ProfileFormValues, contactTypes: ContactTypeIds): ProfilePayload {
+export function buildPayload(values: ProfileFormValues, contactTypes: ContactTypeIds, audiences: AudienceIds): ProfilePayload {
   const contacts: ProfilePayload["contacts"] = [
     { contact_type_id: contactTypes.phone, value: values.phone, accepts_whatsapp: values.phoneWhatsapp },
   ];
@@ -236,6 +359,12 @@ export function buildPayload(values: ProfileFormValues, contactTypes: ContactTyp
     service_modes: unique(values.serviceModes),
     session_formats: unique(values.sessionFormats),
     contacts,
+    therapies: values.therapies.map((slot) => {
+      const rates: ProfilePayload["therapies"][number]["rates"] = [];
+      if (slot.rateOwn !== null && values.currencyOwn !== null) rates.push({ rate_audience_id: audiences.own, amount: slot.rateOwn, currency_id: values.currencyOwn });
+      if (slot.rateOther !== null && values.currencyOther !== null) rates.push({ rate_audience_id: audiences.other, amount: slot.rateOther, currency_id: values.currencyOther });
+      return { therapy_id: slot.therapyId, session_minutes: slot.minutes, rates };
+    }),
   };
 }
 
@@ -258,12 +387,21 @@ export type FormDefaults = {
   facebook: string;
   tiktok: string;
   youtube: string;
+  therapies: TherapyDefaults[];
+  currencyOwn: number | null;
+  currencyOther: number | null;
 };
+export type TherapyDefaults = { therapyId: number | null; minutes: string; rateOwn: string; rateOther: string };
+export const EMPTY_THERAPY_SLOT: TherapyDefaults = { therapyId: null, minutes: "", rateOwn: "", rateOther: "" };
+// Always MAX_THERAPIES rows for the form: the stored ones first, then empty rows. / Siempre MAX_THERAPIES filas: primero las guardadas, luego vacías.
+export const padTherapies = (rows: TherapyDefaults[]): TherapyDefaults[] =>
+  Array.from({ length: MAX_THERAPIES }, (_, index) => rows[index] ?? EMPTY_THERAPY_SLOT);
 
 export const EMPTY_DEFAULTS: FormDefaults = {
   displayName: "", headline: "", zone: "", practiceStartYear: "", cityId: null,
   languages: [], serviceModes: [], sessionFormats: [], phone: "", phoneWhatsapp: false, email: "", website: "", instagram: "",
   facebook: "", tiktok: "", youtube: "",
+  therapies: Array.from({ length: MAX_THERAPIES }, () => EMPTY_THERAPY_SLOT), currencyOwn: null, currencyOther: null,
 };
 
 const payloadSchema = z.object({
@@ -276,13 +414,29 @@ const payloadSchema = z.object({
   service_modes: z.array(z.number().int()).optional(),
   session_formats: z.array(z.number().int()).optional(),
   contacts: z.array(z.object({ contact_type_id: z.number().int(), value: z.string(), accepts_whatsapp: z.boolean().optional() })).optional(),
+  therapies: z
+    .array(z.object({
+      therapy_id: z.number().int(),
+      session_minutes: z.number().int().nullish(),
+      rates: z.array(z.object({ rate_audience_id: z.number().int(), amount: z.number(), currency_id: z.number().int() })).optional(),
+    }))
+    .optional(),
 });
 
-export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeIds, base: FormDefaults = EMPTY_DEFAULTS): FormDefaults {
+export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeIds, audiences: AudienceIds, base: FormDefaults = EMPTY_DEFAULTS): FormDefaults {
   const parsed = payloadSchema.safeParse(payload);
   if (!parsed.success) return base;
   const p = parsed.data;
   const contact = (id: number) => p.contacts?.find((entry) => entry.contact_type_id === id);
+  const stored = p.therapies ?? [];
+  const rateOf = (rates: NonNullable<typeof stored[number]["rates"]> | undefined, audienceId: number) => rates?.find((rate) => rate.rate_audience_id === audienceId);
+  const therapies = stored.slice(0, MAX_THERAPIES).map((row) => ({
+    therapyId: row.therapy_id,
+    minutes: row.session_minutes != null ? String(row.session_minutes) : "",
+    rateOwn: rateOf(row.rates, audiences.own) ? String(rateOf(row.rates, audiences.own)?.amount) : "",
+    rateOther: rateOf(row.rates, audiences.other) ? String(rateOf(row.rates, audiences.other)?.amount) : "",
+  }));
+  const currencyFor = (audienceId: number) => stored.flatMap((row) => row.rates ?? []).find((rate) => rate.rate_audience_id === audienceId)?.currency_id ?? null;
   return {
     displayName: p.display_name ?? base.displayName,
     headline: p.headline ?? "",
@@ -300,6 +454,9 @@ export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeI
     facebook: contact(contactTypes.facebook)?.value ?? "",
     tiktok: contact(contactTypes.tiktok)?.value ?? "",
     youtube: contact(contactTypes.youtube)?.value ?? "",
+    therapies: p.therapies ? padTherapies(therapies) : base.therapies,
+    currencyOwn: currencyFor(audiences.own),
+    currencyOther: currencyFor(audiences.other),
   };
 }
 

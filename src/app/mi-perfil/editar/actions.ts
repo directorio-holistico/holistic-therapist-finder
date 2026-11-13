@@ -8,7 +8,7 @@
 import { redirect } from "next/navigation";
 import { listFormCatalogs } from "@/lib/catalogs";
 import { buildPayload, firstIssue, readProfileForm } from "@/lib/profile-form";
-import { contactTypeIds } from "@/lib/profile-load";
+import { audienceIds, contactTypeIds } from "@/lib/profile-load";
 import type { Database } from "@/lib/supabase/database.types";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 
@@ -22,26 +22,29 @@ const fail = (message: string, fields: string[] = []): EditState => ({ status: "
 
 export async function saveProfile(_previous: EditState, formData: FormData): Promise<EditState> {
   const intent = formData.get("intent") === "submit" ? "submit" : "save";
-  const parsed = readProfileForm(formData, new Date().getFullYear());
+  const supabase = await createServerSupabase();
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) redirect("/ingresar");
+
+  // The catalogs come first: the currencies decide how many decimals a rate may have. / Primero los catálogos: las monedas deciden los decimales.
+  const catalogs = await listFormCatalogs(supabase);
+  const contactTypes = contactTypeIds(catalogs);
+  const audiences = audienceIds(catalogs);
+  if (!contactTypes || !audiences) return fail("No pudimos guardar ahora. Probá de nuevo en unos minutos.");
+
+  const currencyMinorUnits = new Map(catalogs.currencies.map((currency) => [currency.id, currency.minorUnits]));
+  const parsed = readProfileForm(formData, new Date().getFullYear(), currencyMinorUnits);
   if (!parsed.success) {
     const issue = firstIssue(parsed.error);
     return fail(issue.message, issue.fields);
   }
   const values = parsed.data;
 
-  const supabase = await createServerSupabase();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect("/ingresar");
-
   const profile = await supabase.from("therapist_profiles").select("id, status_id").maybeSingle();
   if (profile.error) return fail("No pudimos leer tu perfil. Probá de nuevo en unos minutos.");
   if (!profile.data) redirect("/mi-perfil/alta");
   const statuses = await supabase.from("profile_statuses").select("code").eq("id", profile.data.status_id).maybeSingle();
   if (statuses.data?.code === "suspended" || statuses.data?.code === "erased") return fail("Tu perfil no admite cambios.");
-
-  const catalogs = await listFormCatalogs(supabase);
-  const contactTypes = contactTypeIds(catalogs);
-  if (!contactTypes) return fail("No pudimos guardar ahora. Probá de nuevo en unos minutos.");
 
   // 1) The open revision: none -> create a draft; draft -> update it; pending -> locked.
   // 1) La revisión abierta: ninguna -> se crea un borrador; borrador -> se actualiza; en revisión -> bloqueada.
@@ -70,7 +73,7 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
   }
 
   // 3) The draft. / El borrador.
-  const payload = buildPayload(values, contactTypes);
+  const payload = buildPayload(values, contactTypes, audiences);
   let revisionId = open.data?.id ?? null;
   if (revisionId) {
     const updated = await supabase.from("profile_revisions").update({ payload }).eq("id", revisionId);

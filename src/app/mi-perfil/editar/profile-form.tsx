@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
-import { labelLanguage, labelServiceMode, labelSessionFormat } from "@/lib/labels";
+import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
 import type { FormDefaults } from "@/lib/profile-form";
 import { saveProfile, type EditState } from "./actions";
 
@@ -135,6 +135,53 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
           <label htmlFor="zone" className={LABEL}>Zona o barrio (opcional)</label>
           <input id="zone" name="zone" type="text" maxLength={80} defaultValue={defaults.zone} className={FIELD} />
         </div>
+      </section>
+
+      <section className="grid gap-4" aria-labelledby="sec-terapias">
+        <h2 id="sec-terapias" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tus terapias y tarifas</h2>
+        <p className={HELP}>
+          Elegí hasta {defaults.therapies.length} terapias. La duración y las tarifas son opcionales. Escribí solo números, por ejemplo 15000. No prometas curas.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {([["currencyOwn", "own_country", defaults.currencyOwn], ["currencyOther", "other_countries", defaults.currencyOther]] as const).map(([name, audience, current]) => (
+            <div key={name} className="grid gap-1">
+              <label htmlFor={name} className={LABEL}>Moneda de la tarifa: {labelRateAudience(audience).toLowerCase()}</label>
+              <select id={name} name={name} defaultValue={current ?? ""} aria-invalid={invalid(name)} className={FIELD}>
+                <option value="">Sin tarifa</option>
+                {catalogs.currencies.map((currency) => <option key={currency.id} value={currency.id}>{currency.code}</option>)}
+              </select>
+            </div>
+          ))}
+        </div>
+        {defaults.therapies.map((slot, index) => (
+          <fieldset key={index} className="grid gap-3 rounded-md border border-zinc-300 p-3 dark:border-zinc-700">
+            <legend className={`${LABEL} px-1`}>Terapia {index + 1}{index === 0 ? "" : " (opcional)"}</legend>
+            <div className="grid gap-1">
+              <label htmlFor={`therapyId_${index}`} className={LABEL}>Terapia</label>
+              <select id={`therapyId_${index}`} name={`therapyId_${index}`} defaultValue={slot.therapyId ?? ""} aria-invalid={invalid(`therapyId_${index}`)} className={FIELD}>
+                <option value="">{index === 0 ? "Elegí una terapia" : "Ninguna"}</option>
+                {catalogs.therapies.map((therapy) => <option key={therapy.id} value={therapy.id}>{therapy.name}</option>)}
+              </select>
+            </div>
+            <div className="grid gap-1">
+              <label htmlFor={`minutes_${index}`} className={LABEL}>Duración de la sesión, en minutos (opcional)</label>
+              <input id={`minutes_${index}`} name={`minutes_${index}`} type="text" inputMode="numeric" maxLength={3} defaultValue={slot.minutes}
+                aria-invalid={invalid(`minutes_${index}`)} className={FIELD} />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-1">
+                <label htmlFor={`rateOwn_${index}`} className={LABEL}>Tarifa: {labelRateAudience("own_country").toLowerCase()} (opcional)</label>
+                <input id={`rateOwn_${index}`} name={`rateOwn_${index}`} type="text" inputMode="decimal" maxLength={16} defaultValue={slot.rateOwn}
+                  aria-invalid={invalid(`rateOwn_${index}`)} className={FIELD} />
+              </div>
+              <div className="grid gap-1">
+                <label htmlFor={`rateOther_${index}`} className={LABEL}>Tarifa: {labelRateAudience("other_countries").toLowerCase()} (opcional)</label>
+                <input id={`rateOther_${index}`} name={`rateOther_${index}`} type="text" inputMode="decimal" maxLength={16} defaultValue={slot.rateOther}
+                  aria-invalid={invalid(`rateOther_${index}`)} className={FIELD} />
+              </div>
+            </div>
+          </fieldset>
+        ))}
       </section>
 
       <section className="grid gap-4" aria-labelledby="sec-atencion">

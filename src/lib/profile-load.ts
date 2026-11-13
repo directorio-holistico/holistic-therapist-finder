@@ -5,7 +5,9 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { listFormCatalogs, listLocationTree, type FormCatalogs, type LocationTree } from "@/lib/catalogs";
-import { CONTACT_CODES, defaultsFromPayload, EMPTY_DEFAULTS, type ContactTypeIds, type FormDefaults } from "@/lib/profile-form";
+import {
+  AUDIENCE_CODES, CONTACT_CODES, defaultsFromPayload, EMPTY_DEFAULTS, padTherapies, type AudienceIds, type ContactTypeIds, type FormDefaults,
+} from "@/lib/profile-form";
 import type { Database } from "@/lib/supabase/database.types";
 
 type Client = SupabaseClient<Database>;
@@ -20,6 +22,7 @@ export type EditorData =
       catalogs: FormCatalogs;
       tree: LocationTree;
       contactTypes: ContactTypeIds;
+      audiences: AudienceIds;
       initialCountryId: number | null;
       initialRegionId: number | null;
       missingCity: { regionId: number; cityName: string } | null;
@@ -42,6 +45,13 @@ export function contactTypeIds(catalogs: FormCatalogs): ContactTypeIds | null {
   return phone && email && website && instagram && facebook && tiktok && youtube
     ? { phone, email, website, instagram, facebook, tiktok, youtube }
     : null;
+}
+
+export function audienceIds(catalogs: FormCatalogs): AudienceIds | null {
+  const id = (code: string) => catalogs.rateAudiences.find((audience) => audience.code === code)?.id;
+  const own = id(AUDIENCE_CODES.own);
+  const other = id(AUDIENCE_CODES.other);
+  return own && other ? { own, other } : null;
 }
 
 export async function loadProfileEditor(client: Client): Promise<EditorData> {
@@ -69,19 +79,26 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
   const contactTypes = contactTypeIds(catalogs);
   if (!contactTypes) fail("contact types / tipos de contacto", "phone, email, website, instagram, facebook, tiktok and youtube must exist (apply the latest migrations) / deben existir (aplicá las últimas migraciones)");
 
+  const audiences = audienceIds(catalogs);
+  if (!audiences) fail("rate audiences / audiencias de tarifa", "own_country and other_countries must exist / deben existir");
+
   // Start from the live profile; a draft in progress replaces it. / Se parte del perfil vigente; un borrador en curso lo reemplaza.
   let defaults: FormDefaults;
   if (open.data) {
-    defaults = defaultsFromPayload(open.data.payload, contactTypes, { ...EMPTY_DEFAULTS, displayName: profile.data.display_name ?? "" });
+    defaults = defaultsFromPayload(open.data.payload, contactTypes, audiences, { ...EMPTY_DEFAULTS, displayName: profile.data.display_name ?? "" });
   } else {
-    const [languages, modes, formats, contacts] = await Promise.all([
+    const [languages, modes, formats, contacts, therapies, rates] = await Promise.all([
       client.from("profile_languages").select("language_id").eq("profile_id", profile.data.id).limit(100),
       client.from("profile_service_modes").select("service_mode_id").eq("profile_id", profile.data.id).limit(100),
       client.from("profile_session_formats").select("session_format_id").eq("profile_id", profile.data.id).limit(100),
       client.from("profile_contacts").select("contact_type_id, value, accepts_whatsapp").eq("profile_id", profile.data.id).limit(100),
+      client.from("profile_therapies").select("therapy_id, session_minutes").eq("profile_id", profile.data.id).order("therapy_id").limit(100),
+      client.from("profile_therapy_rates").select("therapy_id, rate_audience_id, amount, currency_id").eq("profile_id", profile.data.id).limit(100),
     ]);
-    for (const result of [languages, modes, formats, contacts]) if (result.error) fail("the profile data / los datos del perfil", result.error.message);
+    for (const result of [languages, modes, formats, contacts, therapies, rates]) if (result.error) fail("the profile data / los datos del perfil", result.error.message);
     const contact = (id: number) => contacts.data?.find((row) => row.contact_type_id === id);
+    const rateRows = rates.data ?? [];
+    const rateOf = (therapyId: number, audienceId: number) => rateRows.find((row) => row.therapy_id === therapyId && row.rate_audience_id === audienceId);
     defaults = {
       displayName: profile.data.display_name ?? "",
       headline: profile.data.headline ?? "",
@@ -99,6 +116,16 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
       facebook: contact(contactTypes.facebook)?.value ?? "",
       tiktok: contact(contactTypes.tiktok)?.value ?? "",
       youtube: contact(contactTypes.youtube)?.value ?? "",
+      therapies: padTherapies(
+        (therapies.data ?? []).map((row) => ({
+          therapyId: row.therapy_id,
+          minutes: row.session_minutes != null ? String(row.session_minutes) : "",
+          rateOwn: String(rateOf(row.therapy_id, audiences.own)?.amount ?? ""),
+          rateOther: String(rateOf(row.therapy_id, audiences.other)?.amount ?? ""),
+        })),
+      ),
+      currencyOwn: rateRows.find((row) => row.rate_audience_id === audiences.own)?.currency_id ?? null,
+      currencyOther: rateRows.find((row) => row.rate_audience_id === audiences.other)?.currency_id ?? null,
     };
   }
 
@@ -124,6 +151,7 @@ export async function loadProfileEditor(client: Client): Promise<EditorData> {
     catalogs,
     tree,
     contactTypes,
+    audiences,
     initialCountryId: region?.parentId ?? null,
     initialRegionId: regionId,
     missingCity,

@@ -115,11 +115,15 @@ export async function listLocations(client: Client, parentId: number | null): Pr
 export type CodedOption = { id: number; code: string };
 export type ChildOption = CatalogOption & { parentId: number };
 export type LocationTree = { countries: CatalogOption[]; regions: ChildOption[]; cities: ChildOption[] };
+export type CurrencyOption = { id: number; code: string; minorUnits: number };
 export type FormCatalogs = {
   languages: CodedOption[];
   serviceModes: CodedOption[];
   sessionFormats: CodedOption[];
   contactTypes: CodedOption[];
+  therapies: CatalogOption[];
+  currencies: CurrencyOption[];
+  rateAudiences: CodedOption[];
 };
 
 type CodedRow = { id: number; code: string };
@@ -130,17 +134,24 @@ const toCoded = (what: string, result: { data: CodedRow[] | null; error: { messa
 
 export async function listFormCatalogs(client: Client): Promise<FormCatalogs> {
   // One explicit query per table keeps the types exact (no table-name unions). / Una consulta explícita por tabla mantiene los tipos exactos.
-  const [languages, serviceModes, sessionFormats, contactTypes] = await Promise.all([
+  const [languages, serviceModes, sessionFormats, contactTypes, currencies, rateAudiences, therapies] = await Promise.all([
     client.from("languages").select("id, code").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
     client.from("service_modes").select("id, code").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
     client.from("session_formats").select("id, code").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
     client.from("contact_types").select("id, code").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
+    client.from("currencies").select("id, code, minor_units").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
+    client.from("rate_audiences").select("id, code").eq("is_active", true).order("sort_order").limit(MAX_ROWS),
+    listTherapies(client),
   ]);
+  if (currencies.error) fail("currencies / monedas", currencies.error.message);
   return {
     languages: toCoded("languages / idiomas", languages),
     serviceModes: toCoded("service modes / modos de atención", serviceModes),
     sessionFormats: toCoded("session formats / formatos de sesión", sessionFormats),
     contactTypes: toCoded("contact types / tipos de contacto", contactTypes),
+    therapies,
+    currencies: (currencies.data ?? []).map((row) => ({ id: row.id, code: row.code, minorUnits: row.minor_units })),
+    rateAudiences: toCoded("rate audiences / audiencias de tarifa", rateAudiences),
   };
 }
 

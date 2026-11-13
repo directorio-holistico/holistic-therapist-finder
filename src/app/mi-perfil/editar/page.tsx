@@ -50,7 +50,7 @@ export default function EditProfilePage() {
     <main className="mx-auto max-w-xl px-4 py-10">
       <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Editar mi perfil</h1>
       <p className="mt-2 text-zinc-700 dark:text-zinc-300">
-        Tus cambios se publican después de una revisión. Las terapias y las tarifas se cargan en el próximo paso.
+        Tus cambios se publican después de una revisión. La foto se agrega en un paso posterior.
       </p>
       <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
         <Editor />
