@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { listFormCatalogs } from "@/lib/catalogs";
 import { buildPayload, firstIssue, readProfileForm } from "@/lib/profile-form";
 import { contactTypeIds } from "@/lib/profile-load";
+import type { Database } from "@/lib/supabase/database.types";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 
 export type EditState = {
@@ -78,7 +79,12 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
       return fail("No pudimos guardar el borrador. Probá de nuevo en unos minutos.");
     }
   } else {
-    const created = await supabase.from("profile_revisions").insert({ profile_id: profile.data.id, payload }).select("id").single();
+    // The generated Insert type asks for status_id, but API roles cannot write it (column-level grants): a trigger fills in
+    // "draft". So the row is typed by hand with ONLY the two columns the therapist may write.
+    // El tipo Insert generado pide status_id, pero los roles de la API no pueden escribirlo (permisos por columna): un trigger
+    // pone "draft". Por eso la fila se tipa a mano con SOLO las dos columnas que el terapeuta puede escribir.
+    const draft = { profile_id: profile.data.id, payload } as unknown as Database["public"]["Tables"]["profile_revisions"]["Insert"];
+    const created = await supabase.from("profile_revisions").insert(draft).select("id").single();
     if (created.error || !created.data) {
       console.error(`draft insert failed / falló la creación del borrador: ${created.error?.code ?? "unknown"}`);
       return fail("No pudimos guardar el borrador. Probá de nuevo en unos minutos.");
