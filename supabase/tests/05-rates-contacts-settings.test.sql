@@ -151,9 +151,11 @@ begin
       and not (grantee = 'authenticated' and (
             (table_name = 'app_settings' and column_name = 'value' and privilege_type = 'UPDATE')
          or (table_name = 'profile_revisions' and column_name in ('profile_id', 'payload', 'suggested_therapy') and privilege_type = 'INSERT')
-         or (table_name = 'profile_revisions' and column_name in ('payload', 'suggested_therapy') and privilege_type = 'UPDATE')))
+         or (table_name = 'profile_revisions' and column_name in ('payload', 'suggested_therapy') and privilege_type = 'UPDATE')
+         or (table_name = 'location_requests' and column_name in ('profile_id', 'region_id', 'city_name') and privilege_type = 'INSERT')
+         or (table_name = 'location_requests' and column_name in ('region_id', 'city_name') and privilege_type = 'UPDATE')))
   ) then
-    raise exception 'an API role has a column-level write grant outside the allow-list (app_settings.value, draft columns of profile_revisions)';
+    raise exception 'an API role has a column-level write grant outside the allow-list (app_settings.value, draft columns of profile_revisions, location_requests)';
   end if;
 end
 $$;

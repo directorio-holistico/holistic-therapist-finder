@@ -39,14 +39,17 @@ begin
     end if;
   end loop;
   -- nobody but the owner writes catalogs / nadie salvo el dueño escribe catálogos
-  -- the only table-level write grant is restricted_terms for authenticated (its policies limit it to admins)
-  -- el único permiso de escritura de tabla es restricted_terms para authenticated (sus políticas lo limitan a admins)
+  -- table-level write grants for authenticated: restricted_terms (admin-only policies) and DELETE on location_requests
+  -- (RLS limits it to the owner's OPEN request). Everything else is column-level (see test 05).
+  -- permisos de escritura de tabla para authenticated: restricted_terms (políticas solo admin) y DELETE en location_requests
+  -- (RLS lo limita al pedido ABIERTO del dueño). Todo lo demás es por columna (ver prueba 05).
   if exists (
     select 1 from information_schema.role_table_grants
     where table_schema = 'public' and grantee in ('anon', 'authenticated', 'service_role')
       and privilege_type in ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE')
       and not (table_name = 'restricted_terms' and grantee = 'authenticated'
-               and privilege_type in ('INSERT', 'UPDATE', 'DELETE'))) then
+               and privilege_type in ('INSERT', 'UPDATE', 'DELETE'))
+      and not (table_name = 'location_requests' and grantee = 'authenticated' and privilege_type = 'DELETE')) then
     raise exception 'an API role can write to a public table';
   end if;
 end

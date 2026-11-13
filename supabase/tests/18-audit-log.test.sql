@@ -43,7 +43,7 @@ begin
   -- exactamente estas tablas se auditan, cada una con un trigger AFTER ROW para insert, update y delete
   if (select array_agg(c.relname::text order by c.relname) from pg_trigger t join pg_class c on c.oid = t.tgrelid
        where not t.tgisinternal and t.tgfoid = 'public.audit_row_change()'::regprocedure)
-     <> array['app_settings', 'people', 'person_roles', 'profile_contacts', 'restricted_terms', 'therapist_profiles'] then
+     <> array['app_settings', 'location_requests', 'people', 'person_roles', 'profile_contacts', 'restricted_terms', 'therapist_profiles'] then
     raise exception 'the set of audited tables changed';
   end if;
   for t in select t.tgname from pg_trigger t where not t.tgisinternal and t.tgfoid = 'public.audit_row_change()'::regprocedure loop

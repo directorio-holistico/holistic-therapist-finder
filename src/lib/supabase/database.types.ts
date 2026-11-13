@@ -272,6 +272,82 @@ export type Database = {
         }
         Relationships: []
       }
+      location_requests: {
+        Row: {
+          city_name: string
+          created_at: string
+          id: number
+          profile_id: string
+          region_id: number
+          resolved_at: string | null
+          resolved_by_person_id: string | null
+          resolved_location_id: number | null
+        }
+        Insert: {
+          city_name: string
+          created_at?: string
+          id?: never
+          profile_id: string
+          region_id: number
+          resolved_at?: string | null
+          resolved_by_person_id?: string | null
+          resolved_location_id?: number | null
+        }
+        Update: {
+          city_name?: string
+          created_at?: string
+          id?: never
+          profile_id?: string
+          region_id?: number
+          resolved_at?: string | null
+          resolved_by_person_id?: string | null
+          resolved_location_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "location_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profile_cards"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "location_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_profile_detail"
+            referencedColumns: ["profile_id"]
+          },
+          {
+            foreignKeyName: "location_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "therapist_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_requests_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_requests_resolved_by_person_id_fkey"
+            columns: ["resolved_by_person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "location_requests_resolved_location_id_fkey"
+            columns: ["resolved_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       location_translations: {
         Row: {
           language_id: number
@@ -1538,6 +1614,10 @@ export type Database = {
           p_reporter_email?: string
         }
         Returns: number
+      }
+      resolve_location_request: {
+        Args: { p_location_id: number; p_request_id: number }
+        Returns: undefined
       }
       reveal_contact: {
         Args: { p_profile_id: string }
