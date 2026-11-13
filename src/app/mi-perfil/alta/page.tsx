@@ -18,7 +18,13 @@ async function Gate() {
   if (!auth.user) redirect("/ingresar");
   const { data: person, error } = await supabase.from("people").select("id").eq("auth_user_id", auth.user.id).maybeSingle();
   if (error) throw new Error(`Could not read the account / No se pudo leer la cuenta: ${error.message}`);
-  if (person) redirect("/mi-perfil");
+  // Only a person who already HAS a profile goes back: a person without one (for example an administrator) can complete the sign-up.
+  // Solo vuelve a /mi-perfil quien YA TIENE perfil: una persona sin perfil (por ejemplo un administrador) puede completar el alta.
+  if (person) {
+    const profile = await supabase.from("therapist_profiles").select("id").eq("person_id", person.id).maybeSingle();
+    if (profile.error) throw new Error(`Could not read the profile / No se pudo leer el perfil: ${profile.error.message}`);
+    if (profile.data) redirect("/mi-perfil");
+  }
   return <RegisterForm suggestedName="" />;
 }
 
