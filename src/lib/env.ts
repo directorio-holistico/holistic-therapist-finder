@@ -81,3 +81,17 @@ export function getPublicEnv(): PublicEnv {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   });
 }
+
+// Public address of the site (for the login link). https only; http accepted for localhost.
+// Dirección pública del sitio (para el enlace de ingreso). Solo https; http se acepta en localhost.
+export function parseSiteUrl(value: string | undefined): string {
+  const trimmed = (value ?? "").trim();
+  if (!isAllowedUrl(trimmed)) {
+    throw new Error("Invalid NEXT_PUBLIC_SITE_URL: must be an https address (http only for localhost) / debe ser una dirección https (http solo en localhost)");
+  }
+  return new URL(trimmed).origin;
+}
+
+export function getSiteUrl(): string {
+  return parseSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
+}

@@ -12,6 +12,9 @@ export default function Home() {
       >
         Buscar terapeuta
       </Link>
+      <Link href="/ingresar" className="text-sm text-zinc-700 underline dark:text-zinc-300">
+        Soy terapeuta: ingresar
+      </Link>
       <p className="text-sm text-zinc-500 dark:text-zinc-500">Sitio en construcción.</p>
     </main>
   );
