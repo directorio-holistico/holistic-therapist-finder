@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { closeReport, reinstateProfile, suspendProfile, type ActionState } from "./actions";
 
 const INITIAL: ActionState = { status: "idle", message: "" };
@@ -23,6 +23,17 @@ export function ReportForms({ reportId, isOpen, profileId, canSuspend, canReinst
   const [reinstateState, reinstate, reinstating] = useActionState(reinstateProfile, INITIAL);
   const busy = closing || suspending || reinstating;
 
+  // A button is enabled only when its form is complete (the text counts without spaces at the ends). The server and the database check again.
+  // Un botón se habilita solo cuando su formulario está completo (el texto cuenta sin espacios en los extremos). El servidor y la base vuelven a revisar.
+  const [suspendReason, setSuspendReason] = useState("");
+  const [suspendConfirmed, setSuspendConfirmed] = useState(false);
+  const [reinstateReason, setReinstateReason] = useState("");
+  const [closeResult, setCloseResult] = useState("");
+  const [closeNote, setCloseNote] = useState("");
+  const suspendReady = suspendReason.trim().length > 0 && suspendConfirmed;
+  const reinstateReady = reinstateReason.trim().length > 0;
+  const closeReady = closeResult !== "" && closeNote.trim().length > 0;
+
   return (
     <div className="mt-6 grid gap-6">
       {profileId && canSuspend && (
@@ -36,14 +47,14 @@ export function ReportForms({ reportId, isOpen, profileId, canSuspend, canReinst
           <input type="hidden" name="profileId" value={profileId} />
           <div className="grid gap-1">
             <label htmlFor="suspend-reason" className={LABEL}>Motivo (queda en el registro)</label>
-            <textarea id="suspend-reason" name="reason" rows={3} maxLength={500} required className={FIELD} />
+            <textarea id="suspend-reason" name="reason" rows={3} maxLength={500} required value={suspendReason} onChange={(e) => setSuspendReason(e.target.value)} className={FIELD} />
           </div>
           <label className="flex items-start gap-3 text-zinc-800 dark:text-zinc-200">
-            <input type="checkbox" name="confirm" required className="mt-1 h-5 w-5" />
+            <input type="checkbox" name="confirm" required checked={suspendConfirmed} onChange={(e) => setSuspendConfirmed(e.target.checked)} className="mt-1 h-5 w-5" />
             <span>Confirmo que quiero suspender este perfil.</span>
           </label>
           {suspendState.status === "error" && <p role="alert" className="text-red-800">{suspendState.message}</p>}
-          <button type="submit" disabled={busy} className="rounded-md bg-red-800 px-4 py-3 font-medium text-white disabled:opacity-50">
+          <button type="submit" disabled={busy || !suspendReady} className="rounded-md bg-red-800 px-4 py-3 font-medium text-white disabled:opacity-50">
             {suspending ? "Suspendiendo…" : "Suspender perfil"}
           </button>
         </form>
@@ -59,10 +70,10 @@ export function ReportForms({ reportId, isOpen, profileId, canSuspend, canReinst
           <input type="hidden" name="profileId" value={profileId} />
           <div className="grid gap-1">
             <label htmlFor="reinstate-reason" className={LABEL}>Motivo (queda en el registro)</label>
-            <textarea id="reinstate-reason" name="reason" rows={3} maxLength={1000} required className={FIELD} />
+            <textarea id="reinstate-reason" name="reason" rows={3} maxLength={1000} required value={reinstateReason} onChange={(e) => setReinstateReason(e.target.value)} className={FIELD} />
           </div>
           {reinstateState.status === "error" && <p role="alert" className="text-red-800">{reinstateState.message}</p>}
-          <button type="submit" disabled={busy} className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">
+          <button type="submit" disabled={busy || !reinstateReady} className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">
             {reinstating ? "Reponiendo…" : "Reponer perfil"}
           </button>
         </form>
@@ -74,7 +85,7 @@ export function ReportForms({ reportId, isOpen, profileId, canSuspend, canReinst
           <input type="hidden" name="reportId" value={reportId} />
           <div className="grid gap-1">
             <label htmlFor="close-status" className={LABEL}>Resultado</label>
-            <select id="close-status" name="status" required defaultValue="" className={FIELD}>
+            <select id="close-status" name="status" required value={closeResult} onChange={(e) => setCloseResult(e.target.value)} className={FIELD}>
               <option value="" disabled>Elegí cómo se cierra</option>
               <option value="dismissed">Descartada (no hay nada que hacer)</option>
               <option value="resolved">Resuelta (se tomó una medida)</option>
@@ -82,10 +93,10 @@ export function ReportForms({ reportId, isOpen, profileId, canSuspend, canReinst
           </div>
           <div className="grid gap-1">
             <label htmlFor="close-note" className={LABEL}>Nota de cierre (queda en el registro)</label>
-            <textarea id="close-note" name="note" rows={3} maxLength={1000} required className={FIELD} />
+            <textarea id="close-note" name="note" rows={3} maxLength={1000} required value={closeNote} onChange={(e) => setCloseNote(e.target.value)} className={FIELD} />
           </div>
           {closeState.status === "error" && <p role="alert" className="text-red-800">{closeState.message}</p>}
-          <button type="submit" disabled={busy} className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">
+          <button type="submit" disabled={busy || !closeReady} className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">
             {closing ? "Cerrando…" : "Cerrar denuncia"}
           </button>
         </form>
