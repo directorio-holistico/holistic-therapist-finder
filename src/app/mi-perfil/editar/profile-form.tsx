@@ -63,7 +63,10 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             Ojo: encontramos palabras que suelen rechazarse ({state.flagged.join(", ")}). No promete cura ni trata enfermedades: si querés, corregilas y volvé a enviar cuando te respondamos.
           </p>
         )}
-        <Link href="/mi-perfil" className="mt-3 inline-block underline">Volver a mi perfil</Link>
+        <p className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+          <Link href="/mi-perfil" className="underline">Volver a mi perfil</Link>
+          <Link href="/" className="underline">Ir al inicio</Link>
+        </p>
       </section>
     );
   }
