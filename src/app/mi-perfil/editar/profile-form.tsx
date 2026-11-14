@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
 import type { FormDefaults } from "@/lib/profile-form";
@@ -42,6 +42,7 @@ function CheckGroup({ legend, name, options, selected, label }: {
 
 export function ProfileForm({ defaults, catalogs, countries, regions, cities, initialCountryId, initialRegionId, missingCity, lastRejection }: Props) {
   const [state, action, pending] = useActionState(saveProfile, INITIAL);
+  const [, startTransition] = useTransition();
   const [countryId, setCountryId] = useState<number | null>(initialCountryId);
   const [regionId, setRegionId] = useState<number | null>(initialRegionId);
   const [cityMissing, setCityMissing] = useState<boolean>(missingCity !== null);
@@ -64,8 +65,19 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
     );
   }
 
+  // React 19 empties an uncontrolled form after a form action finishes, even when the action returned an error. To keep what the
+  // person typed, the submit is sent by hand: the form has no "action" prop, so it is never reset.
+  // React 19 vacía un formulario no controlado cuando termina la acción, incluso si devolvió un error. Para conservar lo escrito,
+  // el envío se hace a mano: el formulario no tiene prop "action", así que nunca se reinicia.
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+    const data = new FormData(event.currentTarget, submitter);
+    startTransition(() => action(data));
+  }
+
   return (
-    <form action={action} className="mt-6 grid gap-6" noValidate>
+    <form onSubmit={handleSubmit} className="mt-6 grid gap-6" noValidate>
       {lastRejection && (
         <p role="note" className="rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
           Tu última revisión fue rechazada: {lastRejection}
@@ -87,7 +99,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         </div>
         <div className="grid gap-1">
           <label htmlFor="practiceStartYear" className={LABEL}>Año en que empezaste a atender (opcional)</label>
-          <input id="practiceStartYear" name="practiceStartYear" type="number" inputMode="numeric" min={1900} max={2100}
+          <input id="practiceStartYear" name="practiceStartYear" type="number" inputMode="numeric" min={1900} max={2100} autoComplete="off"
             defaultValue={defaults.practiceStartYear} aria-invalid={invalid("practiceStartYear")} className={FIELD} />
         </div>
       </section>
@@ -126,14 +138,14 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         {cityMissing && (
           <div className="grid gap-1">
             <label htmlFor="cityName" className={LABEL}>Escribí tu ciudad</label>
-            <input id="cityName" name="cityName" type="text" maxLength={80} defaultValue={missingCity?.cityName ?? ""}
+            <input id="cityName" name="cityName" type="text" maxLength={80} autoComplete="off" defaultValue={missingCity?.cityName ?? ""}
               aria-describedby="cityName-help" aria-invalid={invalid("cityName")} className={FIELD} />
             <p id="cityName-help" className={HELP}>La agregamos nosotros. Tu perfil se publica cuando la ciudad esté cargada; no frena tu alta.</p>
           </div>
         )}
         <div className="grid gap-1">
           <label htmlFor="zone" className={LABEL}>Zona o barrio (opcional)</label>
-          <input id="zone" name="zone" type="text" maxLength={80} defaultValue={defaults.zone} className={FIELD} />
+          <input id="zone" name="zone" type="text" maxLength={80} autoComplete="off" defaultValue={defaults.zone} className={FIELD} />
         </div>
       </section>
 
@@ -165,18 +177,18 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             </div>
             <div className="grid gap-1">
               <label htmlFor={`minutes_${index}`} className={LABEL}>Duración de la sesión, en minutos (opcional)</label>
-              <input id={`minutes_${index}`} name={`minutes_${index}`} type="text" inputMode="numeric" maxLength={3} defaultValue={slot.minutes}
+              <input id={`minutes_${index}`} name={`minutes_${index}`} type="text" inputMode="numeric" maxLength={3} autoComplete="off" defaultValue={slot.minutes}
                 aria-invalid={invalid(`minutes_${index}`)} className={FIELD} />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1">
                 <label htmlFor={`rateOwn_${index}`} className={LABEL}>Tarifa: {labelRateAudience("own_country").toLowerCase()} (opcional)</label>
-                <input id={`rateOwn_${index}`} name={`rateOwn_${index}`} type="text" inputMode="decimal" maxLength={16} defaultValue={slot.rateOwn}
+                <input id={`rateOwn_${index}`} name={`rateOwn_${index}`} type="text" inputMode="decimal" maxLength={16} autoComplete="off" defaultValue={slot.rateOwn}
                   aria-invalid={invalid(`rateOwn_${index}`)} className={FIELD} />
               </div>
               <div className="grid gap-1">
                 <label htmlFor={`rateOther_${index}`} className={LABEL}>Tarifa: {labelRateAudience("other_countries").toLowerCase()} (opcional)</label>
-                <input id={`rateOther_${index}`} name={`rateOther_${index}`} type="text" inputMode="decimal" maxLength={16} defaultValue={slot.rateOther}
+                <input id={`rateOther_${index}`} name={`rateOther_${index}`} type="text" inputMode="decimal" maxLength={16} autoComplete="off" defaultValue={slot.rateOther}
                   aria-invalid={invalid(`rateOther_${index}`)} className={FIELD} />
               </div>
             </div>

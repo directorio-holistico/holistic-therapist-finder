@@ -50,7 +50,7 @@ export function readTherapySlot(slot: TherapySlotInput, index: number): SlotResu
   const other = parseAmount(slot.rateOther);
   if (slot.therapyId === null) {
     if (minutesText === "" && own === null && other === null) return { skip: true };
-    return { skip: false, error: { message: "Elegí la terapia de esa fila, o vaciala.", field: `therapyId_${index}` } };
+    return { skip: false, error: { message: `Terapia ${index + 1}: elegí la terapia o vaciá toda la fila (duración y tarifas).`, field: `therapyId_${index}` } };
   }
   let minutes: number | null = null;
   if (minutesText !== "") {
