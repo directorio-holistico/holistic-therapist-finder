@@ -31,7 +31,7 @@ function isAllowedUrl(value: string): boolean {
 // "sb_secret_"; old-style keys are JWTs whose payload carries the role.
 // Una clave secreta (service role) nunca debe usarse donde va la pública. Las nuevas empiezan con "sb_secret_";
 // las viejas son JWT cuyo payload lleva el rol.
-function looksLikeSecretKey(value: string): boolean {
+export function looksLikeSecretKey(value: string): boolean {
   if (value.startsWith("sb_secret_")) return true;
   const parts = value.split(".");
   if (parts.length !== 3 || !parts[1]) return false;
@@ -94,4 +94,11 @@ export function parseSiteUrl(value: string | undefined): string {
 
 export function getSiteUrl(): string {
   return parseSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
+}
+
+// Public key of the Turnstile widget (it is meant for the browser). null = not configured: the contact reveal is then off.
+// Clave pública del widget de Turnstile (es para el navegador). null = sin configurar: el revelado de contacto queda apagado.
+export function getTurnstileSiteKey(): string | null {
+  const value = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "").trim();
+  return value.length >= 10 ? value : null;
 }

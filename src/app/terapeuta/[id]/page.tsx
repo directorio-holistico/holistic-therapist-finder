@@ -1,17 +1,19 @@
 // Public profile of a therapist. Everything the patient needs to know about the therapist, therapy by therapy. The phone and
-// the mail are NOT here: they come with the contact reveal (next step, protected by ADR-0003).
+// the mail are NOT in the page: they come only through the "Ver contacto" button (ADR-0003).
 // Perfil público de un terapeuta. Todo lo que el paciente necesita saber, terapia por terapia. El teléfono y el mail NO
-// están acá: llegan con la revelación de contacto (paso siguiente, protegida por el ADR-0003).
+// están en la página: llegan solo con el botón "Ver contacto" (ADR-0003).
 
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ModeBadge } from "@/components/mode-icon";
+import { getTurnstileSiteKey } from "@/lib/env";
 import { formatDate, formatMoney } from "@/lib/format";
 import { joinWithY, labelLanguage, labelRateAudience, labelSessionFormat } from "@/lib/labels";
 import { loadPublicProfile, type ProfileDetail, type ProfileLinkKind, type TherapyDetail } from "@/lib/profile-detail";
 import { createAnonClient } from "@/lib/supabase/anon-client";
+import { ContactReveal } from "./contact-reveal";
 
 export const metadata: Metadata = { title: "Perfil del terapeuta" };
 
@@ -79,6 +81,7 @@ function RatesFreshness({ profile }: { profile: ProfileDetail }) {
 }
 
 function ProfileView({ profile }: { profile: ProfileDetail }) {
+  const siteKey = getTurnstileSiteKey();
   return (
     <article>
       <header className="flex items-start gap-4">
@@ -131,9 +134,13 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
             ))}
           </ul>
         )}
-        <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
-          El teléfono y el mail se podrán ver desde acá en el próximo paso del sitio.
-        </p>
+        <div className="mt-3">
+          {siteKey ? (
+            <ContactReveal profileId={profile.profileId} siteKey={siteKey} />
+          ) : (
+            <p className="text-sm text-zinc-700 dark:text-zinc-300">El contacto directo no está disponible por ahora.</p>
+          )}
+        </div>
       </section>
     </article>
   );
