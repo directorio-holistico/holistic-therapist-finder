@@ -10,6 +10,9 @@ import { saveProfile, type EditState } from "./actions";
 const INITIAL: EditState = { status: "idle", message: "", fields: [], flagged: [] };
 const FIELD = "w-full rounded-md border border-zinc-400 bg-white p-3 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100";
 const LABEL = "font-medium text-zinc-900 dark:text-zinc-100";
+// Chrome ignores autocomplete="off" on fields it takes for address fields; a value it does not recognize is never filled.
+// Chrome ignora autocomplete="off" en campos que cree de dirección; un valor que no reconoce nunca se rellena.
+const NO_AUTOFILL = "nope";
 const HELP = "text-sm text-zinc-600 dark:text-zinc-400";
 
 type Props = {
@@ -99,7 +102,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         </div>
         <div className="grid gap-1">
           <label htmlFor="practiceStartYear" className={LABEL}>Año en que empezaste a atender (opcional)</label>
-          <input id="practiceStartYear" name="practiceStartYear" type="number" inputMode="numeric" min={1900} max={2100} autoComplete="off"
+          <input id="practiceStartYear" name="practiceStartYear" type="number" inputMode="numeric" min={1900} max={2100} autoComplete={NO_AUTOFILL}
             defaultValue={defaults.practiceStartYear} aria-invalid={invalid("practiceStartYear")} className={FIELD} />
         </div>
       </section>
@@ -138,21 +141,21 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         {cityMissing && (
           <div className="grid gap-1">
             <label htmlFor="cityName" className={LABEL}>Escribí tu ciudad</label>
-            <input id="cityName" name="cityName" type="text" maxLength={80} autoComplete="off" defaultValue={missingCity?.cityName ?? ""}
+            <input id="cityName" name="cityName" type="text" maxLength={80} autoComplete={NO_AUTOFILL} defaultValue={missingCity?.cityName ?? ""}
               aria-describedby="cityName-help" aria-invalid={invalid("cityName")} className={FIELD} />
             <p id="cityName-help" className={HELP}>La agregamos nosotros. Tu perfil se publica cuando la ciudad esté cargada; no frena tu alta.</p>
           </div>
         )}
         <div className="grid gap-1">
           <label htmlFor="zone" className={LABEL}>Zona o barrio (opcional)</label>
-          <input id="zone" name="zone" type="text" maxLength={80} autoComplete="off" defaultValue={defaults.zone} className={FIELD} />
+          <input id="zone" name="zone" type="text" maxLength={80} autoComplete={NO_AUTOFILL} defaultValue={defaults.zone} className={FIELD} />
         </div>
       </section>
 
       <section className="grid gap-4" aria-labelledby="sec-terapias">
         <h2 id="sec-terapias" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tus terapias y tarifas</h2>
         <p className={HELP}>
-          Elegí hasta {defaults.therapies.length} terapias. La duración y las tarifas son opcionales. Escribí solo números, por ejemplo 15000. No prometas curas.
+          Elegí hasta {defaults.therapies.length} terapias. La duración y las tarifas son opcionales. Escribí solo números, por ejemplo 15000. &quot;Locales&quot; son quienes viven en el mismo país donde atendés. No prometas curas.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           {([["currencyOwn", "own_country", defaults.currencyOwn], ["currencyOther", "other_countries", defaults.currencyOther]] as const).map(([name, audience, current]) => (
@@ -177,18 +180,18 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             </div>
             <div className="grid gap-1">
               <label htmlFor={`minutes_${index}`} className={LABEL}>Duración de la sesión, en minutos (opcional)</label>
-              <input id={`minutes_${index}`} name={`minutes_${index}`} type="text" inputMode="numeric" maxLength={3} autoComplete="off" defaultValue={slot.minutes}
+              <input id={`minutes_${index}`} name={`minutes_${index}`} type="text" inputMode="numeric" maxLength={3} autoComplete={NO_AUTOFILL} defaultValue={slot.minutes}
                 aria-invalid={invalid(`minutes_${index}`)} className={FIELD} />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1">
-                <label htmlFor={`rateOwn_${index}`} className={LABEL}>Tarifa: {labelRateAudience("own_country").toLowerCase()} (opcional)</label>
-                <input id={`rateOwn_${index}`} name={`rateOwn_${index}`} type="text" inputMode="decimal" maxLength={16} autoComplete="off" defaultValue={slot.rateOwn}
+                <label htmlFor={`rateOwn_${index}`} className={LABEL}>Tarifa para pacientes locales (opcional)</label>
+                <input id={`rateOwn_${index}`} name={`rateOwn_${index}`} type="text" inputMode="decimal" maxLength={16} autoComplete={NO_AUTOFILL} defaultValue={slot.rateOwn}
                   aria-invalid={invalid(`rateOwn_${index}`)} className={FIELD} />
               </div>
               <div className="grid gap-1">
-                <label htmlFor={`rateOther_${index}`} className={LABEL}>Tarifa: {labelRateAudience("other_countries").toLowerCase()} (opcional)</label>
-                <input id={`rateOther_${index}`} name={`rateOther_${index}`} type="text" inputMode="decimal" maxLength={16} autoComplete="off" defaultValue={slot.rateOther}
+                <label htmlFor={`rateOther_${index}`} className={LABEL}>Tarifa para pacientes del exterior (opcional)</label>
+                <input id={`rateOther_${index}`} name={`rateOther_${index}`} type="text" inputMode="decimal" maxLength={16} autoComplete={NO_AUTOFILL} defaultValue={slot.rateOther}
                   aria-invalid={invalid(`rateOther_${index}`)} className={FIELD} />
               </div>
             </div>
