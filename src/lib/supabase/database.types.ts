@@ -1616,6 +1616,16 @@ export type Database = {
         }
         Returns: number
       }
+      report_profile_limited: {
+        Args: {
+          p_details: string
+          p_origin_hash: string
+          p_profile_id: string
+          p_reason_code: string
+          p_reporter_email: string
+        }
+        Returns: number
+      }
       resolve_location_request: {
         Args: { p_location_id: number; p_request_id: number }
         Returns: undefined

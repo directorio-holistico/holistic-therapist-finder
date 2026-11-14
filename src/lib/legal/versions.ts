@@ -8,12 +8,12 @@ import type { LegalDocumentCode } from "./types";
 
 export const LEGAL_VERSIONS: Record<LegalDocumentCode, string> = {
   terms: "2026-11-a",
-  privacy: "2026-11-a",
+  privacy: "2026-11-b",
   legal_declaration: "2026-11-a",
   offers_consent: "2026-11-a",
 };
 
-export const LEGAL_UPDATED_LABEL = "12 de noviembre de 2026";
+export const LEGAL_UPDATED_LABEL = "14 de noviembre de 2026";
 
 // TRUE while no lawyer has reviewed the texts: every page shows a visible notice. Set it to false ONLY after the review
 // (the tests then require the controller's address, so nobody launches with a placeholder).

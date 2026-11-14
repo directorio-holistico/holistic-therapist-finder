@@ -82,7 +82,7 @@ foreach ($t in $columnOnly) { Check "read ALL columns of $t" (Get-Status "GET" "
 # 2b) Tables where anon has ALL columns by design (every column is public); rows are limited to published profiles by RLS.
 #     select=* answers 2xx here: that is correct. Tablas donde anon tiene TODAS las columnas por diseno (todas son publicas);
 #     las filas se limitan a perfiles publicados por RLS. select=* responde 2xx: es lo correcto.
-$allColumnsPublic = @("profile_languages", "profile_therapy_service_modes", "profile_therapy_session_formats", "profile_therapies", "profile_therapy_rates")
+$allColumnsPublic = @("profile_languages", "profile_service_modes", "profile_session_formats", "profile_therapies", "profile_therapy_rates")
 foreach ($t in $allColumnsPublic) { Check "read $t (all columns public, rows by RLS)" (Get-Status "GET" "$base/${t}?select=*&limit=1") $true }
 
 # 3) Every other table: refused / Toda otra tabla: rechazada
@@ -107,6 +107,8 @@ $zeroUuid = "00000000-0000-0000-0000-000000000000"
 $zeroHash = "0" * 64
 Check "call reveal_contact(uuid)" (Get-Status "POST" "$base/rpc/reveal_contact" ('{"p_profile_id":"' + $zeroUuid + '"}')) $false
 Check "call reveal_contact_limited(uuid, hash)" (Get-Status "POST" "$base/rpc/reveal_contact_limited" ('{"p_profile_id":"' + $zeroUuid + '","p_origin_hash":"' + $zeroHash + '"}')) $false
+Check "call report_profile(uuid, reason)" (Get-Status "POST" "$base/rpc/report_profile" ('{"p_profile_id":"' + $zeroUuid + '","p_reason_code":"other"}')) $false
+Check "call report_profile_limited(...)" (Get-Status "POST" "$base/rpc/report_profile_limited" ('{"p_profile_id":"' + $zeroUuid + '","p_reason_code":"other","p_details":"","p_reporter_email":"","p_origin_hash":"' + $zeroHash + '"}')) $false
 
 # 6) Commit 33 functions: the three for logged-in users are refused to anon; the two for visitors answer.
 #    Funciones del commit 33: las tres para usuarios con sesion se rechazan a anon; las dos para visitantes responden.

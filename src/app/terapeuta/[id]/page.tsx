@@ -14,6 +14,7 @@ import { joinWithY, labelLanguage, labelRateAudience, labelSessionFormat } from 
 import { loadPublicProfile, type ProfileDetail, type ProfileLinkKind, type TherapyDetail } from "@/lib/profile-detail";
 import { createAnonClient } from "@/lib/supabase/anon-client";
 import { ContactReveal } from "./contact-reveal";
+import { ReportForm } from "./report-form";
 
 export const metadata: Metadata = { title: "Perfil del terapeuta" };
 
@@ -142,6 +143,12 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
           )}
         </div>
       </section>
+
+      {siteKey && (
+        <section aria-label="Denunciar este perfil" className="mt-8">
+          <ReportForm profileId={profile.profileId} siteKey={siteKey} />
+        </section>
+      )}
     </article>
   );
 }

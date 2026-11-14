@@ -18,11 +18,12 @@ export const PRIVACY: LegalDocument = {
       id: "visitantes",
       title: "2. Si solo buscás un terapeuta",
       blocks: [
-        { type: "p", text: "No necesitás cuenta y no te pedimos nombre, mail ni ningún dato de salud. Esto es lo único que registramos de una visita:" },
+        { type: "p", text: "No necesitás cuenta y no te pedimos nombre ni ningún dato de salud. Esto es lo único que registramos de una visita:" },
         { type: "ul", items: [
           `Búsquedas sin resultado: guardamos la terapia, la zona, el modo de atención y la fecha, sin tu dirección ni ningún identificador, para saber qué falta en el directorio. Se conservan ${RETENTION.unmetSearchesMonths} meses.`,
           `Cuando pedís ver un contacto: guardamos que se vio el contacto de un perfil y la fecha, sin ningún dato tuyo. Se conserva ${RETENTION.contactRevealsMonths} meses.`,
-          `Protección contra abusos: para limitar pedidos repetidos guardamos, durante ${RETENTION.rateLimitDays} días, una huella irreversible calculada con una clave secreta a partir de tu dirección de red; la dirección en sí no se guarda. Al pedir un contacto, esa dirección se envía al servicio de verificación anti-bots que usamos (ver el apartado de proveedores).`,
+          `Protección contra abusos: para limitar pedidos repetidos guardamos, durante ${RETENTION.rateLimitDays} días, una huella irreversible calculada con una clave secreta a partir de tu dirección de red; la dirección en sí no se guarda. Al pedir un contacto o al enviar una denuncia, esa dirección se envía al servicio de verificación anti-bots que usamos (ver el apartado de proveedores).`,
+          `Si denunciás un perfil: guardamos el motivo, el detalle que escribas y la fecha. El mail es opcional y solo lo ve quien revisa las denuncias; no escribas datos de salud en el detalle. Las denuncias cerradas se conservan ${RETENTION.closedReportsMonths} meses.`,
         ] },
       ],
     },
@@ -84,7 +85,7 @@ export const PRIVACY: LegalDocument = {
           "Supabase: base de datos e ingreso con enlace por mail. La base está alojada en São Paulo, Brasil.",
           "Vercel: alojamiento del sitio.",
           "Un proveedor de envío de correo para los enlaces de ingreso (se informará su nombre cuando esté definido).",
-          "Cloudflare (servicio Turnstile): verificación anti-bots al pedir un contacto; recibe la dirección de red del visitante.",
+          "Cloudflare (servicio Turnstile): verificación anti-bots al pedir un contacto o enviar una denuncia; recibe la dirección de red del visitante.",
         ] },
         { type: "p", text: "Estos proveedores pueden tratar datos fuera de tu país. Para el caso de transferencias internacionales nos apoyamos en las condiciones contractuales de cada proveedor." },
       ],

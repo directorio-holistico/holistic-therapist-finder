@@ -49,10 +49,12 @@ begin
     raise exception 'reports must carry no network identifier';
   end if;
   -- ACL matrix of the 5 functions / matriz de permisos de las 5 funciones
-  if not has_function_privilege('service_role', 'public.report_profile(uuid,text,text,text)', 'execute')
+  -- since commit 70 the direct door is closed: only report_profile_limited (test 30) is open to service_role
+  -- desde el commit 70 la puerta directa está cerrada: solo report_profile_limited (prueba 30) está abierta a service_role
+  if has_function_privilege('service_role', 'public.report_profile(uuid,text,text,text)', 'execute')
      or has_function_privilege('anon', 'public.report_profile(uuid,text,text,text)', 'execute')
      or has_function_privilege('authenticated', 'public.report_profile(uuid,text,text,text)', 'execute') then
-    raise exception 'report_profile must be executable by service_role only';
+    raise exception 'report_profile must be closed to every API role';
   end if;
   foreach f in array array['public.close_report(bigint,text,text)', 'public.suspend_profile(uuid,text)', 'public.reinstate_profile(uuid,text)'] loop
     if not has_function_privilege('authenticated', f, 'execute') or has_function_privilege('anon', f, 'execute') or has_function_privilege('service_role', f, 'execute') then
@@ -66,8 +68,8 @@ begin
 end $$;
 
 -- 2) CREATE REPORTS as the server (service_role) / CREAR DENUNCIAS como el servidor
-set session authorization authenticator;
-set role service_role;
+-- (runs as owner since commit 70: the direct door is closed to service_role; the door itself is tested in 30-report-limited)
+-- (corre como dueño desde el commit 70: la puerta directa está cerrada a service_role; la puerta se prueba en 30-report-limited)
 do $$
 declare
   a1 uuid := '20000000-0000-0000-0000-0000000003a1'; id1 bigint; id2 bigint;
@@ -99,8 +101,6 @@ begin
   -- a 1000-character detail is the maximum accepted / 1000 caracteres es el máximo aceptado
   perform public.report_profile(a1, 'other', repeat('y', 1000));
 end $$;
-reset role;
-reset session authorization;
 
 -- 2b) WHAT WAS STORED (as owner; service_role has no read access) / LO GUARDADO (como dueño)
 do $$
@@ -118,16 +118,14 @@ end $$;
 
 -- 2c) A DEACTIVATED REASON IS NOT ACCEPTED / UN MOTIVO DESACTIVADO NO SE ACEPTA
 update public.report_reasons set is_active = false where code = 'other';
-set session authorization authenticator;
-set role service_role;
+-- (runs as owner since commit 70: the direct door is closed to service_role; the door itself is tested in 30-report-limited)
+-- (corre como dueño desde el commit 70: la puerta directa está cerrada a service_role; la puerta se prueba en 30-report-limited)
 do $$
 begin
   begin perform public.report_profile('20000000-0000-0000-0000-0000000003a1', 'other'); raise exception 'a deactivated reason was accepted';
   exception when sqlstate '22023' then null; end;
   perform public.report_profile('20000000-0000-0000-0000-0000000003a1', 'cure_claim');   -- active ones still work / los activos siguen
 end $$;
-reset role;
-reset session authorization;
 update public.report_reasons set is_active = true where code = 'other';
 delete from public.reports where id = (select max(id) from public.reports);   -- remove the extra row / saco la fila extra
 
@@ -255,15 +253,13 @@ begin
   if not exists (select 1 from public.public_profile_cards where profile_id = '20000000-0000-0000-0000-0000000003a1') then
     raise exception 'the reinstated profile must be public again'; end if;
 end $$;
-set session authorization authenticator;
-set role service_role;
+-- (runs as owner since commit 70: the direct door is closed to service_role; the door itself is tested in 30-report-limited)
+-- (corre como dueño desde el commit 70: la puerta directa está cerrada a service_role; la puerta se prueba en 30-report-limited)
 do $$
 begin
   begin perform public.report_profile('20000000-0000-0000-0000-0000000003a3', 'other'); raise exception 'a suspended profile was reported';
   exception when sqlstate '22023' then null; end;
 end $$;
-reset role;
-reset session authorization;
 
 -- 7) TABLE CONSTRAINTS (as owner) / RESTRICCIONES DE LA TABLA
 do $$

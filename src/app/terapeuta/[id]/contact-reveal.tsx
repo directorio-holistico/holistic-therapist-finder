@@ -7,38 +7,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { emailHref, labelContactType, phoneHref, whatsappHref } from "@/lib/contact-links";
+import { loadTurnstile } from "@/lib/turnstile-client";
 
 type Contact = { type: string; value: string; whatsapp: boolean };
-type Turnstile = {
-  render: (element: HTMLElement, options: Record<string, unknown>) => string;
-  remove: (widgetId: string) => void;
-};
-
-declare global {
-  interface Window {
-    turnstile?: Turnstile;
-  }
-}
-
-const SCRIPT_URL = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 const GENERIC_ERROR = "No pudimos mostrar el contacto. Probá de nuevo en unos minutos.";
-
-let scriptPromise: Promise<void> | null = null;
-function loadTurnstile(): Promise<void> {
-  if (window.turnstile) return Promise.resolve();
-  scriptPromise ??= new Promise<void>((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = SCRIPT_URL;
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => {
-      scriptPromise = null;
-      reject(new Error("turnstile script"));
-    };
-    document.head.appendChild(script);
-  });
-  return scriptPromise;
-}
 
 type Props = { profileId: string; siteKey: string };
 
