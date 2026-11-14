@@ -519,6 +519,24 @@ export type Database = {
           },
         ]
       }
+      password_baselines: {
+        Row: {
+          auth_user_id: string
+          baseline: string
+          created_at: string
+        }
+        Insert: {
+          auth_user_id: string
+          baseline: string
+          created_at?: string
+        }
+        Update: {
+          auth_user_id?: string
+          baseline?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       people: {
         Row: {
           auth_user_id: string | null
@@ -750,94 +768,6 @@ export type Database = {
           },
         ]
       }
-      profile_service_modes: {
-        Row: {
-          profile_id: string
-          service_mode_id: number
-        }
-        Insert: {
-          profile_id: string
-          service_mode_id: number
-        }
-        Update: {
-          profile_id?: string
-          service_mode_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profile_service_modes_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "public_profile_cards"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "profile_service_modes_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "public_profile_detail"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "profile_service_modes_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "therapist_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profile_service_modes_service_mode_id_fkey"
-            columns: ["service_mode_id"]
-            isOneToOne: false
-            referencedRelation: "service_modes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profile_session_formats: {
-        Row: {
-          profile_id: string
-          session_format_id: number
-        }
-        Insert: {
-          profile_id: string
-          session_format_id: number
-        }
-        Update: {
-          profile_id?: string
-          session_format_id?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profile_session_formats_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "public_profile_cards"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "profile_session_formats_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "public_profile_detail"
-            referencedColumns: ["profile_id"]
-          },
-          {
-            foreignKeyName: "profile_session_formats_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "therapist_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profile_session_formats_session_format_id_fkey"
-            columns: ["session_format_id"]
-            isOneToOne: false
-            referencedRelation: "session_formats"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profile_statuses: {
         Row: {
           code: string
@@ -948,6 +878,72 @@ export type Database = {
             columns: ["rate_audience_id"]
             isOneToOne: false
             referencedRelation: "rate_audiences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_therapy_service_modes: {
+        Row: {
+          profile_id: string
+          service_mode_id: number
+          therapy_id: number
+        }
+        Insert: {
+          profile_id: string
+          service_mode_id: number
+          therapy_id: number
+        }
+        Update: {
+          profile_id?: string
+          service_mode_id?: number
+          therapy_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_therapy_service_modes_profile_id_therapy_id_fkey"
+            columns: ["profile_id", "therapy_id"]
+            isOneToOne: false
+            referencedRelation: "profile_therapies"
+            referencedColumns: ["profile_id", "therapy_id"]
+          },
+          {
+            foreignKeyName: "profile_therapy_service_modes_service_mode_id_fkey"
+            columns: ["service_mode_id"]
+            isOneToOne: false
+            referencedRelation: "service_modes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_therapy_session_formats: {
+        Row: {
+          profile_id: string
+          session_format_id: number
+          therapy_id: number
+        }
+        Insert: {
+          profile_id: string
+          session_format_id: number
+          therapy_id: number
+        }
+        Update: {
+          profile_id?: string
+          session_format_id?: number
+          therapy_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_therapy_session_formats_profile_id_therapy_id_fkey"
+            columns: ["profile_id", "therapy_id"]
+            isOneToOne: false
+            referencedRelation: "profile_therapies"
+            referencedColumns: ["profile_id", "therapy_id"]
+          },
+          {
+            foreignKeyName: "profile_therapy_session_formats_session_format_id_fkey"
+            columns: ["session_format_id"]
+            isOneToOne: false
+            referencedRelation: "session_formats"
             referencedColumns: ["id"]
           },
         ]
