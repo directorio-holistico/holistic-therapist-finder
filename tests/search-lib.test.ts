@@ -5,29 +5,30 @@ import { describe, expect, it, vi } from "vitest";
 import { formatDate, formatMoney } from "../src/lib/format";
 import { joinWithY, labelRateAudience, labelServiceMode } from "../src/lib/labels";
 import { orderTherapies, parseRatesFrom, searchProfiles, splitByGroup, toCard, type SearchCard } from "../src/lib/search";
-import { MAX_PAGE, PAGE_SIZE, buildSearchHref, locationIdOf, parseSearchQuery } from "../src/lib/search-query";
+import { MAX_PAGE, PAGE_SIZE, buildSearchHref, hrefFromFormValues, locationIdOf, parseSearchQuery } from "../src/lib/search-query";
 
 describe("parseSearchQuery", () => {
   it("reads valid values", () => {
-    expect(parseSearchQuery({ therapy: "5", country: "1", region: "7", mode: "remote", page: "3" })).toEqual({
-      therapyId: 5, countryId: 1, regionId: 7, serviceMode: "remote", page: 3,
+    expect(parseSearchQuery({ therapy: "5", country: "1", region: "7", city: "9", mode: "remote", page: "3" })).toEqual({
+      therapyId: 5, countryId: 1, regionId: 7, cityId: 9, serviceMode: "remote", page: 3,
     });
   });
 
   it("ignores anything invalid instead of failing", () => {
     expect(parseSearchQuery({ therapy: "abc", country: "-4", region: "1.5", mode: "hack", page: "0" })).toEqual({
-      therapyId: null, countryId: null, regionId: null, serviceMode: null, page: 1,
+      therapyId: null, countryId: null, regionId: null, cityId: null, serviceMode: null, page: 1,
     });
     expect(parseSearchQuery({ page: String(MAX_PAGE + 1) }).page).toBe(1);
     expect(parseSearchQuery({ therapy: "99999999999" }).therapyId).toBeNull();
-    expect(parseSearchQuery({})).toEqual({ therapyId: null, countryId: null, regionId: null, serviceMode: null, page: 1 });
+    expect(parseSearchQuery({})).toEqual({ therapyId: null, countryId: null, regionId: null, cityId: null, serviceMode: null, page: 1 });
   });
 
   it("takes the first value when a parameter is repeated", () => {
     expect(parseSearchQuery({ therapy: ["2", "9"] }).therapyId).toBe(2);
   });
 
-  it("uses the region when there is one, else the country", () => {
+  it("uses the most specific place: city, else region, else country", () => {
+    expect(locationIdOf(parseSearchQuery({ country: "1", region: "7", city: "9" }))).toBe(9);
     expect(locationIdOf(parseSearchQuery({ country: "1", region: "7" }))).toBe(7);
     expect(locationIdOf(parseSearchQuery({ country: "1" }))).toBe(1);
     expect(locationIdOf(parseSearchQuery({}))).toBeNull();
@@ -160,5 +161,23 @@ describe("searchProfiles with Todos (null therapy / place)", () => {
       p_limit: PAGE_SIZE,
       p_offset: 2 * PAGE_SIZE,
     });
+  });
+});
+
+describe("hrefFromFormValues (the form updates the search by itself)", () => {
+  const values: [string, unknown][] = [["therapy", "5"], ["country", "1"], ["region", "7"], ["city", "9"], ["mode", "remote"]];
+
+  it("keeps every filled field and drops the empty ones", () => {
+    expect(hrefFromFormValues([["therapy", ""], ["country", ""], ["mode", ""]], "therapy")).toBe("/buscar");
+    expect(hrefFromFormValues(values, "mode")).toBe("/buscar?therapy=5&country=1&region=7&city=9&mode=remote");
+  });
+
+  it("clears the levels below the one that changed", () => {
+    expect(hrefFromFormValues(values, "country")).toBe("/buscar?therapy=5&country=1&mode=remote");
+    expect(hrefFromFormValues(values, "region")).toBe("/buscar?therapy=5&country=1&region=7&mode=remote");
+  });
+
+  it("ignores unknown fields and non-text values", () => {
+    expect(hrefFromFormValues([["therapy", "5"], ["hack", "1"], ["country", new Blob(["x"])]], "therapy")).toBe("/buscar?therapy=5");
   });
 });

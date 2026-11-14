@@ -41,21 +41,25 @@ async function SearchContent({ searchParams }: { searchParams: RawParams }) {
 
   const [therapies, countries] = await Promise.all([getTherapies(), getLocationOptions(null)]);
   const regions = parsed.countryId !== null ? await getLocationOptions(parsed.countryId) : [];
+  // Cities hang under a region, so the city list only exists once a region is chosen.
+  // Las ciudades cuelgan de una región, así que la lista de ciudades existe recién con una región elegida.
+  const cities = parsed.regionId !== null && regions.some((option) => option.id === parsed.regionId) ? await getLocationOptions(parsed.regionId) : [];
 
-  // Keep only choices that exist; a region that does not belong to the chosen country is dropped.
-  // Se conservan solo opciones que existen; una región que no es del país elegido se descarta.
+  // Keep only choices that exist; a region that does not belong to the chosen country (or a city to the region) is dropped.
+  // Se conservan solo opciones que existen; una región que no es del país elegido (o una ciudad de la región) se descarta.
   const query = {
     ...parsed,
     therapyId: therapies.some((option) => option.id === parsed.therapyId) ? parsed.therapyId : null,
     countryId: countries.some((option) => option.id === parsed.countryId) ? parsed.countryId : null,
     regionId: regions.some((option) => option.id === parsed.regionId) ? parsed.regionId : null,
+    cityId: cities.some((option) => option.id === parsed.cityId) ? parsed.cityId : null,
   };
   const locationId = locationIdOf(query);
 
   return (
     <>
       <div className="mt-4">
-        <SearchForm therapies={therapies} countries={countries} regions={regions} query={query} />
+        <SearchForm therapies={therapies} countries={countries} regions={regions} cities={cities} query={query} />
       </div>
       <Results query={query} therapyId={query.therapyId} locationId={locationId} therapyName={therapies.find((o) => o.id === query.therapyId)?.name ?? ""} />
     </>
