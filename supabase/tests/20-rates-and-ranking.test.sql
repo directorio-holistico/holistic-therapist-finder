@@ -34,8 +34,9 @@ insert into public.profile_therapies (profile_id, therapy_id, session_minutes)
   from unnest(array['a1','a2','a3','c1','c2','c3','c4','c5','c6','c7']) k;
 insert into public.profile_therapies (profile_id, therapy_id, session_minutes)
   values ('20000000-0000-0000-0000-0000000007a1', (select id from public.therapies where is_active order by id limit 1 offset 1), 60);
-insert into public.profile_service_modes (profile_id, service_mode_id)
-  select ('20000000-0000-0000-0000-0000000007' || k)::uuid, (select id from public.service_modes where code = 'in_person')
+insert into public.profile_therapy_service_modes (profile_id, therapy_id, service_mode_id)
+  select ('20000000-0000-0000-0000-0000000007' || k)::uuid, (select id from public.therapies where is_active order by id limit 1),
+         (select id from public.service_modes where code = 'in_person')
   from unnest(array['a1','a2','a3','c1','c2','c3','c4','c5','c6','c7']) k;
 update public.therapist_profiles set status_id = (select id from public.profile_statuses where code = 'published')
   where id in (select ('20000000-0000-0000-0000-0000000007' || k)::uuid from unnest(array['a1','a2','c1','c2','c3','c4','c5','c6','c7']) k);
@@ -302,7 +303,9 @@ begin
     raise exception 'a payload without therapies must not confirm rates';
   end if;
   perform public.apply_revision_payload(p, ('{"therapies":[{"therapy_id":' || current_setting('test.t1')
-    || ',"rates":[{"rate_audience_id":' || current_setting('test.aud') || ',"amount":700,"currency_id":' || current_setting('test.ars') || '}]}]}')::jsonb);
+    || ',"service_modes":[' || (select id from public.service_modes where code = 'in_person')
+    || '],"session_formats":[' || (select id from public.session_formats where code = 'individual')
+    || '],"rates":[{"rate_audience_id":' || current_setting('test.aud') || ',"amount":700,"currency_id":' || current_setting('test.ars') || '}]}]}')::jsonb);
   if (select rates_confirmed_at from public.therapist_profiles where id = p) is null then
     raise exception 'a payload with therapies must confirm the rates';
   end if;

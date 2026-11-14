@@ -38,9 +38,10 @@ describe("describeRevision", () => {
     headline: "Hola",
     location_id: 79,
     languages: [1],
-    service_modes: [1],
-    session_formats: [1],
-    therapies: [{ therapy_id: 10, session_minutes: 60, rates: [{ rate_audience_id: 1, amount: 15000, currency_id: 1 }] }, { therapy_id: 99 }],
+    therapies: [
+      { therapy_id: 10, session_minutes: 60, service_modes: [1], session_formats: [1], rates: [{ rate_audience_id: 1, amount: 15000, currency_id: 1 }] },
+      { therapy_id: 99 },
+    ],
     contacts: [
       { contact_type_id: 1, value: "+54 299 555 0101", accepts_whatsapp: true },
       { contact_type_id: 2, value: "ana@example.com" },
@@ -54,8 +55,12 @@ describe("describeRevision", () => {
     expect(view).not.toBeNull();
     if (!view) return;
     expect(view.displayName).toBe("<img src=x onerror=alert(1)>Ana"); // plain text: React escapes it on screen
-    expect(view.therapies[0]).toEqual({ name: "Reiki", minutes: 60, rates: [{ audience: "Residentes", amount: 15000, currency: "ARS" }] });
-    expect(view.therapies[1]?.name).toBe("#99");
+    expect(view.therapies[0]).toEqual({
+      name: "Reiki", minutes: 60, serviceModes: ["Presencial"], sessionFormats: ["Individual"],
+      rates: [{ audience: "Residentes", amount: 15000, currency: "ARS" }],
+    });
+    // a therapy without lists (an old payload) shows empty lists, never invented ones / sin listas (payload viejo): listas vacías
+    expect(view.therapies[1]).toMatchObject({ name: "#99", serviceModes: [], sessionFormats: [] });
     expect(view.links).toEqual([
       { kind: "website", value: "javascript:alert(1)", href: null },
       { kind: "instagram", value: "ana.terapias", href: "https://www.instagram.com/ana.terapias" },

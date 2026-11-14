@@ -37,10 +37,12 @@ insert into public.profile_therapies (profile_id, therapy_id, session_minutes)
   select '20000000-0000-0000-0000-0000000000b2'::uuid, id, 45 from public.therapies order by id desc limit 1;
 insert into public.profile_languages (profile_id, language_id)
   select '20000000-0000-0000-0000-0000000000a1'::uuid, id from public.languages where code = 'es';
-insert into public.profile_service_modes (profile_id, service_mode_id)
-  select '20000000-0000-0000-0000-0000000000a1'::uuid, id from public.service_modes;
-insert into public.profile_session_formats (profile_id, session_format_id)
-  select '20000000-0000-0000-0000-0000000000b2'::uuid, id from public.session_formats where code = 'individual';
+insert into public.profile_therapy_service_modes (profile_id, therapy_id, service_mode_id)
+  select pt.profile_id, pt.therapy_id, m.id from public.profile_therapies pt cross join public.service_modes m
+  where pt.profile_id = '20000000-0000-0000-0000-0000000000a1';
+insert into public.profile_therapy_session_formats (profile_id, therapy_id, session_format_id)
+  select pt.profile_id, pt.therapy_id, f.id from public.profile_therapies pt cross join public.session_formats f
+  where pt.profile_id = '20000000-0000-0000-0000-0000000000b2' and f.code = 'individual';
 
 -- 1) Constraints and guard trigger (as owner) / Restricciones y trigger de guarda (como dueño)
 do $$
@@ -91,10 +93,10 @@ begin
     raise exception 'A must see exactly their own profile';
   end if;
   if (select count(*) from public.profile_therapies) <> 2 then raise exception 'A must see their 2 therapies'; end if;
-  if (select count(*) from public.profile_languages) <> 1 or (select count(*) from public.profile_service_modes) <> 2 then
+  if (select count(*) from public.profile_languages) <> 1 or (select count(*) from public.profile_therapy_service_modes) <> 4 then
     raise exception 'A must see only their own languages and modes';
   end if;
-  if (select count(*) from public.profile_session_formats) <> 0 then raise exception 'A must not see the formats of B'; end if;
+  if (select count(*) from public.profile_therapy_session_formats) <> 0 then raise exception 'A must not see the formats of B'; end if;
   foreach stmt in array array[
     $q$update public.therapist_profiles set headline = 'Hackeado'$q$,
     $q$update public.therapist_profiles set status_id = (select id from public.profile_statuses where code = 'suspended')$q$,
@@ -123,7 +125,7 @@ begin
      or (select person_id from public.therapist_profiles) <> '10000000-0000-0000-0000-0000000000b2' then
     raise exception 'B must see exactly their own profile';
   end if;
-  if (select count(*) from public.profile_therapies) <> 1 or (select count(*) from public.profile_session_formats) <> 1 then
+  if (select count(*) from public.profile_therapies) <> 1 or (select count(*) from public.profile_therapy_session_formats) <> 1 then
     raise exception 'B must see only their own links';
   end if;
   if (select count(*) from public.profile_languages) <> 0 then raise exception 'B must not see the languages of A'; end if;

@@ -31,8 +31,8 @@ insert into public.profile_contacts (profile_id, contact_type_id, value)
 insert into public.profile_therapies (profile_id, therapy_id, session_minutes)
   select ('20000000-0000-0000-0000-0000000001' || k)::uuid, (select id from public.therapies where is_active order by id limit 1), 60
   from unnest(array['a1','a2','a3','a4','a5','a6']) k;
-insert into public.profile_service_modes (profile_id, service_mode_id)
-  select ('20000000-0000-0000-0000-0000000001' || x.k)::uuid, m.id
+insert into public.profile_therapy_service_modes (profile_id, therapy_id, service_mode_id)
+  select ('20000000-0000-0000-0000-0000000001' || x.k)::uuid, (select id from public.therapies where is_active order by id limit 1), m.id
   from (values ('a1','in_person'), ('a2','remote'), ('a3','remote'), ('a4','in_person'), ('a4','remote'), ('a5','in_person'), ('a6','in_person'), ('a6','remote')) x(k, mode)
   join public.service_modes m on m.code = x.mode;
 update public.therapist_profiles set status_id = (select id from public.profile_statuses where code = 'published')

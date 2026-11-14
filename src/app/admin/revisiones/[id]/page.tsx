@@ -96,8 +96,6 @@ async function Detail({ params }: Props) {
           <Row label="Ciudad">{place ?? (view.locationId === null ? "Sin ciudad" : `#${view.locationId}`)}</Row>
           <Row label="Zona o barrio">{view.zone ?? "—"}</Row>
           <Row label="Empezó a atender">{view.practiceStartYear ?? "—"}</Row>
-          <Row label="Modo de atención">{view.serviceModes.join(", ") || "—"}</Row>
-          <Row label="Formato de sesión">{view.sessionFormats.join(", ") || "—"}</Row>
           <Row label="Idiomas">{view.languages.join(", ") || "—"}</Row>
           <Row label="Terapias">
             {view.therapies.length === 0 ? "—" : (
@@ -106,6 +104,7 @@ async function Detail({ params }: Props) {
                   <li key={index}>
                     <strong>{therapy.name}</strong>
                     {therapy.minutes !== null ? ` · ${therapy.minutes} min` : ""}
+                    {` · ${therapy.serviceModes.join(", ") || "sin modalidad"} · ${therapy.sessionFormats.join(", ") || "sin formato"}`}
                     {therapy.rates.map((rate) => ` · ${rate.audience}: ${formatMoney(rate.amount, rate.currency)}`).join("")}
                   </li>
                 ))}

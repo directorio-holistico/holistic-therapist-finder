@@ -39,8 +39,10 @@ export function parseAmount(raw: string): number | null {
   return Number.NaN;
 }
 
-export type TherapySlotInput = { therapyId: number | null; minutes: string; rateOwn: string; rateOther: string };
-export type TherapySlot = { therapyId: number; minutes: number | null; rateOwn: number | null; rateOther: number | null };
+// Each row carries its OWN service modes and session formats (a therapist may give one therapy in person and another remote).
+// Cada fila lleva SUS PROPIAS modalidades y formatos de sesión (un terapeuta puede dar una terapia presencial y otra a distancia).
+export type TherapySlotInput = { therapyId: number | null; minutes: string; rateOwn: string; rateOther: string; serviceModes: number[]; sessionFormats: number[] };
+export type TherapySlot = { therapyId: number; minutes: number | null; rateOwn: number | null; rateOther: number | null; serviceModes: number[]; sessionFormats: number[] };
 type SlotResult = { skip: true } | { skip: false; value: TherapySlot } | { skip: false; error: { message: string; field: string } };
 
 // One row of the therapies block: empty rows are skipped; a half filled row is an error. / Una fila del bloque de terapias.
@@ -49,8 +51,8 @@ export function readTherapySlot(slot: TherapySlotInput, index: number): SlotResu
   const own = parseAmount(slot.rateOwn);
   const other = parseAmount(slot.rateOther);
   if (slot.therapyId === null) {
-    if (minutesText === "" && own === null && other === null) return { skip: true };
-    return { skip: false, error: { message: `Terapia ${index + 1}: elegí la terapia o vaciá toda la fila (duración y tarifas).`, field: `therapyId_${index}` } };
+    if (minutesText === "" && own === null && other === null && slot.serviceModes.length === 0 && slot.sessionFormats.length === 0) return { skip: true };
+    return { skip: false, error: { message: `Terapia ${index + 1}: elegí la terapia o vaciá toda la fila (duración, tarifas, modalidad y formato).`, field: `therapyId_${index}` } };
   }
   let minutes: number | null = null;
   if (minutesText !== "") {
@@ -59,6 +61,12 @@ export function readTherapySlot(slot: TherapySlotInput, index: number): SlotResu
       return { skip: false, error: { message: `Duración: entre ${LIMITS.minMinutes} y ${LIMITS.maxMinutes} minutos.`, field: `minutes_${index}` } };
     }
   }
+  if (slot.serviceModes.length === 0) {
+    return { skip: false, error: { message: `Terapia ${index + 1}: elegí al menos una modalidad de atención (presencial o a distancia).`, field: `serviceModes_${index}` } };
+  }
+  if (slot.sessionFormats.length === 0) {
+    return { skip: false, error: { message: `Terapia ${index + 1}: elegí al menos un formato de sesión (individual o grupal).`, field: `sessionFormats_${index}` } };
+  }
   const rates: [string, number | null][] = [[`rateOwn_${index}`, own], [`rateOther_${index}`, other]];
   for (const [field, amount] of rates) {
     if (amount === null) continue;
@@ -66,7 +74,7 @@ export function readTherapySlot(slot: TherapySlotInput, index: number): SlotResu
     if (amount <= 0) return { skip: false, error: { message: "La tarifa debe ser mayor que cero. Si no querés mostrarla, dejala vacía.", field } };
     if (amount > LIMITS.maxAmount) return { skip: false, error: { message: "La tarifa es demasiado alta.", field } };
   }
-  return { skip: false, value: { therapyId: slot.therapyId, minutes, rateOwn: own, rateOther: other } };
+  return { skip: false, value: { therapyId: slot.therapyId, minutes, rateOwn: own, rateOther: other, serviceModes: slot.serviceModes, sessionFormats: slot.sessionFormats } };
 }
 
 const hasDecimals = (amount: number, minorUnits: number) => {
@@ -175,8 +183,6 @@ export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: Read
       regionId: z.number().int().positive().nullable(),
       cityName: optionalText(LIMITS.cityName, "Ciudad"),
       languages: idList("Elegí al menos un idioma de atención."),
-      serviceModes: idList("Elegí al menos un modo de atención."),
-      sessionFormats: idList("Elegí al menos un formato de sesión."),
       phone: z
         .string()
         .transform(oneLine)
@@ -204,7 +210,16 @@ export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: Read
       facebook: socialField("facebook"),
       tiktok: socialField("tiktok"),
       youtube: socialField("youtube"),
-      therapies: z.array(z.object({ therapyId: z.number().int().positive().nullable(), minutes: z.string(), rateOwn: z.string(), rateOther: z.string() })).max(MAX_THERAPIES),
+      therapies: z
+        .array(z.object({
+          therapyId: z.number().int().positive().nullable(),
+          minutes: z.string(),
+          rateOwn: z.string(),
+          rateOther: z.string(),
+          serviceModes: z.array(z.number().int().positive()).max(20, "Elegiste demasiadas opciones."),
+          sessionFormats: z.array(z.number().int().positive()).max(20, "Elegiste demasiadas opciones."),
+        }))
+        .max(MAX_THERAPIES),
       currencyOwn: z.number().int().positive().nullable(),
       currencyOther: z.number().int().positive().nullable(),
     })
@@ -291,6 +306,8 @@ export function readProfileForm(formData: FormData, maxYear: number, currencyMin
     minutes: text(formData.get(`minutes_${index}`)),
     rateOwn: text(formData.get(`rateOwn_${index}`)),
     rateOther: text(formData.get(`rateOther_${index}`)),
+    serviceModes: toIntList(formData.getAll(`serviceModes_${index}`)),
+    sessionFormats: toIntList(formData.getAll(`sessionFormats_${index}`)),
   }));
   return buildProfileFormSchema(maxYear, currencyMinorUnits).safeParse({
     displayName: text(formData.get("displayName")),
@@ -302,8 +319,6 @@ export function readProfileForm(formData: FormData, maxYear: number, currencyMin
     regionId: toInt(formData.get("regionId")),
     cityName: text(formData.get("cityName")),
     languages: toIntList(formData.getAll("languages")),
-    serviceModes: toIntList(formData.getAll("serviceModes")),
-    sessionFormats: toIntList(formData.getAll("sessionFormats")),
     phone: text(formData.get("phone")),
     phoneWhatsapp: formData.get("phoneWhatsapp") === "on",
     email: text(formData.get("email")),
@@ -327,10 +342,14 @@ export type ProfilePayload = {
   practice_start_year: number | null;
   location_id: number | null;
   languages: number[];
-  service_modes: number[];
-  session_formats: number[];
   contacts: { contact_type_id: number; value: string; accepts_whatsapp: boolean }[];
-  therapies: { therapy_id: number; session_minutes: number | null; rates: { rate_audience_id: number; amount: number; currency_id: number }[] }[];
+  therapies: {
+    therapy_id: number;
+    session_minutes: number | null;
+    service_modes: number[];
+    session_formats: number[];
+    rates: { rate_audience_id: number; amount: number; currency_id: number }[];
+  }[];
 };
 
 const unique = (ids: number[]) => [...new Set(ids)].sort((a, b) => a - b);
@@ -356,14 +375,18 @@ export function buildPayload(values: ProfileFormValues, contactTypes: ContactTyp
     practice_start_year: values.practiceStartYear,
     location_id: values.cityMissing ? null : values.cityId,
     languages: unique(values.languages),
-    service_modes: unique(values.serviceModes),
-    session_formats: unique(values.sessionFormats),
     contacts,
     therapies: values.therapies.map((slot) => {
       const rates: ProfilePayload["therapies"][number]["rates"] = [];
       if (slot.rateOwn !== null && values.currencyOwn !== null) rates.push({ rate_audience_id: audiences.own, amount: slot.rateOwn, currency_id: values.currencyOwn });
       if (slot.rateOther !== null && values.currencyOther !== null) rates.push({ rate_audience_id: audiences.other, amount: slot.rateOther, currency_id: values.currencyOther });
-      return { therapy_id: slot.therapyId, session_minutes: slot.minutes, rates };
+      return {
+        therapy_id: slot.therapyId,
+        session_minutes: slot.minutes,
+        service_modes: unique(slot.serviceModes),
+        session_formats: unique(slot.sessionFormats),
+        rates,
+      };
     }),
   };
 }
@@ -377,8 +400,6 @@ export type FormDefaults = {
   practiceStartYear: string;
   cityId: number | null;
   languages: number[];
-  serviceModes: number[];
-  sessionFormats: number[];
   phone: string;
   phoneWhatsapp: boolean;
   email: string;
@@ -391,15 +412,15 @@ export type FormDefaults = {
   currencyOwn: number | null;
   currencyOther: number | null;
 };
-export type TherapyDefaults = { therapyId: number | null; minutes: string; rateOwn: string; rateOther: string };
-export const EMPTY_THERAPY_SLOT: TherapyDefaults = { therapyId: null, minutes: "", rateOwn: "", rateOther: "" };
+export type TherapyDefaults = { therapyId: number | null; minutes: string; rateOwn: string; rateOther: string; serviceModes: number[]; sessionFormats: number[] };
+export const EMPTY_THERAPY_SLOT: TherapyDefaults = { therapyId: null, minutes: "", rateOwn: "", rateOther: "", serviceModes: [], sessionFormats: [] };
 // Always MAX_THERAPIES rows for the form: the stored ones first, then empty rows. / Siempre MAX_THERAPIES filas: primero las guardadas, luego vacías.
 export const padTherapies = (rows: TherapyDefaults[]): TherapyDefaults[] =>
   Array.from({ length: MAX_THERAPIES }, (_, index) => rows[index] ?? EMPTY_THERAPY_SLOT);
 
 export const EMPTY_DEFAULTS: FormDefaults = {
   displayName: "", headline: "", zone: "", practiceStartYear: "", cityId: null,
-  languages: [], serviceModes: [], sessionFormats: [], phone: "", phoneWhatsapp: false, email: "", website: "", instagram: "",
+  languages: [], phone: "", phoneWhatsapp: false, email: "", website: "", instagram: "",
   facebook: "", tiktok: "", youtube: "",
   therapies: Array.from({ length: MAX_THERAPIES }, () => EMPTY_THERAPY_SLOT), currencyOwn: null, currencyOther: null,
 };
@@ -411,13 +432,13 @@ const payloadSchema = z.object({
   practice_start_year: z.number().int().nullish(),
   location_id: z.number().int().nullish(),
   languages: z.array(z.number().int()).optional(),
-  service_modes: z.array(z.number().int()).optional(),
-  session_formats: z.array(z.number().int()).optional(),
   contacts: z.array(z.object({ contact_type_id: z.number().int(), value: z.string(), accepts_whatsapp: z.boolean().optional() })).optional(),
   therapies: z
     .array(z.object({
       therapy_id: z.number().int(),
       session_minutes: z.number().int().nullish(),
+      service_modes: z.array(z.number().int()).optional(),
+      session_formats: z.array(z.number().int()).optional(),
       rates: z.array(z.object({ rate_audience_id: z.number().int(), amount: z.number(), currency_id: z.number().int() })).optional(),
     }))
     .optional(),
@@ -435,6 +456,8 @@ export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeI
     minutes: row.session_minutes != null ? String(row.session_minutes) : "",
     rateOwn: rateOf(row.rates, audiences.own) ? String(rateOf(row.rates, audiences.own)?.amount) : "",
     rateOther: rateOf(row.rates, audiences.other) ? String(rateOf(row.rates, audiences.other)?.amount) : "",
+    serviceModes: row.service_modes ?? [],
+    sessionFormats: row.session_formats ?? [],
   }));
   const currencyFor = (audienceId: number) => stored.flatMap((row) => row.rates ?? []).find((rate) => rate.rate_audience_id === audienceId)?.currency_id ?? null;
   return {
@@ -444,8 +467,6 @@ export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeI
     practiceStartYear: p.practice_start_year != null ? String(p.practice_start_year) : "",
     cityId: p.location_id ?? null,
     languages: p.languages ?? base.languages,
-    serviceModes: p.service_modes ?? base.serviceModes,
-    sessionFormats: p.session_formats ?? base.sessionFormats,
     phone: contact(contactTypes.phone)?.value ?? "",
     phoneWhatsapp: contact(contactTypes.phone)?.accepts_whatsapp ?? false,
     email: contact(contactTypes.email)?.value ?? "",

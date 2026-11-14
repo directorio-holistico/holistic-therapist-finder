@@ -82,7 +82,7 @@ foreach ($t in $columnOnly) { Check "read ALL columns of $t" (Get-Status "GET" "
 # 2b) Tables where anon has ALL columns by design (every column is public); rows are limited to published profiles by RLS.
 #     select=* answers 2xx here: that is correct. Tablas donde anon tiene TODAS las columnas por diseno (todas son publicas);
 #     las filas se limitan a perfiles publicados por RLS. select=* responde 2xx: es lo correcto.
-$allColumnsPublic = @("profile_languages", "profile_service_modes", "profile_session_formats", "profile_therapies", "profile_therapy_rates")
+$allColumnsPublic = @("profile_languages", "profile_therapy_service_modes", "profile_therapy_session_formats", "profile_therapies", "profile_therapy_rates")
 foreach ($t in $allColumnsPublic) { Check "read $t (all columns public, rows by RLS)" (Get-Status "GET" "$base/${t}?select=*&limit=1") $true }
 
 # 3) Every other table: refused / Toda otra tabla: rechazada

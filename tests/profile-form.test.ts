@@ -21,8 +21,9 @@ const VALID = {
   displayName: "  Lucía   Ferrante ",
   cityId: "7",
   languages: ["1"],
-  serviceModes: ["1", "2"],
-  sessionFormats: ["1"],
+  // modes and formats belong to EACH therapy (row 0 here) / modalidades y formatos son de CADA terapia (acá la fila 0)
+  serviceModes_0: ["1", "2"],
+  sessionFormats_0: ["1"],
   phone: "+54 299 555 0101",
   therapyId_0: "10",
 };
@@ -39,8 +40,8 @@ describe("profile form", () => {
     expect(parsed.data.cityId).toBe(7);
   });
 
-  it("requires name, phone, a city and at least one language, mode and format", () => {
-    for (const missing of ["displayName", "phone", "cityId", "languages", "serviceModes", "sessionFormats", "therapyId_0"]) {
+  it("requires name, phone, a city, a language, and for the therapy a mode and a format", () => {
+    for (const missing of ["displayName", "phone", "cityId", "languages", "serviceModes_0", "sessionFormats_0", "therapyId_0"]) {
       const fields: Record<string, string | string[]> = { ...VALID };
       delete fields[missing];
       expect(readProfileForm(form(fields), YEAR).success, missing).toBe(false);
@@ -159,7 +160,7 @@ describe("facebook, tiktok and youtube", () => {
 });
 
 describe("therapies and rates", () => {
-  const withTherapies = (fields: Record<string, string>) => readProfileForm(form({ ...VALID, ...fields }), YEAR, CURRENCIES);
+  const withTherapies = (fields: Record<string, string | string[]>) => readProfileForm(form({ ...VALID, ...fields }), YEAR, CURRENCIES);
 
   it("reads amounts the way people write them", () => {
     expect(parseAmount("15000")).toBe(15000);
@@ -174,10 +175,10 @@ describe("therapies and rates", () => {
   it("needs at least one therapy and drops the empty rows", () => {
     const none = withTherapies({ therapyId_0: "" });
     expect(none.success).toBe(false);
-    const ok = withTherapies({ therapyId_1: "11", minutes_1: "60" });
+    const ok = withTherapies({ therapyId_1: "11", minutes_1: "60", serviceModes_1: ["1"], sessionFormats_1: ["2"] });
     expect(ok.success && ok.data.therapies).toEqual([
-      { therapyId: 10, minutes: null, rateOwn: null, rateOther: null },
-      { therapyId: 11, minutes: 60, rateOwn: null, rateOther: null },
+      { therapyId: 10, minutes: null, rateOwn: null, rateOther: null, serviceModes: [1, 2], sessionFormats: [1] },
+      { therapyId: 11, minutes: 60, rateOwn: null, rateOther: null, serviceModes: [1], sessionFormats: [2] },
     ]);
   });
 
@@ -186,6 +187,21 @@ describe("therapies and rates", () => {
     expect(withTherapies({ therapyId_1: "10" }).success).toBe(false);
     for (const minutes of ["4", "481", "abc", "1.5"]) expect(withTherapies({ minutes_0: minutes }).success, minutes).toBe(false);
     expect(withTherapies({ minutes_0: "5" }).success && withTherapies({ minutes_0: "480" }).success).toBe(true);
+  });
+
+  it("needs at least one mode and one format for EACH therapy, and keeps each therapy's own lists", () => {
+    const message = (fields: Record<string, string | string[]>) => {
+      const parsed = withTherapies(fields);
+      return parsed.success ? null : parsed.error.issues[0]?.message ?? "";
+    };
+    expect(message({ therapyId_1: "11" })).toMatch(/Terapia 2.*modalidad/);
+    expect(message({ therapyId_1: "11", serviceModes_1: ["1"] })).toMatch(/Terapia 2.*formato/);
+    expect(message({ therapyId_1: "11", sessionFormats_1: ["1"] })).toMatch(/Terapia 2.*modalidad/);
+    // modes ticked in a row without a therapy: the row is not empty, so it must be fixed or cleared / modalidad sin terapia: la fila no está vacía
+    expect(message({ therapyId_1: "", serviceModes_1: ["1"] })).toMatch(/Terapia 2.*elegí la terapia/);
+    // one therapy in person, another remote only / una terapia presencial, otra solo a distancia
+    const parsed = withTherapies({ therapyId_0: "10", serviceModes_0: ["1"], sessionFormats_0: ["1"], therapyId_1: "11", serviceModes_1: ["2"], sessionFormats_1: ["1", "2"] });
+    expect(parsed.success && parsed.data.therapies.map((slot) => [slot.serviceModes, slot.sessionFormats])).toEqual([[[1], [1]], [[2], [1, 2]]]);
   });
 
   it("needs a currency for any rate, and respects its decimals", () => {
@@ -201,17 +217,24 @@ describe("therapies and rates", () => {
   });
 
   it("builds the payload the database expects and refills the form from it", () => {
-    const parsed = withTherapies({ minutes_0: "60", rateOwn_0: "15.000", rateOther_0: "40", currencyOwn: "1", currencyOther: "1", therapyId_1: "11", rateOwn_1: "9000" });
+    const parsed = withTherapies({
+      minutes_0: "60", rateOwn_0: "15.000", rateOther_0: "40", currencyOwn: "1", currencyOther: "1",
+      therapyId_1: "11", rateOwn_1: "9000", serviceModes_1: ["2"], sessionFormats_1: ["2", "1", "2"],
+    });
     if (!parsed.success) throw new Error("must parse");
     const payload = buildPayload(parsed.data, TYPES, AUD);
     expect(payload.therapies).toEqual([
-      { therapy_id: 10, session_minutes: 60, rates: [{ rate_audience_id: 1, amount: 15000, currency_id: 1 }, { rate_audience_id: 2, amount: 40, currency_id: 1 }] },
-      { therapy_id: 11, session_minutes: null, rates: [{ rate_audience_id: 1, amount: 9000, currency_id: 1 }] },
+      {
+        therapy_id: 10, session_minutes: 60, service_modes: [1, 2], session_formats: [1],
+        rates: [{ rate_audience_id: 1, amount: 15000, currency_id: 1 }, { rate_audience_id: 2, amount: 40, currency_id: 1 }],
+      },
+      { therapy_id: 11, session_minutes: null, service_modes: [2], session_formats: [1, 2], rates: [{ rate_audience_id: 1, amount: 9000, currency_id: 1 }] },
     ]);
     const back = defaultsFromPayload(payload, TYPES, AUD);
     expect(back.therapies).toHaveLength(4);
-    expect(back.therapies[0]).toEqual({ therapyId: 10, minutes: "60", rateOwn: "15000", rateOther: "40" });
-    expect(back.therapies[2]).toEqual({ therapyId: null, minutes: "", rateOwn: "", rateOther: "" });
+    expect(back.therapies[0]).toEqual({ therapyId: 10, minutes: "60", rateOwn: "15000", rateOther: "40", serviceModes: [1, 2], sessionFormats: [1] });
+    expect(back.therapies[1]).toMatchObject({ therapyId: 11, serviceModes: [2], sessionFormats: [1, 2] });
+    expect(back.therapies[2]).toEqual({ therapyId: null, minutes: "", rateOwn: "", rateOther: "", serviceModes: [], sessionFormats: [] });
     expect(back.currencyOwn).toBe(1);
     expect(back.currencyOther).toBe(1);
   });
@@ -223,8 +246,10 @@ describe("payload", () => {
     if (!parsed.success) throw new Error("must parse");
     const payload = buildPayload(parsed.data, TYPES, AUD);
     expect(Object.keys(payload).sort()).toEqual([
-      "contacts", "display_name", "headline", "languages", "location_id", "practice_start_year", "service_modes", "session_formats", "therapies", "zone",
+      "contacts", "display_name", "headline", "languages", "location_id", "practice_start_year", "therapies", "zone",
     ]);
+    // the modes and formats travel INSIDE each therapy, never at the profile level / viajan DENTRO de cada terapia, nunca a nivel perfil
+    expect(Object.keys(payload.therapies[0] ?? {}).sort()).toEqual(["rates", "service_modes", "session_formats", "session_minutes", "therapy_id"]);
     expect(payload.languages).toEqual([1, 2]);
     expect(payload.contacts).toEqual([
       { contact_type_id: 1, value: "+54 299 555 0101", accepts_whatsapp: true },

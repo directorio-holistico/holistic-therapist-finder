@@ -48,14 +48,16 @@ select pg_temp.open_revision('30000000-0000-0000-0000-0000000000a1', 'a1', (
     'headline', 'Acompaño procesos de calma', 'zone', 'Centro', 'practice_start_year', 2015,
     'location_id', (select l.id from public.locations l join public.location_levels ll on ll.id = l.level_id where ll.code = 'city' order by l.id limit 1),
     'languages', (select jsonb_agg(id) from public.languages where code in ('es', 'en')),
-    'service_modes', (select jsonb_agg(id) from public.service_modes),
-    'session_formats', (select jsonb_agg(id) from public.session_formats where code = 'individual'),
     'therapies', jsonb_build_array(
       jsonb_build_object('therapy_id', (select id from public.therapies where is_active order by id limit 1), 'session_minutes', 60,
+        'service_modes', (select jsonb_agg(id) from public.service_modes),
+        'session_formats', (select jsonb_agg(id) from public.session_formats where code = 'individual'),
         'rates', jsonb_build_array(
           jsonb_build_object('rate_audience_id', (select id from public.rate_audiences where code = 'own_country'), 'amount', 15000, 'currency_id', (select id from public.currencies where code = 'ARS')),
           jsonb_build_object('rate_audience_id', (select id from public.rate_audiences where code = 'other_countries'), 'amount', 30, 'currency_id', (select id from public.currencies where code = 'USD')))),
-      jsonb_build_object('therapy_id', (select id from public.therapies where is_active order by id limit 1 offset 1))),
+      jsonb_build_object('therapy_id', (select id from public.therapies where is_active order by id limit 1 offset 1),
+        'service_modes', (select jsonb_agg(id) from public.service_modes where code = 'remote'),
+        'session_formats', (select jsonb_agg(id) from public.session_formats))),
     'contacts', jsonb_build_array(
       jsonb_build_object('contact_type_id', (select id from public.contact_types where code = 'phone'), 'value', '+54 299 555 0111', 'accepts_whatsapp', true),
       jsonb_build_object('contact_type_id', (select id from public.contact_types where code = 'email'), 'value', 'a@example.test'),
@@ -77,8 +79,8 @@ begin
     raise exception 'scalar fields were not applied';
   end if;
   if (select count(*) from public.profile_languages where profile_id = p.id) <> 2
-     or (select count(*) from public.profile_service_modes where profile_id = p.id) <> 2
-     or (select count(*) from public.profile_session_formats where profile_id = p.id) <> 1
+     or (select count(*) from public.profile_therapy_service_modes where profile_id = p.id) <> 3
+     or (select count(*) from public.profile_therapy_session_formats where profile_id = p.id) <> 3
      or (select count(*) from public.profile_therapies where profile_id = p.id) <> 2
      or (select count(*) from public.profile_therapy_rates where profile_id = p.id) <> 2
      or (select count(*) from public.profile_contacts where profile_id = p.id) <> 3 then
@@ -160,6 +162,9 @@ declare
   ars int := (select id from public.currencies where code = 'ARS');
   usd int := (select id from public.currencies where code = 'USD');
   phone int := (select id from public.contact_types where code = 'phone');
+  -- the modes and formats every therapy of a payload must carry / las modalidades y formatos que toda terapia del payload debe traer
+  opts jsonb := jsonb_build_object('service_modes', (select jsonb_agg(id) from public.service_modes where code = 'remote'),
+                                   'session_formats', (select jsonb_agg(id) from public.session_formats where code = 'individual'));
 begin
   if hidden is null then raise exception 'fixture: expected a hidden therapy'; end if;
   perform pg_temp.try_bad('headline as number', '{"headline":5}', '22023');
@@ -173,15 +178,26 @@ begin
   perform pg_temp.try_bad('country as base location', jsonb_build_object('location_id', country), '23514');
   perform pg_temp.try_bad('unknown location', '{"location_id":99999999}', '22023');
   perform pg_temp.try_bad('rate amount as text', jsonb_build_object('therapies', jsonb_build_array(jsonb_build_object('therapy_id', t1,
-    'rates', jsonb_build_array(jsonb_build_object('rate_audience_id', own, 'amount', 'x', 'currency_id', ars))))), '22023');
+    'rates', jsonb_build_array(jsonb_build_object('rate_audience_id', own, 'amount', 'x', 'currency_id', ars))) || opts)), '22023');
   perform pg_temp.try_bad('unknown contact type', '{"contacts":[{"contact_type_id":99,"value":"x"}]}', '22023');
   perform pg_temp.try_bad('published profile without phone', '{"contacts":[]}', '23514');
   perform pg_temp.try_bad('invalid phone', jsonb_build_object('contacts', jsonb_build_array(jsonb_build_object('contact_type_id', phone, 'value', 'abc'))), '23514');
   perform pg_temp.try_bad('more therapies than allowed', jsonb_build_object('therapies',
-    (select jsonb_agg(jsonb_build_object('therapy_id', id)) from (select id from public.therapies where is_active order by id limit 5) t)), '23514');
+    (select jsonb_agg(jsonb_build_object('therapy_id', id) || opts) from (select id from public.therapies where is_active order by id limit 5) t)), '23514');
+  -- each therapy needs its own non-empty modes and formats / cada terapia necesita sus modalidades y formatos no vacíos
+  perform pg_temp.try_bad('therapy without modes', jsonb_build_object('therapies', jsonb_build_array(jsonb_build_object('therapy_id', t1,
+    'session_formats', opts -> 'session_formats'))), '22023');
+  perform pg_temp.try_bad('therapy with an empty modes list', jsonb_build_object('therapies', jsonb_build_array(jsonb_build_object('therapy_id', t1,
+    'service_modes', '[]'::jsonb, 'session_formats', opts -> 'session_formats'))), '22023');
+  perform pg_temp.try_bad('therapy without formats', jsonb_build_object('therapies', jsonb_build_array(jsonb_build_object('therapy_id', t1,
+    'service_modes', opts -> 'service_modes'))), '22023');
+  perform pg_temp.try_bad('therapy with an unknown mode', jsonb_build_object('therapies', jsonb_build_array(jsonb_build_object('therapy_id', t1,
+    'service_modes', '[99999]'::jsonb, 'session_formats', opts -> 'session_formats'))), '22023');
+  perform pg_temp.try_bad('old profile-level modes key', jsonb_build_object('service_modes', opts -> 'service_modes'), '22023');
+  perform pg_temp.try_bad('old profile-level formats key', jsonb_build_object('session_formats', opts -> 'session_formats'), '22023');
   perform pg_temp.try_bad('two currencies for one audience', jsonb_build_object('therapies', jsonb_build_array(
-    jsonb_build_object('therapy_id', t1, 'rates', jsonb_build_array(jsonb_build_object('rate_audience_id', own, 'amount', 1, 'currency_id', ars))),
-    jsonb_build_object('therapy_id', t2, 'rates', jsonb_build_array(jsonb_build_object('rate_audience_id', own, 'amount', 1, 'currency_id', usd))))), '23514');
+    jsonb_build_object('therapy_id', t1, 'rates', jsonb_build_array(jsonb_build_object('rate_audience_id', own, 'amount', 1, 'currency_id', ars))) || opts,
+    jsonb_build_object('therapy_id', t2, 'rates', jsonb_build_array(jsonb_build_object('rate_audience_id', own, 'amount', 1, 'currency_id', usd))) || opts)), '23514');
 end
 $$;
 -- the pending revision of B is no longer needed / la revisión pendiente de B ya no hace falta

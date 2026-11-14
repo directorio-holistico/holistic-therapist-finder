@@ -97,8 +97,8 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
   } else {
     const [languages, modes, formats, contacts, therapies, rates] = await Promise.all([
       client.from("profile_languages").select("language_id").eq("profile_id", profile.data.id).limit(100),
-      client.from("profile_service_modes").select("service_mode_id").eq("profile_id", profile.data.id).limit(100),
-      client.from("profile_session_formats").select("session_format_id").eq("profile_id", profile.data.id).limit(100),
+      client.from("profile_therapy_service_modes").select("therapy_id, service_mode_id").eq("profile_id", profile.data.id).limit(1000),
+      client.from("profile_therapy_session_formats").select("therapy_id, session_format_id").eq("profile_id", profile.data.id).limit(1000),
       client.from("profile_contacts").select("contact_type_id, value, accepts_whatsapp").eq("profile_id", profile.data.id).limit(100),
       client.from("profile_therapies").select("therapy_id, session_minutes").eq("profile_id", profile.data.id).order("therapy_id").limit(100),
       client.from("profile_therapy_rates").select("therapy_id, rate_audience_id, amount, currency_id").eq("profile_id", profile.data.id).limit(100),
@@ -114,8 +114,6 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
       practiceStartYear: profile.data.practice_start_year != null ? String(profile.data.practice_start_year) : "",
       cityId: profile.data.location_id,
       languages: (languages.data ?? []).map((row) => row.language_id),
-      serviceModes: (modes.data ?? []).map((row) => row.service_mode_id),
-      sessionFormats: (formats.data ?? []).map((row) => row.session_format_id),
       phone: contact(contactTypes.phone)?.value ?? "",
       phoneWhatsapp: contact(contactTypes.phone)?.accepts_whatsapp ?? false,
       email: contact(contactTypes.email)?.value ?? "",
@@ -130,6 +128,8 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
           minutes: row.session_minutes != null ? String(row.session_minutes) : "",
           rateOwn: String(rateOf(row.therapy_id, audiences.own)?.amount ?? ""),
           rateOther: String(rateOf(row.therapy_id, audiences.other)?.amount ?? ""),
+          serviceModes: (modes.data ?? []).filter((item) => item.therapy_id === row.therapy_id).map((item) => item.service_mode_id),
+          sessionFormats: (formats.data ?? []).filter((item) => item.therapy_id === row.therapy_id).map((item) => item.session_format_id),
         })),
       ),
       currencyOwn: rateRows.find((row) => row.rate_audience_id === audiences.own)?.currency_id ?? null,

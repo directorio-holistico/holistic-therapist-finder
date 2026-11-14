@@ -36,8 +36,12 @@ begin
            (p_profile, (select id from public.contact_types where code = 'website'), 'https://example.test/' || p_k);
   insert into public.profile_therapies (profile_id, therapy_id, session_minutes) values (p_profile, t1, 60), (p_profile, t2, 45);
   insert into public.profile_languages (profile_id, language_id) select p_profile, id from public.languages where code in ('es', 'en');
-  insert into public.profile_service_modes (profile_id, service_mode_id) select p_profile, id from public.service_modes;
-  insert into public.profile_session_formats (profile_id, session_format_id) select p_profile, id from public.session_formats where code = 'individual';
+  -- therapy 1: both modes; therapy 2: in person only; both: individual / terapia 1: las dos modalidades; terapia 2: solo presencial
+  insert into public.profile_therapy_service_modes (profile_id, therapy_id, service_mode_id)
+    select p_profile, t1, id from public.service_modes
+    union all select p_profile, t2, id from public.service_modes where code = 'in_person';
+  insert into public.profile_therapy_session_formats (profile_id, therapy_id, session_format_id)
+    select p_profile, t, id from public.session_formats cross join (values (t1), (t2)) v(t) where code = 'individual';
   insert into public.profile_therapy_rates (profile_id, therapy_id, rate_audience_id, amount, currency_id) values
     (p_profile, t1, (select id from public.rate_audiences where code = 'own_country'), 9000, (select id from public.currencies where code = 'ARS')),
     (p_profile, t2, (select id from public.rate_audiences where code = 'own_country'), 12000, (select id from public.currencies where code = 'ARS')),
@@ -82,18 +86,18 @@ begin
   expected := array[
     'profile_contacts.contact_type_id:SELECT', 'profile_contacts.profile_id:SELECT', 'profile_contacts.value:SELECT',
     'profile_languages.language_id:SELECT', 'profile_languages.profile_id:SELECT',
-    'profile_service_modes.profile_id:SELECT', 'profile_service_modes.service_mode_id:SELECT',
-    'profile_session_formats.profile_id:SELECT', 'profile_session_formats.session_format_id:SELECT',
     'profile_therapies.profile_id:SELECT', 'profile_therapies.session_minutes:SELECT', 'profile_therapies.therapy_id:SELECT',
     'profile_therapy_rates.amount:SELECT', 'profile_therapy_rates.currency_id:SELECT', 'profile_therapy_rates.profile_id:SELECT',
     'profile_therapy_rates.rate_audience_id:SELECT', 'profile_therapy_rates.therapy_id:SELECT',
+    'profile_therapy_service_modes.profile_id:SELECT', 'profile_therapy_service_modes.service_mode_id:SELECT', 'profile_therapy_service_modes.therapy_id:SELECT',
+    'profile_therapy_session_formats.profile_id:SELECT', 'profile_therapy_session_formats.session_format_id:SELECT', 'profile_therapy_session_formats.therapy_id:SELECT',
     'therapist_profiles.approved_at:SELECT', 'therapist_profiles.display_name:SELECT', 'therapist_profiles.headline:SELECT',
     'therapist_profiles.id:SELECT', 'therapist_profiles.is_pinned:SELECT', 'therapist_profiles.location_id:SELECT',
     'therapist_profiles.photo_path:SELECT', 'therapist_profiles.practice_start_year:SELECT',
     'therapist_profiles.rates_confirmed_at:SELECT', 'therapist_profiles.zone:SELECT'];
   -- column grants that belong to table-level grants (the catalogs and views) are listed by the table-level view of the standard
-  got := array(select g from unnest(got) g where split_part(g, '.', 1) = any (array['profile_contacts', 'profile_languages', 'profile_service_modes',
-    'profile_session_formats', 'profile_therapies', 'profile_therapy_rates', 'therapist_profiles']));
+  got := array(select g from unnest(got) g where split_part(g, '.', 1) = any (array['profile_contacts', 'profile_languages', 'profile_therapy_service_modes',
+    'profile_therapy_session_formats', 'profile_therapies', 'profile_therapy_rates', 'therapist_profiles']));
   if got is distinct from expected then
     raise exception 'anon column grants differ from the written list: %', (select array_agg(x) from (select unnest(got) except select unnest(expected) union all select unnest(expected) except select unnest(got)) q(x));
   end if;
@@ -217,7 +221,7 @@ begin
 
   -- child tables: rows of published profiles only / hijas: solo filas de perfiles publicados
   if (select count(*) from public.profile_therapies) <> 2 or (select count(*) from public.profile_languages) <> 2
-     or (select count(*) from public.profile_service_modes) <> 2 or (select count(*) from public.profile_session_formats) <> 1
+     or (select count(*) from public.profile_therapy_service_modes) <> 3 or (select count(*) from public.profile_therapy_session_formats) <> 2
      or (select count(*) from public.profile_therapy_rates) <> 3 then
     raise exception 'child tables expose more than the published profile';
   end if;
@@ -236,7 +240,7 @@ $$;
 do $$
 declare stmt text; denied boolean; t text;
 begin
-  foreach t in array array['therapist_profiles', 'profile_therapies', 'profile_languages', 'profile_service_modes', 'profile_session_formats', 'profile_therapy_rates', 'profile_contacts'] loop
+  foreach t in array array['therapist_profiles', 'profile_therapies', 'profile_languages', 'profile_therapy_service_modes', 'profile_therapy_session_formats', 'profile_therapy_rates', 'profile_contacts'] loop
     foreach stmt in array array[format('delete from public.%I', t), format('update public.%I set profile_id = profile_id', t)] loop
       if t like 'therapist%' and stmt like 'update%' then stmt := 'update public.therapist_profiles set id = id'; end if;
       denied := false;

@@ -158,7 +158,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
       <section className="grid gap-4" aria-labelledby="sec-terapias">
         <h2 id="sec-terapias" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tus terapias y tarifas</h2>
         <p className={HELP}>
-          Elegí hasta {defaults.therapies.length} terapias. La duración y las tarifas son opcionales. Escribí solo números, por ejemplo 15000. &quot;Locales&quot; son quienes viven en el mismo país donde atendés. No prometas curas.
+          Elegí hasta {defaults.therapies.length} terapias. Para cada una marcá cómo la das: al menos una modalidad (presencial o a distancia) y un formato (individual o grupal). La duración y las tarifas son opcionales. Escribí solo números, por ejemplo 15000. &quot;Locales&quot; son quienes viven en el mismo país donde atendés. No prometas curas.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           {([["currencyOwn", "own_country", defaults.currencyOwn], ["currencyOther", "other_countries", defaults.currencyOther]] as const).map(([name, audience, current]) => (
@@ -181,6 +181,8 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
                 {catalogs.therapies.map((therapy) => <option key={therapy.id} value={therapy.id}>{therapy.name}</option>)}
               </select>
             </div>
+            <CheckGroup legend="Modo de atención de esta terapia" name={`serviceModes_${index}`} options={catalogs.serviceModes} selected={slot.serviceModes} label={labelServiceMode} />
+            <CheckGroup legend="Formato de sesión de esta terapia" name={`sessionFormats_${index}`} options={catalogs.sessionFormats} selected={slot.sessionFormats} label={labelSessionFormat} />
             <div className="grid gap-1">
               <label htmlFor={`minutes_${index}`} className={LABEL}>Duración de la sesión, en minutos (opcional)</label>
               <input id={`minutes_${index}`} name={`minutes_${index}`} type="text" inputMode="numeric" maxLength={3} autoComplete={NO_AUTOFILL} defaultValue={slot.minutes}
@@ -203,9 +205,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
       </section>
 
       <section className="grid gap-4" aria-labelledby="sec-atencion">
-        <h2 id="sec-atencion" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Cómo atendés</h2>
-        <CheckGroup legend="Modo de atención" name="serviceModes" options={catalogs.serviceModes} selected={defaults.serviceModes} label={labelServiceMode} />
-        <CheckGroup legend="Formato de sesión" name="sessionFormats" options={catalogs.sessionFormats} selected={defaults.sessionFormats} label={labelSessionFormat} />
+        <h2 id="sec-atencion" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Idiomas</h2>
         <CheckGroup legend="Idiomas de atención" name="languages" options={catalogs.languages} selected={defaults.languages} label={labelLanguage} />
       </section>
 

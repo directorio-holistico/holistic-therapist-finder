@@ -74,11 +74,13 @@ begin
     insert into public.profile_therapies (profile_id, therapy_id, session_minutes) values (prof, lnt, 60), (prof, second, 45);
     insert into public.profile_languages (profile_id, language_id)
       select prof, g.id from public.languages g where g.code = any (string_to_array(d.langs, ','));
-    insert into public.profile_service_modes (profile_id, service_mode_id)
-      select prof, m.id from public.service_modes m
-      where (m.code = 'in_person' and d.in_person) or (m.code = 'remote' and d.remote);
-    insert into public.profile_session_formats (profile_id, session_format_id)
-      select prof, f.id from public.session_formats f where f.code = 'individual' or (f.code = 'group' and d.grp);
+    -- the demo gives the same modes and formats to both of its therapies / la demo da las mismas modalidades y formatos a sus dos terapias
+    insert into public.profile_therapy_service_modes (profile_id, therapy_id, service_mode_id)
+      select prof, pt.therapy_id, m.id from public.profile_therapies pt cross join public.service_modes m
+      where pt.profile_id = prof and ((m.code = 'in_person' and d.in_person) or (m.code = 'remote' and d.remote));
+    insert into public.profile_therapy_session_formats (profile_id, therapy_id, session_format_id)
+      select prof, pt.therapy_id, f.id from public.profile_therapies pt cross join public.session_formats f
+      where pt.profile_id = prof and (f.code = 'individual' or (f.code = 'group' and d.grp));
 
     if d.prices <> 'none' then
       insert into public.profile_therapy_rates (profile_id, therapy_id, rate_audience_id, amount, currency_id) values

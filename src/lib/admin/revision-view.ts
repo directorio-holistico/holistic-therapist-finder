@@ -23,7 +23,7 @@ export type ViewLookups = {
 export type LinkKind = "website" | "instagram" | "facebook" | "tiktok" | "youtube";
 export type ContactLink = { kind: LinkKind; value: string; href: string | null };
 export type RateView = { audience: string; amount: number; currency: string };
-export type TherapyView = { name: string; minutes: number | null; rates: RateView[] };
+export type TherapyView = { name: string; minutes: number | null; serviceModes: string[]; sessionFormats: string[]; rates: RateView[] };
 
 export type RevisionView = {
   displayName: string | null;
@@ -32,8 +32,6 @@ export type RevisionView = {
   practiceStartYear: number | null;
   locationId: number | null;
   languages: string[];
-  serviceModes: string[];
-  sessionFormats: string[];
   therapies: TherapyView[];
   hasPhone: boolean;
   phoneWhatsapp: boolean;
@@ -48,13 +46,13 @@ const payloadSchema = z.looseObject({
   practice_start_year: z.number().int().nullish(),
   location_id: z.number().int().nullish(),
   languages: z.array(z.number().int()).optional(),
-  service_modes: z.array(z.number().int()).optional(),
-  session_formats: z.array(z.number().int()).optional(),
   contacts: z.array(z.looseObject({ contact_type_id: z.number().int(), value: z.string(), accepts_whatsapp: z.boolean().optional() })).optional(),
   therapies: z
     .array(z.looseObject({
       therapy_id: z.number().int(),
       session_minutes: z.number().int().nullish(),
+      service_modes: z.array(z.number().int()).optional(),
+      session_formats: z.array(z.number().int()).optional(),
       rates: z.array(z.looseObject({ rate_audience_id: z.number().int(), amount: z.number(), currency_id: z.number().int() })).optional(),
     }))
     .optional(),
@@ -101,11 +99,11 @@ export function describeRevision(payload: unknown, lookups: ViewLookups): Revisi
     practiceStartYear: p.practice_start_year ?? null,
     locationId: p.location_id ?? null,
     languages: names(p.languages, lookups.languages),
-    serviceModes: names(p.service_modes, lookups.serviceModes),
-    sessionFormats: names(p.session_formats, lookups.sessionFormats),
     therapies: (p.therapies ?? []).map((therapy) => ({
       name: lookups.therapies.get(therapy.therapy_id) ?? `#${therapy.therapy_id}`,
       minutes: therapy.session_minutes ?? null,
+      serviceModes: names(therapy.service_modes, lookups.serviceModes),
+      sessionFormats: names(therapy.session_formats, lookups.sessionFormats),
       rates: (therapy.rates ?? []).map((rate) => ({
         audience: lookups.audiences.get(rate.rate_audience_id) ?? `#${rate.rate_audience_id}`,
         amount: rate.amount,
