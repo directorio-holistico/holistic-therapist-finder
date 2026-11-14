@@ -156,8 +156,6 @@ declare
   q text; failed int := 0;
 begin
   foreach q in array array[
-    'select * from public.search_profiles(null, %2$s)',
-    'select * from public.search_profiles(%1$s, null)',
     'select * from public.search_profiles(-1, %2$s)',
     'select * from public.search_profiles(%1$s, -1)',
     'select * from public.search_profiles(%1$s, %2$s, ''inventado'')',
@@ -173,7 +171,7 @@ begin
     exception when sqlstate '22023' then failed := failed + 1;
     end;
   end loop;
-  if failed <> 11 then raise exception 'expected 11 rejections, got %', failed; end if;
+  if failed <> 9 then raise exception 'expected 9 rejections, got %', failed; end if;
 end $$;
 
 -- anon cannot read or write the counters / anon no lee ni escribe los contadores

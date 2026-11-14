@@ -16,7 +16,7 @@ import { SearchForm } from "./search-form";
 
 export const metadata: Metadata = {
   title: "Buscar terapeutas",
-  description: "Elegí una terapia y una zona para ver terapeutas holísticos y cómo contactarlos.",
+  description: "Mirá todos los terapeutas holísticos o filtrá por terapia, zona y modo de atención.",
 };
 
 type RawParams = Promise<Record<string, string | string[] | undefined>>;
@@ -57,17 +57,15 @@ async function SearchContent({ searchParams }: { searchParams: RawParams }) {
       <div className="mt-4">
         <SearchForm therapies={therapies} countries={countries} regions={regions} query={query} />
       </div>
-      {query.therapyId !== null && locationId !== null ? (
-        <Results query={query} therapyId={query.therapyId} locationId={locationId} therapyName={therapies.find((o) => o.id === query.therapyId)?.name ?? ""} />
-      ) : null}
+      <Results query={query} therapyId={query.therapyId} locationId={locationId} therapyName={therapies.find((o) => o.id === query.therapyId)?.name ?? ""} />
     </>
   );
 }
 
 type ResultsProps = {
   query: ReturnType<typeof parseSearchQuery>;
-  therapyId: number;
-  locationId: number;
+  therapyId: number | null;
+  locationId: number | null;
   therapyName: string;
 };
 
@@ -84,13 +82,25 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
     // Only the first page of a search that returns nothing is unmet demand; the database re-checks it.
     // Solo la primera página de una búsqueda sin nada es demanda no cubierta; la base lo vuelve a comprobar.
     if (query.page === 1) {
-      await logUnmetSearch(client, { therapyId, locationId, serviceMode: query.serviceMode });
+      // Only a search with a specific therapy and place is unmet demand; with "Todos" there is nothing specific to count.
+      // Solo una búsqueda con terapia y lugar concretos es demanda no cubierta; con "Todos" no hay nada concreto que contar.
+      if (therapyId !== null && locationId !== null) {
+        await logUnmetSearch(client, { therapyId, locationId, serviceMode: query.serviceMode });
+        return (
+          <section aria-labelledby="results-title" className="mt-8">
+            <h2 id="results-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Sin resultados</h2>
+            <p className="mt-2 text-zinc-800 dark:text-zinc-200">
+              Todavía no hay terapeutas de {therapyName} para esa zona. Anotamos tu búsqueda, sin datos personales, para saber
+              dónde hace falta. Podés probar con todo el país, con atención a distancia o con «Todos» en terapia o país.
+            </p>
+          </section>
+        );
+      }
       return (
         <section aria-labelledby="results-title" className="mt-8">
           <h2 id="results-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Sin resultados</h2>
           <p className="mt-2 text-zinc-800 dark:text-zinc-200">
-            Todavía no hay terapeutas de {therapyName} para esa zona. Anotamos tu búsqueda, sin datos personales, para saber
-            dónde hace falta. Podés probar con todo el país o con atención a distancia.
+            Todavía no hay terapeutas con esos filtros. Probá con otra terapia, otro país o sin elegir el modo de atención.
           </p>
         </section>
       );

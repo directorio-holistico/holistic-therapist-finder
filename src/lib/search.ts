@@ -115,12 +115,18 @@ export function splitByGroup(cards: readonly SearchCard[]): { group: number; car
   return groups;
 }
 
-export type SearchInput = { therapyId: number; locationId: number; serviceMode: ServiceModeCode | null; page: number };
+// therapyId / locationId null = "Todos" (any therapy / anywhere). The database accepts both as optional.
+// therapyId / locationId null = "Todos" (cualquier terapia / cualquier lugar). La base acepta ambos como opcionales.
+export type SearchInput = { therapyId: number | null; locationId: number | null; serviceMode: ServiceModeCode | null; page: number };
+
+// Unmet demand is only recorded for a search with a specific therapy AND a specific place.
+// La demanda no cubierta solo se registra con una terapia Y un lugar concretos.
+export type UnmetSearchInput = { therapyId: number; locationId: number; serviceMode: ServiceModeCode | null };
 
 export async function searchProfiles(client: Client, input: SearchInput): Promise<SearchPage> {
   const { data, error } = await client.rpc("search_profiles", {
-    p_therapy_id: input.therapyId,
-    p_location_id: input.locationId,
+    p_therapy_id: input.therapyId ?? undefined,
+    p_location_id: input.locationId ?? undefined,
     p_service_mode: input.serviceMode ?? undefined,
     p_limit: PAGE_SIZE,
     p_offset: (input.page - 1) * PAGE_SIZE,
@@ -134,7 +140,7 @@ export async function searchProfiles(client: Client, input: SearchInput): Promis
 
 // Best effort: the database counts the search only if it truly has no result. A failure here never breaks the page.
 // Mejor esfuerzo: la base cuenta la búsqueda solo si de verdad no tiene resultado. Un fallo acá nunca rompe la página.
-export async function logUnmetSearch(client: Client, input: Omit<SearchInput, "page">): Promise<void> {
+export async function logUnmetSearch(client: Client, input: UnmetSearchInput): Promise<void> {
   try {
     await client.rpc("log_search", {
       p_therapy_id: input.therapyId,

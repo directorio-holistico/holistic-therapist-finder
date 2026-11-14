@@ -20,8 +20,8 @@ export function SearchForm({ therapies, countries, regions, query }: Props) {
     <form action="/buscar" method="get" className="grid gap-4">
       <div>
         <label htmlFor="therapy" className={labelClass}>Terapia</label>
-        <select id="therapy" name="therapy" required defaultValue={query.therapyId ?? ""} className={fieldClass}>
-          <option value="" disabled>Elegí una terapia</option>
+        <select id="therapy" name="therapy" defaultValue={query.therapyId ?? ""} className={fieldClass}>
+          <option value="">Todas las terapias</option>
           {therapies.map((option) => (
             <option key={option.id} value={option.id}>{option.name}</option>
           ))}
@@ -30,8 +30,8 @@ export function SearchForm({ therapies, countries, regions, query }: Props) {
 
       <div>
         <label htmlFor="country" className={labelClass}>País</label>
-        <select id="country" name="country" required defaultValue={query.countryId ?? ""} className={fieldClass}>
-          <option value="" disabled>Elegí un país</option>
+        <select id="country" name="country" defaultValue={query.countryId ?? ""} className={fieldClass}>
+          <option value="">Todos los países</option>
           {countries.map((option) => (
             <option key={option.id} value={option.id}>{option.name}</option>
           ))}

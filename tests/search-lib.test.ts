@@ -1,11 +1,11 @@
 // Search pieces that need no network: reading the URL, building links, formatting, turning rows into cards.
 // Piezas de la búsqueda que no necesitan red: leer la URL, armar enlaces, formatear, convertir filas en tarjetas.
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { formatDate, formatMoney } from "../src/lib/format";
 import { joinWithY, labelRateAudience, labelServiceMode } from "../src/lib/labels";
-import { orderTherapies, parseRatesFrom, splitByGroup, toCard, type SearchCard } from "../src/lib/search";
-import { MAX_PAGE, buildSearchHref, locationIdOf, parseSearchQuery } from "../src/lib/search-query";
+import { orderTherapies, parseRatesFrom, searchProfiles, splitByGroup, toCard, type SearchCard } from "../src/lib/search";
+import { MAX_PAGE, PAGE_SIZE, buildSearchHref, locationIdOf, parseSearchQuery } from "../src/lib/search-query";
 
 describe("parseSearchQuery", () => {
   it("reads valid values", () => {
@@ -133,5 +133,32 @@ describe("joinWithY", () => {
     expect(joinWithY(["Individual", "Grupal"])).toBe("Individual y grupal");
     expect(joinWithY(["Presencial"])).toBe("Presencial");
     expect(joinWithY([])).toBe("");
+  });
+});
+
+describe("searchProfiles with Todos (null therapy / place)", () => {
+  it("sends no therapy and no place to the database when both are Todos", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+    const result = await searchProfiles({ rpc } as never, { therapyId: null, locationId: null, serviceMode: null, page: 1 });
+    expect(rpc).toHaveBeenCalledWith("search_profiles", {
+      p_therapy_id: undefined,
+      p_location_id: undefined,
+      p_service_mode: undefined,
+      p_limit: PAGE_SIZE,
+      p_offset: 0,
+    });
+    expect(result).toEqual({ cards: [], total: 0 });
+  });
+
+  it("keeps the chosen therapy and mode when only the place is Todos", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
+    await searchProfiles({ rpc } as never, { therapyId: 24, locationId: null, serviceMode: "remote", page: 3 });
+    expect(rpc).toHaveBeenCalledWith("search_profiles", {
+      p_therapy_id: 24,
+      p_location_id: undefined,
+      p_service_mode: "remote",
+      p_limit: PAGE_SIZE,
+      p_offset: 2 * PAGE_SIZE,
+    });
   });
 });

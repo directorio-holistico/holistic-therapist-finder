@@ -1640,10 +1640,10 @@ export type Database = {
       search_profiles: {
         Args: {
           p_limit?: number
-          p_location_id: number
+          p_location_id?: number
           p_offset?: number
           p_service_mode?: string
-          p_therapy_id: number
+          p_therapy_id?: number
         }
         Returns: {
           approved_at: string
