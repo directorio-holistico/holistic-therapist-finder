@@ -1,6 +1,7 @@
 // One result. The contact data is NOT here: it is shown only through the contact reveal (later commit).
 // Un resultado. Los datos de contacto NO están acá: se muestran solo con la revelación de contacto (commit posterior).
 
+import Link from "next/link";
 import { formatDate, formatMoney } from "@/lib/format";
 import { joinWithY, labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
 import type { SearchCard } from "@/lib/search";
@@ -52,6 +53,15 @@ export function ProfileCard({ card }: { card: SearchCard }) {
       <div className="mt-2">
         <RatesLine card={card} />
       </div>
+      <p className="mt-3">
+        <Link
+          className="inline-block rounded-md border border-zinc-900 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          href={`/terapeuta/${card.profileId}`}
+          aria-label={`Ver perfil de ${card.displayName}`}
+        >
+          Ver perfil
+        </Link>
+      </p>
     </article>
   );
 }
