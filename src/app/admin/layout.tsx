@@ -10,6 +10,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <nav aria-label="Administración" className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-zinc-300 pb-3 dark:border-zinc-700">
         <Link href="/admin" className="font-semibold text-zinc-900 dark:text-zinc-100">Administración</Link>
         <Link href="/admin/revisiones" className="underline">Revisiones</Link>
+        <Link href="/admin/denuncias" className="underline">Denuncias</Link>
       </nav>
       {children}
     </div>

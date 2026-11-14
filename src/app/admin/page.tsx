@@ -23,12 +23,34 @@ async function Summary() {
   );
 }
 
+async function ReportsSummary() {
+  const { supabase } = await requireAdmin();
+  const open = await supabase.from("report_statuses").select("id").eq("code", "open").maybeSingle();
+  if (open.error || !open.data) throw new Error("Could not read the report statuses / No se pudieron leer los estados de denuncias");
+  const count = await supabase.from("reports").select("id", { count: "exact", head: true }).eq("status_id", open.data.id);
+  if (count.error) throw new Error(`Could not count the reports / No se pudieron contar las denuncias: ${count.error.message}`);
+  return (
+    <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
+      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Denuncias de perfiles</h2>
+      <p className="mt-1 text-zinc-700 dark:text-zinc-300">
+        {count.count === 0 ? "No hay denuncias abiertas." : `Abiertas: ${count.count}.`}
+      </p>
+      <Link href="/admin/denuncias" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
+        Ver denuncias
+      </Link>
+    </section>
+  );
+}
+
 export default function AdminHome() {
   return (
     <main>
       <h1 className="mt-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Administración</h1>
       <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
         <Summary />
+      </Suspense>
+      <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
+        <ReportsSummary />
       </Suspense>
     </main>
   );
