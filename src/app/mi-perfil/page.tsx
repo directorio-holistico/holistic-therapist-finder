@@ -6,6 +6,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { requirePassword } from "@/lib/auth/password-gate";
 import { formatDate } from "@/lib/format";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 import { signOut } from "./actions";
@@ -29,6 +30,7 @@ async function Account() {
   // getUser() valida el token con el servidor de autenticación; getSession() solo confiaría en la cookie.
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
+  await requirePassword(supabase);
 
   // An administrator can read every row of people and therapist_profiles: filter by the logged-in person.
   // Un administrador puede leer todas las filas de people y therapist_profiles: se filtra por la persona ingresada.
@@ -64,7 +66,8 @@ async function Account() {
           <Link href="/mi-perfil/editar" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">Editar mi perfil</Link>
         </section>
       )}
-      <form action={signOut} className="mt-6">
+      <p className="mt-6 text-sm"><Link className="underline" href="/mi-perfil/contrasena">Cambiar mi contraseña</Link></p>
+      <form action={signOut} className="mt-4">
         <button type="submit" className="rounded-md border border-zinc-400 px-4 py-2 text-zinc-900 dark:text-zinc-100">Salir</button>
       </form>
     </>

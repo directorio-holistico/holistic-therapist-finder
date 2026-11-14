@@ -1550,6 +1550,7 @@ export type Database = {
       }
       confirm_my_rates: { Args: never; Returns: undefined }
       current_person_id: { Args: never; Returns: string }
+      current_user_has_password: { Args: never; Returns: boolean }
       discard_revision: { Args: { p_revision_id: string }; Returns: undefined }
       erase_therapist: {
         Args: {

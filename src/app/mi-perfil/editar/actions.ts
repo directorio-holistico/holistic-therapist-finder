@@ -6,6 +6,7 @@
 // una revisión aprobada (paso de moderación). Todo se lee con la sesión del propio terapeuta (RLS).
 
 import { redirect } from "next/navigation";
+import { requirePassword } from "@/lib/auth/password-gate";
 import { listFormCatalogs } from "@/lib/catalogs";
 import { buildPayload, firstIssue, readProfileForm } from "@/lib/profile-form";
 import { audienceIds, contactTypeIds } from "@/lib/profile-load";
@@ -25,6 +26,7 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
+  await requirePassword(supabase);
 
   // The catalogs come first: the currencies decide how many decimals a rate may have. / Primero los catálogos: las monedas deciden los decimales.
   const catalogs = await listFormCatalogs(supabase);

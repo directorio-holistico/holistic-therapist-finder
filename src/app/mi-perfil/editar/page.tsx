@@ -6,6 +6,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { requirePassword } from "@/lib/auth/password-gate";
 import { loadProfileEditor } from "@/lib/profile-load";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 import { ProfileForm } from "./profile-form";
@@ -17,6 +18,7 @@ async function Editor() {
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
+  await requirePassword(supabase);
   const data = await loadProfileEditor(supabase, auth.user.id);
 
   if (data.kind === "no-account") redirect("/mi-perfil/alta");

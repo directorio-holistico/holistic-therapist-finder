@@ -48,6 +48,8 @@ create table if not exists auth.users (
   id uuid primary key,
   email text,
   email_confirmed_at timestamptz,
+  -- like the real table: empty text = never set a password (a login created by email link) / como la real: vacío = nunca puso contraseña
+  encrypted_password text not null default '',
   created_at timestamptz not null default now()
 );
 

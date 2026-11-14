@@ -7,6 +7,7 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
+import { requirePassword } from "@/lib/auth/password-gate";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 
 export async function requireAdmin() {
@@ -15,6 +16,7 @@ export async function requireAdmin() {
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
+  await requirePassword(supabase);
   const { data: isAdmin, error } = await supabase.rpc("is_admin");
   if (error || isAdmin !== true) notFound();
   return { supabase, userId: auth.user.id };

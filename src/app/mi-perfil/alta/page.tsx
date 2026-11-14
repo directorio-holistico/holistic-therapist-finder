@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { LegalReviewNotice } from "@/components/legal-document";
+import { requirePassword } from "@/lib/auth/password-gate";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 import { RegisterForm } from "./register-form";
 
@@ -16,6 +17,7 @@ async function Gate() {
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
+  await requirePassword(supabase);
   const { data: person, error } = await supabase.from("people").select("id").eq("auth_user_id", auth.user.id).maybeSingle();
   if (error) throw new Error(`Could not read the account / No se pudo leer la cuenta: ${error.message}`);
   // Only a person who already HAS a profile goes back: a person without one (for example an administrator) can complete the sign-up.

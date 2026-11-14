@@ -6,6 +6,7 @@
 // transacción). La identidad sale de la sesión en la base, nunca del formulario.
 
 import { redirect } from "next/navigation";
+import { requirePassword } from "@/lib/auth/password-gate";
 import { buildAcceptances, readRegistrationForm, registrationErrorMessage } from "@/lib/registration";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 
@@ -20,6 +21,7 @@ export async function registerTherapist(_previous: RegisterState, formData: Form
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
+  await requirePassword(supabase);
 
   const { error } = await supabase.rpc("register_therapist", {
     p_full_name: parsed.data.fullName,
