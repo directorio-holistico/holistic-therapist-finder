@@ -37,14 +37,15 @@ async function Detail({ params }: Props) {
   const row = revision.data;
 
   // No joins under RLS: each table on its own. / Sin joins bajo RLS: cada tabla por separado.
-  const [status, profile, me, request, lookups] = await Promise.all([
+  const [status, profile, me, request, lookups, selfSetting] = await Promise.all([
     supabase.from("revision_statuses").select("code").eq("id", row.status_id).maybeSingle(),
     supabase.from("therapist_profiles").select("status_id, person_id").eq("id", row.profile_id).maybeSingle(),
     supabase.from("people").select("id").eq("auth_user_id", userId).maybeSingle(),
     supabase.from("location_requests").select("city_name, region_id").eq("profile_id", row.profile_id).is("resolved_at", null).maybeSingle(),
     loadViewLookups(supabase),
+    supabase.from("app_settings").select("value").eq("key", "moderation_allow_self_approval").maybeSingle(),
   ]);
-  for (const result of [status, profile, me, request]) if (result.error) throw new Error(`Could not read the revision data / No se pudieron leer los datos: ${result.error.message}`);
+  for (const result of [status, profile, me, request, selfSetting]) if (result.error) throw new Error(`Could not read the revision data / No se pudieron leer los datos: ${result.error.message}`);
   const profileStatus = profile.data
     ? await supabase.from("profile_statuses").select("code").eq("id", profile.data.status_id).maybeSingle()
     : { data: null, error: null };
@@ -56,9 +57,12 @@ async function Detail({ params }: Props) {
 
   const isPending = status.data?.code === "pending_review";
   const isOwn = profile.data !== null && me.data !== null && profile.data.person_id === me.data.id;
+  // The database decides (approve_revision re-checks the setting); the page only mirrors it so the button is not disabled for nothing.
+  // La base decide (approve_revision vuelve a revisar el ajuste); la página solo lo refleja para no desactivar el botón en vano.
+  const selfApprovalOn = selfSetting.data?.value === true;
   const whyNot = !isPending
     ? "Esta revisión ya no está pendiente."
-    : isOwn
+    : isOwn && !selfApprovalOn
       ? "Es tu propio perfil: no podés aprobarlo (sí rechazarlo). Hace falta otra persona administradora."
       : !facts
         ? "El contenido no tiene el formato esperado: rechazala."
@@ -74,6 +78,11 @@ async function Detail({ params }: Props) {
         {profileStatus.data?.code === "unpublished" ? " · primera aprobación: el perfil se publica" : ""}
       </p>
 
+      {isOwn && selfApprovalOn && (
+        <section role="note" className="mt-4 rounded-md border border-amber-500 bg-amber-50 p-3 text-amber-900">
+          <p>Autoaprobación activada (<code>moderation_allow_self_approval</code>): podés aprobar tu propio perfil. Es solo para pruebas; desactivala después.</p>
+        </section>
+      )}
       {row.flagged_terms.length > 0 && (
         <section role="note" className="mt-4 rounded-md border border-amber-500 bg-amber-50 p-3 text-amber-900">
           <h2 className="font-semibold">Palabras marcadas (posibles promesas de cura)</h2>
