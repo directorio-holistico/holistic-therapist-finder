@@ -90,10 +90,32 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
   const audiences = audienceIds(catalogs);
   if (!audiences) fail("rate audiences / audiencias de tarifa", "own_country and other_countries must exist / deben existir");
 
-  // Start from the live profile; a draft in progress replaces it. / Se parte del perfil vigente; un borrador en curso lo reemplaza.
+  // With no open revision, the latest decision decides where the form starts: if it was a REJECTION, the therapist corrects that same
+  // proposal (otherwise a profile that was never approved would open empty and everything typed would look lost).
+  // Sin revisión abierta, la última decisión define de dónde parte el formulario: si fue un RECHAZO, el terapeuta corrige esa misma
+  // propuesta (si no, un perfil que nunca fue aprobado se abriría vacío y parecería que se perdió todo lo cargado).
+  let rejectedPayload: unknown = null;
+  if (!open.data) {
+    const decided = await client
+      .from("profile_revisions")
+      .select("payload, rejection_reason")
+      .eq("profile_id", profile.data.id)
+      .not("decided_at", "is", null)
+      .order("decided_at", { ascending: false })
+      .limit(1);
+    if (decided.error) fail("the last decision / la última decisión", decided.error.message);
+    const latest = decided.data?.[0];
+    if (latest && latest.rejection_reason !== null) rejectedPayload = latest.payload;
+  }
+
+  // Start from the live profile; a draft in progress (or the last rejected proposal) replaces it.
+  // Se parte del perfil vigente; un borrador en curso (o la última propuesta rechazada) lo reemplaza.
   let defaults: FormDefaults;
-  if (open.data) {
-    defaults = defaultsFromPayload(open.data.payload, contactTypes, audiences, { ...EMPTY_DEFAULTS, displayName: profile.data.display_name ?? "" });
+  if (open.data || rejectedPayload !== null) {
+    defaults = defaultsFromPayload(open.data ? open.data.payload : rejectedPayload, contactTypes, audiences, {
+      ...EMPTY_DEFAULTS,
+      displayName: profile.data.display_name ?? "",
+    });
   } else {
     const [languages, modes, formats, contacts, therapies, rates] = await Promise.all([
       client.from("profile_languages").select("language_id").eq("profile_id", profile.data.id).limit(100),
@@ -164,6 +186,6 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
     initialCountryId: region?.parentId ?? null,
     initialRegionId: regionId,
     missingCity,
-    lastRejection: open.data ? (rejected.data?.[0]?.rejection_reason ?? null) : null,
+    lastRejection: open.data || rejectedPayload !== null ? (rejected.data?.[0]?.rejection_reason ?? null) : null,
   };
 }
