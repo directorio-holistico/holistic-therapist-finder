@@ -19,6 +19,14 @@ export async function setPassword(_previous: PasswordState, formData: FormData):
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
 
+  // First remember the fingerprint of the CURRENT hash: "has a password" means the hash changed after this point.
+  // Primero se recuerda la huella del hash ACTUAL: "tiene contraseña" significa que el hash cambió después de este punto.
+  const baseline = await supabase.rpc("current_user_has_password");
+  if (baseline.error) {
+    console.error(`password baseline failed / falló la huella inicial: ${baseline.error.code ?? "unknown"}`);
+    return { status: "error", message: passwordErrorMessage(undefined) };
+  }
+
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
   if (error) {
     console.error(`set password failed / falló guardar la contraseña: ${error.code ?? error.status ?? "unknown"}`);
