@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { approveRevision, rejectRevision, type DecisionState } from "./actions";
 
 const INITIAL: DecisionState = { status: "idle", message: "" };
@@ -13,6 +13,10 @@ export function DecisionForms({ revisionId, canApprove, whyNot, linksToCheck }: 
   const [approveState, approve, approving] = useActionState(approveRevision, INITIAL);
   const [rejectState, reject, rejecting] = useActionState(rejectRevision, INITIAL);
   const busy = approving || rejecting;
+  // The approve button stays off until the links are confirmed. The server action checks it again (this only guides the click).
+  // El botón de aprobar queda apagado hasta confirmar los enlaces. La acción del servidor lo vuelve a revisar (esto solo guía el clic).
+  const [linksChecked, setLinksChecked] = useState(false);
+  const needsLinksCheck = linksToCheck > 0 && !linksChecked;
 
   return (
     <div className="mt-6 grid gap-6">
@@ -21,13 +25,13 @@ export function DecisionForms({ revisionId, canApprove, whyNot, linksToCheck }: 
         <input type="hidden" name="revisionId" value={revisionId} />
         {linksToCheck > 0 && (
           <label className="flex items-start gap-3 text-zinc-800 dark:text-zinc-200">
-            <input type="checkbox" name="linksChecked" className="mt-1 h-5 w-5" />
+            <input type="checkbox" name="linksChecked" checked={linksChecked} onChange={(event) => setLinksChecked(event.target.checked)} className="mt-1 h-5 w-5" />
             <span>Revisé los enlaces públicos (web y redes): son del terapeuta y no son engañosos.</span>
           </label>
         )}
         {whyNot && <p className="text-sm text-amber-900">{whyNot}</p>}
         {approveState.status === "error" && <p role="alert" className="text-red-800">{approveState.message}</p>}
-        <button type="submit" disabled={busy || !canApprove}
+        <button type="submit" disabled={busy || !canApprove || needsLinksCheck}
           className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">
           {approving ? "Aprobando…" : "Aprobar y publicar"}
         </button>
