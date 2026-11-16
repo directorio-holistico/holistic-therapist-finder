@@ -62,7 +62,7 @@ async function SearchContent({ searchParams }: { searchParams: RawParams }) {
 
   return (
     <>
-      <div className="mt-4 max-w-2xl">
+      <div className="mt-4">
         <SearchForm therapies={therapies} countries={countries} regions={regions} cities={cities} query={query} />
       </div>
       <Results query={query} therapyId={query.therapyId} locationId={locationId} therapyName={therapies.find((o) => o.id === query.therapyId)?.name ?? ""} />

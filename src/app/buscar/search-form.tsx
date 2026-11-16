@@ -45,8 +45,8 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
   }
 
   return (
-    <form action="/buscar" method="get" className="grid gap-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm" onChange={onChange} aria-busy={pending}>
-      <div>
+    <form action="/buscar" method="get" className="grid grid-cols-2 gap-x-3 gap-y-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm sm:grid-cols-3" onChange={onChange} aria-busy={pending}>
+      <div className="col-span-2 sm:col-span-1">
         <label htmlFor="therapy" className={labelClass}>Terapia</label>
         <select id="therapy" name="therapy" defaultValue={query.therapyId ?? ""} className={fieldClass}>
           <option value="">Todas las terapias</option>
@@ -93,7 +93,7 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
       <div>
         <label htmlFor="mode" className={labelClass}>Modo de atención</label>
         <select id="mode" name="mode" defaultValue={query.serviceMode ?? ""} className={fieldClass}>
-          <option value="">Presencial o a distancia</option>
+          <option value="">Cualquiera</option>
           <option value="in_person">Presencial</option>
           <option value="remote">A distancia</option>
         </select>
@@ -101,11 +101,11 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
 
       <button
         type="submit"
-        className="min-h-12 rounded-full bg-boton px-6 text-base font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+        className="col-span-full min-h-12 rounded-full bg-boton px-6 text-base font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
       >
         Buscar
       </button>
-      <p className="text-sm text-apagado" role="status">
+      <p className="col-span-full text-sm text-apagado" role="status">
         {pending ? "Actualizando resultados…" : "Los resultados se actualizan al cambiar un filtro."}
       </p>
     </form>
