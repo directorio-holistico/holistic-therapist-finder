@@ -51,9 +51,9 @@ export function ModeIcon({ mode }: { mode: string }) {
   return (
     <span
       title={label}
-      className="inline-flex size-10 items-center justify-center rounded-full bg-fondo text-tinta ring-1 ring-linea"
+      className="inline-flex size-9 items-center justify-center rounded-full bg-fondo text-tinta ring-1 ring-linea"
     >
-      <Icon mode={mode} size={20} />
+      <Icon mode={mode} size={18} />
       <span className="sr-only">{label}</span>
     </span>
   );
