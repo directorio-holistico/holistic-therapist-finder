@@ -1368,16 +1368,19 @@ export type Database = {
         Row: {
           language_id: number
           name: string
+          short_name: string | null
           therapy_id: number
         }
         Insert: {
           language_id: number
           name: string
+          short_name?: string | null
           therapy_id: number
         }
         Update: {
           language_id?: number
           name?: string
+          short_name?: string | null
           therapy_id?: number
         }
         Relationships: [
@@ -1471,6 +1474,7 @@ export type Database = {
           session_formats: string[] | null
           therapy_ids: number[] | null
           therapy_names: string[] | null
+          therapy_short_names: string[] | null
           zone: string | null
         }
         Relationships: [
@@ -1678,6 +1682,7 @@ export type Database = {
           session_formats: string[]
           therapy_ids: number[]
           therapy_names: string[]
+          therapy_short_names: string[]
           total_count: number
           zone: string
         }[]
