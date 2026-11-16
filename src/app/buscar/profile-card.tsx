@@ -40,9 +40,9 @@ export function ProfileCard({ card }: { card: SearchCard }) {
           {hidden > 0 && <li className="text-sm text-apagado">y {hidden} más</li>}
         </ul>
       )}
-      {card.place && <p className="mt-3 mb-4 text-sm text-apagado">{card.place}</p>}
+      {card.place && <p className="mt-3 mb-5 text-sm text-apagado">{card.place}</p>}
       <Link
-        className="mt-auto inline-flex min-h-11 w-full items-center justify-center rounded-full border border-tinta px-5 text-sm font-semibold text-tinta hover:bg-fondo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+        className="mt-auto inline-flex min-h-10 items-center justify-center rounded-full bg-boton px-8 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
         href={`/terapeuta/${card.profileId}`}
         aria-label={`Ver perfil de ${card.displayName}`}
       >
