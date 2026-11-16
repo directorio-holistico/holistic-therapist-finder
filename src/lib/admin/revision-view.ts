@@ -8,6 +8,7 @@
 // esperados). El teléfono y el mail no se muestran: solo si existen.
 
 import { z } from "zod";
+import { isPendingPhotoPath, photoChangeOf, type PhotoChange } from "@/lib/photo-rules";
 import { instagramIsValid, socialLinkIsValid } from "@/lib/profile-form";
 
 export type ViewLookups = {
@@ -33,6 +34,7 @@ export type RevisionView = {
   locationId: number | null;
   languages: string[];
   therapies: TherapyView[];
+  photo: PhotoChange;
   hasPhone: boolean;
   phoneWhatsapp: boolean;
   hasEmail: boolean;
@@ -45,6 +47,7 @@ const payloadSchema = z.looseObject({
   zone: z.string().nullish(),
   practice_start_year: z.number().int().nullish(),
   location_id: z.number().int().nullish(),
+  photo_path: z.string().nullable().optional(),
   languages: z.array(z.number().int()).optional(),
   contacts: z.array(z.looseObject({ contact_type_id: z.number().int(), value: z.string(), accepts_whatsapp: z.boolean().optional() })).optional(),
   therapies: z
@@ -110,6 +113,7 @@ export function describeRevision(payload: unknown, lookups: ViewLookups): Revisi
         currency: lookups.currencies.get(rate.currency_id) ?? `#${rate.currency_id}`,
       })),
     })),
+    photo: photoChangeOf(p),
     hasPhone: phone !== undefined,
     phoneWhatsapp: phone?.accepts_whatsapp ?? false,
     hasEmail: contacts.some((contact) => lookups.contactTypes.get(contact.contact_type_id) === "email"),
@@ -119,9 +123,12 @@ export function describeRevision(payload: unknown, lookups: ViewLookups): Revisi
 
 // Only what the decision rules need (no names): is there a city, and which public links must the administrator check?
 // Solo lo que necesitan las reglas de la decisión (sin nombres): ¿hay ciudad? y ¿qué enlaces públicos debe revisar?
-export function decisionFacts(payload: unknown, contactTypeCodes: ReadonlyMap<number, string>): { hasCity: boolean; linksToCheck: number } | null {
+export function decisionFacts(payload: unknown, contactTypeCodes: ReadonlyMap<number, string>, profileId?: string): { hasCity: boolean; linksToCheck: number; photoOk: boolean } | null {
   const parsed = payloadSchema.safeParse(payload);
   if (!parsed.success) return null;
   const links = (parsed.data.contacts ?? []).filter((contact) => isLinkKind(contactTypeCodes.get(contact.contact_type_id) ?? "")).length;
-  return { hasCity: parsed.data.location_id != null, linksToCheck: links };
+  // a proposed photo must be a pending file of the profile / la foto propuesta tiene que ser un archivo pendiente del perfil
+  const change = photoChangeOf(parsed.data);
+  const photoOk = change.kind !== "set" || (profileId !== undefined && isPendingPhotoPath(change.path, profileId));
+  return { hasCity: parsed.data.location_id != null, linksToCheck: links, photoOk };
 }

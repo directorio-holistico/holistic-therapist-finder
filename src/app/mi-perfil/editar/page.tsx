@@ -7,6 +7,10 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { requirePassword } from "@/lib/auth/password-gate";
+import { getPublicEnv } from "@/lib/env";
+import { photoPublicUrl } from "@/lib/photo";
+import { isPendingPhotoPath } from "@/lib/photo-rules";
+import { pendingPhotoUrl } from "@/lib/photo-storage";
 import { loadProfileEditor } from "@/lib/profile-load";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 import { ProfileForm } from "./profile-form";
@@ -32,9 +36,14 @@ async function Editor() {
       </p>
     );
   }
+  // a pending photo is shown with a short-lived signed address; only if it belongs to this profile
+  // la foto pendiente se muestra con una dirección firmada de corta vida; solo si es de este perfil
+  const pendingUrl = data.defaults.photoNew && isPendingPhotoPath(data.defaults.photoNew, data.profileId) ? await pendingPhotoUrl(data.defaults.photoNew) : null;
+  // a proposed photo whose file is gone (rejected or discarded) is forgotten, so it is never sent again / una foto propuesta cuyo archivo ya no está (rechazada o descartada) se olvida, para no volver a enviarla
+  const defaults = data.defaults.photoNew && !pendingUrl ? { ...data.defaults, photoNew: "" } : data.defaults;
   return (
     <ProfileForm
-      defaults={data.defaults}
+      defaults={defaults}
       catalogs={data.catalogs}
       countries={data.tree.countries}
       regions={data.tree.regions}
@@ -43,6 +52,8 @@ async function Editor() {
       initialRegionId={data.initialRegionId}
       missingCity={data.missingCity}
       lastRejection={data.lastRejection}
+      livePhotoUrl={photoPublicUrl(getPublicEnv().supabaseUrl, data.livePhotoPath)}
+      pendingPhotoUrl={pendingUrl}
     />
   );
 }
@@ -52,7 +63,7 @@ export default function EditProfilePage() {
     <main className="mx-auto max-w-xl px-4 py-10">
       <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Editar mi perfil</h1>
       <p className="mt-2 text-zinc-700 dark:text-zinc-300">
-        Tus cambios se publican después de una revisión. La foto se agrega en un paso posterior.
+        Tus cambios se publican después de una revisión. También podés subir tu foto: la revisamos antes de publicarla.
       </p>
       <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
         <Editor />

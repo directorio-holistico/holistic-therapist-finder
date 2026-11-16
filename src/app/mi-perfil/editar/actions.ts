@@ -8,6 +8,7 @@
 import { redirect } from "next/navigation";
 import { requirePassword } from "@/lib/auth/password-gate";
 import { listFormCatalogs } from "@/lib/catalogs";
+import { isPendingPhotoPath } from "@/lib/photo-rules";
 import { buildPayload, firstIssue, readProfileForm } from "@/lib/profile-form";
 import { audienceIds, contactTypeIds } from "@/lib/profile-load";
 import type { Database } from "@/lib/supabase/database.types";
@@ -51,6 +52,10 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
   if (!profile.data) redirect("/mi-perfil/alta");
   const statuses = await supabase.from("profile_statuses").select("code").eq("id", profile.data.status_id).maybeSingle();
   if (statuses.data?.code === "suspended" || statuses.data?.code === "erased") return fail("Tu perfil no admite cambios.");
+
+  // The new photo must be a pending file of THIS profile (made by the server), never a path the browser invented.
+  // La foto nueva tiene que ser un archivo pendiente de ESTE perfil (hecho por el servidor), nunca una ruta inventada por el navegador.
+  if (values.photoNew !== null && !isPendingPhotoPath(values.photoNew, profile.data.id)) return fail("La foto no es válida. Elegila de nuevo.", ["photo"]);
 
   // 1) The open revision: none -> create a draft; draft -> update it; pending -> locked.
   // 1) La revisión abierta: ninguna -> se crea un borrador; borrador -> se actualiza; en revisión -> bloqueada.

@@ -85,8 +85,18 @@ describe("decisionFacts", () => {
   it("tells whether there is a city and how many public links must be checked", () => {
     const types = LOOKUPS.contactTypes;
     expect(decisionFacts({ location_id: 5, contacts: [{ contact_type_id: 1, value: "1" }, { contact_type_id: 3, value: "x" }, { contact_type_id: 7, value: "y" }] }, types))
-      .toEqual({ hasCity: true, linksToCheck: 2 });
-    expect(decisionFacts({ location_id: null }, types)).toEqual({ hasCity: false, linksToCheck: 0 });
+      .toEqual({ hasCity: true, linksToCheck: 2, photoOk: true });
+    expect(decisionFacts({ location_id: null }, types)).toEqual({ hasCity: false, linksToCheck: 0, photoOk: true });
     expect(decisionFacts("basura", types)).toBeNull();
+  });
+
+  const PROFILE = "773f2832-c09f-4878-98e4-98bf190bff2c";
+  const FILE = "0b6a1c1e-52ad-4c7e-9f0e-6f3a1d2b9c10";
+  it("accepts a photo only if it is a pending file of the same profile / acepta la foto solo si es un archivo pendiente del mismo perfil", () => {
+    const types = LOOKUPS.contactTypes;
+    expect(decisionFacts({ location_id: 5, photo_path: `${PROFILE}/${FILE}.jpg` }, types, PROFILE)?.photoOk).toBe(true);
+    expect(decisionFacts({ location_id: 5, photo_path: `${PROFILE}/${FILE}.jpg` }, types, "00000000-0000-4000-8000-000000000000")?.photoOk).toBe(false);
+    expect(decisionFacts({ location_id: 5, photo_path: "../x.jpg" }, types, PROFILE)?.photoOk).toBe(false);
+    expect(decisionFacts({ location_id: 5, photo_path: null }, types, PROFILE)?.photoOk).toBe(true);
   });
 });

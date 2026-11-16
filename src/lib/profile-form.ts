@@ -222,6 +222,12 @@ export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: Read
         .max(MAX_THERAPIES),
       currencyOwn: z.number().int().positive().nullable(),
       currencyOther: z.number().int().positive().nullable(),
+      // Photo: the path of a NEW pending photo (made by the server) or the wish to remove the current one. Whether the path is
+      // really this profile's own is checked in the action, which knows the profile id.
+      // Foto: la ruta de una foto NUEVA pendiente (la hizo el servidor) o el pedido de quitar la actual. Que la ruta sea de este
+      // perfil se comprueba en la acción, que conoce el id del perfil.
+      photoNew: z.string().transform((value) => value.trim()).pipe(z.string().max(120)).transform(emptyToNull),
+      photoRemove: z.boolean(),
     })
     .superRefine((value, ctx) => {
       // therapies and rates / terapias y tarifas
@@ -283,6 +289,8 @@ export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: Read
         therapies,
         currencyOwn: therapies.some((slot) => slot.rateOwn !== null) ? value.currencyOwn : null,
         currencyOther: therapies.some((slot) => slot.rateOther !== null) ? value.currencyOther : null,
+        // a new photo wins over "remove" / una foto nueva gana sobre "quitar"
+        photoRemove: value.photoRemove && value.photoNew === null,
       };
     });
 }
@@ -330,6 +338,8 @@ export function readProfileForm(formData: FormData, maxYear: number, currencyMin
     therapies,
     currencyOwn: toInt(formData.get("currencyOwn")),
     currencyOther: toInt(formData.get("currencyOther")),
+    photoNew: text(formData.get("photoNew")),
+    photoRemove: formData.get("photoRemove") === "on",
   });
 }
 
@@ -341,6 +351,9 @@ export type ProfilePayload = {
   zone: string | null;
   practice_start_year: number | null;
   location_id: number | null;
+  // Only present when the therapist changes the photo: a path = new pending photo, null = remove it. Absent = no change.
+  // Solo está cuando el terapeuta cambia la foto: una ruta = foto nueva pendiente, null = quitarla. Ausente = sin cambio.
+  photo_path?: string | null;
   languages: number[];
   contacts: { contact_type_id: number; value: string; accepts_whatsapp: boolean }[];
   therapies: {
@@ -368,8 +381,10 @@ export function buildPayload(values: ProfileFormValues, contactTypes: ContactTyp
   if (values.facebook !== null) contacts.push({ contact_type_id: contactTypes.facebook, value: values.facebook, accepts_whatsapp: false });
   if (values.tiktok !== null) contacts.push({ contact_type_id: contactTypes.tiktok, value: values.tiktok, accepts_whatsapp: false });
   if (values.youtube !== null) contacts.push({ contact_type_id: contactTypes.youtube, value: values.youtube, accepts_whatsapp: false });
+  const photo: Pick<ProfilePayload, "photo_path"> = values.photoNew !== null ? { photo_path: values.photoNew } : values.photoRemove ? { photo_path: null } : {};
   return {
     display_name: values.displayName,
+    ...photo,
     headline: values.headline,
     zone: values.zone,
     practice_start_year: values.practiceStartYear,
@@ -411,6 +426,9 @@ export type FormDefaults = {
   therapies: TherapyDefaults[];
   currencyOwn: number | null;
   currencyOther: number | null;
+  // photo: a pending photo path waiting in the draft, or the wish to remove the current one / foto: ruta pendiente en el borrador o pedido de quitar la actual
+  photoNew: string;
+  photoRemove: boolean;
 };
 export type TherapyDefaults = { therapyId: number | null; minutes: string; rateOwn: string; rateOther: string; serviceModes: number[]; sessionFormats: number[] };
 export const EMPTY_THERAPY_SLOT: TherapyDefaults = { therapyId: null, minutes: "", rateOwn: "", rateOther: "", serviceModes: [], sessionFormats: [] };
@@ -423,6 +441,7 @@ export const EMPTY_DEFAULTS: FormDefaults = {
   languages: [], phone: "", phoneWhatsapp: false, email: "", website: "", instagram: "",
   facebook: "", tiktok: "", youtube: "",
   therapies: Array.from({ length: MAX_THERAPIES }, () => EMPTY_THERAPY_SLOT), currencyOwn: null, currencyOther: null,
+  photoNew: "", photoRemove: false,
 };
 
 const payloadSchema = z.object({
@@ -431,6 +450,7 @@ const payloadSchema = z.object({
   zone: z.string().nullish(),
   practice_start_year: z.number().int().nullish(),
   location_id: z.number().int().nullish(),
+  photo_path: z.string().nullable().optional(),
   languages: z.array(z.number().int()).optional(),
   contacts: z.array(z.object({ contact_type_id: z.number().int(), value: z.string(), accepts_whatsapp: z.boolean().optional() })).optional(),
   therapies: z
@@ -478,6 +498,8 @@ export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeI
     therapies: p.therapies ? padTherapies(therapies) : base.therapies,
     currencyOwn: currencyFor(audiences.own),
     currencyOther: currencyFor(audiences.other),
+    photoNew: typeof p.photo_path === "string" ? p.photo_path : "",
+    photoRemove: p.photo_path === null,
   };
 }
 

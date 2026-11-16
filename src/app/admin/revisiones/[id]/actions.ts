@@ -9,6 +9,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin/guard";
 import { decisionFacts } from "@/lib/admin/revision-view";
+import { isPendingPhotoPath, photoChangeOf } from "@/lib/photo-rules";
+import { copyPendingToPublic, removePendingPhoto, removePublicPhoto } from "@/lib/photo-storage";
 
 export type DecisionState = { status: "idle" | "error"; message: string };
 const fail = (message: string): DecisionState => ({ status: "error", message });
@@ -30,17 +32,37 @@ export async function approveRevision(_previous: DecisionState, formData: FormDa
   const id = idSchema.safeParse(formData.get("revisionId"));
   if (!id.success) return fail("Revisión inválida.");
 
-  const revision = await supabase.from("profile_revisions").select("payload").eq("id", id.data).maybeSingle();
+  const revision = await supabase.from("profile_revisions").select("payload, profile_id").eq("id", id.data).maybeSingle();
   if (revision.error || !revision.data) return fail("No pudimos leer la revisión.");
   const types = await supabase.from("contact_types").select("id, code").limit(100);
   if (types.error) return fail("No pudimos leer los tipos de contacto.");
-  const facts = decisionFacts(revision.data.payload, new Map((types.data ?? []).map((type) => [type.id, type.code])));
+  const facts = decisionFacts(revision.data.payload, new Map((types.data ?? []).map((type) => [type.id, type.code])), revision.data.profile_id);
   if (!facts) return fail("El contenido de la revisión no tiene el formato esperado: rechazala.");
+  if (!facts.photoOk) return fail("La foto de la revisión tiene una ruta inválida: rechazala.");
   if (!facts.hasCity) return fail("Todavía no tiene ciudad. Cargá la ciudad primero (o rechazala pidiendo que elija una).");
   if (facts.linksToCheck > 0 && formData.get("linksChecked") !== "on") return fail("Marcá que revisaste los enlaces antes de aprobar.");
 
+  // PHOTO. The pending file is copied to the public bucket BEFORE approving: if the copy fails nothing changes. If approving fails
+  // afterwards, the copy is deleted. The path must be a pending file of this very profile (never trust the payload).
+  // FOTO. El archivo pendiente se copia al bucket público ANTES de aprobar: si la copia falla no cambia nada. Si aprobar falla
+  // después, se borra la copia. La ruta tiene que ser un archivo pendiente de este mismo perfil (el payload nunca es de confianza).
+  const change = photoChangeOf(revision.data.payload);
+  if (change.kind === "set") {
+    if (!isPendingPhotoPath(change.path, revision.data.profile_id)) return fail("La foto de la revisión tiene una ruta inválida: rechazala.");
+    if (!(await copyPendingToPublic(change.path))) return fail("No pudimos preparar la foto. Probá de nuevo en unos minutos; no se aprobó nada.");
+  }
+  const before = change.kind === "none" ? null : await supabase.from("therapist_profiles").select("photo_path").eq("id", revision.data.profile_id).maybeSingle();
+  const oldPhoto = before?.data?.photo_path ?? null;
+
   const result = await supabase.rpc("approve_revision", { p_revision_id: id.data });
-  if (result.error) return explain(result.error, "approve_revision");
+  if (result.error) {
+    if (change.kind === "set") await removePublicPhoto(change.path);
+    return explain(result.error, "approve_revision");
+  }
+  // Approved: now the old public photo and the pending file are no longer needed. A failure here only leaves a stray file.
+  // Aprobada: la foto pública vieja y el archivo pendiente ya no hacen falta. Un fallo acá solo deja un archivo suelto.
+  if (change.kind === "set") await removePendingPhoto(change.path);
+  if (change.kind !== "none" && oldPhoto && !(change.kind === "set" && oldPhoto === change.path)) await removePublicPhoto(oldPhoto);
   redirect("/admin/revisiones?resultado=aprobada");
 }
 
@@ -51,7 +73,11 @@ export async function rejectRevision(_previous: DecisionState, formData: FormDat
   const reason = reasonSchema.safeParse(formData.get("reason") ?? "");
   if (!reason.success) return fail(reason.error.issues[0]?.message ?? "Revisá el motivo.");
 
+  const revision = await supabase.from("profile_revisions").select("payload, profile_id").eq("id", id.data).maybeSingle();
   const result = await supabase.rpc("reject_revision", { p_revision_id: id.data, p_reason: reason.data });
   if (result.error) return explain(result.error, "reject_revision");
+  // Rejected: the pending photo of this proposal is deleted (the therapist uploads another one). / Rechazada: se borra la foto pendiente de esta propuesta.
+  const change = photoChangeOf(revision.data?.payload);
+  if (revision.data && change.kind === "set" && isPendingPhotoPath(change.path, revision.data.profile_id)) await removePendingPhoto(change.path);
   redirect("/admin/revisiones?resultado=rechazada");
 }

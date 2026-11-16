@@ -6,6 +6,7 @@ import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
 import type { FormDefaults } from "@/lib/profile-form";
 import { saveProfile, type EditState } from "./actions";
+import { PhotoField } from "./photo-field";
 
 const INITIAL: EditState = { status: "idle", message: "", fields: [], flagged: [] };
 const FIELD = "w-full rounded-md border border-zinc-400 bg-white p-3 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100";
@@ -25,6 +26,8 @@ type Props = {
   initialRegionId: number | null;
   missingCity: { regionId: number; cityName: string } | null;
   lastRejection: string | null;
+  livePhotoUrl: string | null;
+  pendingPhotoUrl: string | null;
 };
 
 function CheckGroup({ legend, name, options, selected, label }: {
@@ -43,7 +46,7 @@ function CheckGroup({ legend, name, options, selected, label }: {
   );
 }
 
-export function ProfileForm({ defaults, catalogs, countries, regions, cities, initialCountryId, initialRegionId, missingCity, lastRejection }: Props) {
+export function ProfileForm({ defaults, catalogs, countries, regions, cities, initialCountryId, initialRegionId, missingCity, lastRejection, livePhotoUrl, pendingPhotoUrl }: Props) {
   const [state, action, pending] = useActionState(saveProfile, INITIAL);
   const [, startTransition] = useTransition();
   const [countryId, setCountryId] = useState<number | null>(initialCountryId);
@@ -109,6 +112,8 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             defaultValue={defaults.practiceStartYear} aria-invalid={invalid("practiceStartYear")} className={FIELD} />
         </div>
       </section>
+
+      <PhotoField initialNew={defaults.photoNew} initialRemove={defaults.photoRemove} initialPreviewUrl={pendingPhotoUrl} liveUrl={livePhotoUrl} />
 
       <section className="grid gap-4" aria-labelledby="sec-lugar">
         <h2 id="sec-lugar" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Dónde atendés</h2>

@@ -27,6 +27,10 @@ export type EditorData =
       initialRegionId: number | null;
       missingCity: { regionId: number; cityName: string } | null;
       lastRejection: string | null;
+      // the photo shown on the public profile today (path in the public bucket) / la foto que hoy muestra el perfil público (ruta en el bucket público)
+      livePhotoPath: string | null;
+      // the profile id: the pending photo folder is named after it / el id del perfil: la carpeta de la foto pendiente se llama así
+      profileId: string;
     };
 
 function fail(what: string, message: string): never {
@@ -64,7 +68,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
   if (!person.data) return { kind: "no-account" };
   const profile = await client
     .from("therapist_profiles")
-    .select("id, status_id, display_name, headline, zone, practice_start_year, location_id")
+    .select("id, status_id, display_name, headline, zone, practice_start_year, location_id, photo_path")
     .eq("person_id", person.data.id)
     .maybeSingle();
   if (profile.error) fail("the profile / el perfil", profile.error.message);
@@ -156,6 +160,8 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
       ),
       currencyOwn: rateRows.find((row) => row.rate_audience_id === audiences.own)?.currency_id ?? null,
       currencyOther: rateRows.find((row) => row.rate_audience_id === audiences.other)?.currency_id ?? null,
+      photoNew: "",
+      photoRemove: false,
     };
   }
 
@@ -187,5 +193,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
     initialRegionId: regionId,
     missingCity,
     lastRejection: open.data || rejectedPayload !== null ? (rejected.data?.[0]?.rejection_reason ?? null) : null,
+    livePhotoPath: profile.data.photo_path ?? null,
+    profileId: profile.data.id,
   };
 }

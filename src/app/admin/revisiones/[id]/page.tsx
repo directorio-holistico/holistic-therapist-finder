@@ -9,6 +9,7 @@ import { z } from "zod";
 import { loadViewLookups, locationPath } from "@/lib/admin/lookups";
 import { describeRevision, decisionFacts, type LinkKind } from "@/lib/admin/revision-view";
 import { requireAdmin } from "@/lib/admin/guard";
+import { pendingPhotoUrl } from "@/lib/photo-storage";
 import { formatDate, formatMoney } from "@/lib/format";
 import { DecisionForms } from "./decision-form";
 
@@ -51,7 +52,9 @@ async function Detail({ params }: Props) {
     : { data: null, error: null };
 
   const view = describeRevision(row.payload, lookups);
-  const facts = decisionFacts(row.payload, lookups.contactTypes);
+  const facts = decisionFacts(row.payload, lookups.contactTypes, row.profile_id);
+  // the proposed photo is shown only if its path is a pending file of THIS profile / la foto propuesta solo se muestra si es un archivo pendiente de ESTE perfil
+  const photoUrl = view?.photo.kind === "set" && facts?.photoOk ? await pendingPhotoUrl(view.photo.path) : null;
   const place = view?.locationId != null ? await locationPath(supabase, view.locationId) : null;
   const requestRegion = request.data ? await locationPath(supabase, request.data.region_id) : null;
 
@@ -68,7 +71,9 @@ async function Detail({ params }: Props) {
         ? "El contenido no tiene el formato esperado: rechazala."
         : !facts.hasCity
           ? "Todavía no tiene ciudad: no se puede aprobar."
-          : null;
+          : !facts.photoOk
+            ? "La foto propuesta tiene una ruta inválida: rechazala."
+            : null;
 
   return (
     <>
@@ -100,6 +105,15 @@ async function Detail({ params }: Props) {
         <p className="mt-4 text-red-800">El contenido de esta revisión no tiene el formato esperado. Lo correcto es rechazarla.</p>
       ) : (
         <dl className="mt-4 grid gap-3">
+          <Row label="Foto">
+            {view.photo.kind === "remove" ? "Pide quitar su foto actual." : view.photo.kind === "none" ? "Sin cambios en la foto." : photoUrl ? (
+              <span className="grid gap-1">
+                {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed address of a private file / dirección firmada de corta vida de un archivo privado */}
+                <img src={photoUrl} alt="Foto propuesta" className="size-40 rounded-full object-cover" />
+                <span className="text-sm">Revisá que sea una foto personal (no logo, no de otra persona). Si no, rechazala con el motivo.</span>
+              </span>
+            ) : <span className="text-red-800">No se pudo mostrar la foto (archivo ausente o ruta inválida): rechazala.</span>}
+          </Row>
           <Row label="Nombre público">{view.displayName ?? "—"}</Row>
           <Row label="Presentación">{view.headline ?? "—"}</Row>
           <Row label="Ciudad">{place ?? (view.locationId === null ? "Sin ciudad" : `#${view.locationId}`)}</Row>
