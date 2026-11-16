@@ -10,6 +10,7 @@ import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
 import { ModeBadge } from "@/components/mode-icon";
 import { SiteHeader } from "@/components/site-header";
+import { SocialIcon } from "@/components/social-icon";
 import { getTurnstileSiteKey } from "@/lib/env";
 import { formatDate, formatMoney } from "@/lib/format";
 import { joinWithY, labelLanguage, labelRateAudience, labelSessionFormat } from "@/lib/labels";
@@ -129,11 +130,19 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
       {profile.links.length > 0 && (
         <section aria-labelledby="links-title" className="mt-8">
           <h2 id="links-title" className={h2}>Redes y sitio web</h2>
-          <ul className="mt-3 list-none rounded-2xl border border-linea bg-superficie p-5 text-tinta shadow-sm">
+          <ul className="mt-3 flex list-none flex-wrap gap-3 p-0">
             {profile.links.map((link) => (
               <li key={link.kind}>
-                {LINK_LABELS[link.kind]}:{" "}
-                <a className="font-medium text-acento underline" href={link.href} target="_blank" rel="noopener noreferrer nofollow">{link.text}</a>
+                <a
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer nofollow"
+                  title={`${LINK_LABELS[link.kind]}: ${link.text}`}
+                  className="inline-flex size-11 items-center justify-center rounded-full border border-linea bg-superficie text-tinta shadow-sm hover:bg-fondo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                >
+                  <SocialIcon kind={link.kind} />
+                  <span className="sr-only">{LINK_LABELS[link.kind]}: {link.text}</span>
+                </a>
               </li>
             ))}
           </ul>
