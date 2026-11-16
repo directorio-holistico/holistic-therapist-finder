@@ -19,6 +19,8 @@ export type SearchCard = {
   headline: string | null;
   place: string;
   therapies: string[];
+  // Short names, same order as `therapies`; equal to the full name when a therapy has none. / Nombres cortos, mismo orden que `therapies`; igual al nombre completo si la terapia no tiene.
+  therapyShorts: string[];
   serviceModes: string[];
   sessionFormats: string[];
   languages: string[];
@@ -43,6 +45,7 @@ export type SearchRow = {
   country_name?: string | null;
   therapy_ids?: number[] | null;
   therapy_names?: string[] | null;
+  therapy_short_names?: string[] | null;
   service_modes?: string[] | null;
   session_formats?: string[] | null;
   languages?: string[] | null;
@@ -71,22 +74,37 @@ export function parseRatesFrom(value: unknown): RateFrom[] {
 // ids and names come aligned from the database (both ordered by id). If they are not aligned, names are kept alphabetical.
 // Terapias de una tarjeta: alfabético (español), pero la terapia buscada va primera (A, B, C buscando B -> B, A, C).
 // Los ids y los nombres vienen alineados de la base (ambos ordenados por id). Si no lo están, queda el orden alfabético.
+export function orderTherapyItems(
+  ids: readonly number[] | null | undefined,
+  names: readonly string[] | null | undefined,
+  shorts: readonly string[] | null | undefined = null,
+  searchedId: number | null = null,
+): { name: string; short: string }[] {
+  const list = names ?? [];
+  const aligned = ids != null && ids.length === list.length;
+  const shortsAligned = shorts != null && shorts.length === list.length;
+  const items = list.map((name, index) => ({
+    name,
+    short: (shortsAligned ? shorts[index]?.trim() : "") || name,
+    id: aligned ? (ids[index] ?? null) : null,
+  }));
+  items.sort((a, b) => a.name.localeCompare(b.name, "es"));
+  const first = searchedId === null ? -1 : items.findIndex((item) => item.id === searchedId);
+  if (first > 0) items.unshift(...items.splice(first, 1));
+  return items.map(({ name, short }) => ({ name, short }));
+}
+
 export function orderTherapies(
   ids: readonly number[] | null | undefined,
   names: readonly string[] | null | undefined,
   searchedId: number | null = null,
 ): string[] {
-  const list = names ?? [];
-  const aligned = ids != null && ids.length === list.length;
-  const items = list.map((name, index) => ({ name, id: aligned ? (ids[index] ?? null) : null }));
-  items.sort((a, b) => a.name.localeCompare(b.name, "es"));
-  const first = searchedId === null ? -1 : items.findIndex((item) => item.id === searchedId);
-  if (first > 0) items.unshift(...items.splice(first, 1));
-  return items.map((item) => item.name);
+  return orderTherapyItems(ids, names, null, searchedId).map((item) => item.name);
 }
 
 export function toCard(row: SearchRow, searchedTherapyId: number | null = null): SearchCard | null {
   if (!row.profile_id || !row.display_name) return null;
+  const therapyItems = orderTherapyItems(row.therapy_ids, row.therapy_names, row.therapy_short_names, searchedTherapyId);
   const place = [row.city_name, row.region_name, row.country_name].filter((part): part is string => Boolean(part)).join(", ");
   return {
     profileId: row.profile_id,
@@ -94,7 +112,8 @@ export function toCard(row: SearchRow, searchedTherapyId: number | null = null):
     displayName: row.display_name,
     headline: row.headline ?? null,
     place,
-    therapies: orderTherapies(row.therapy_ids, row.therapy_names, searchedTherapyId),
+    therapies: therapyItems.map((item) => item.name),
+    therapyShorts: therapyItems.map((item) => item.short),
     serviceModes: row.service_modes ?? [],
     sessionFormats: row.session_formats ?? [],
     languages: row.languages ?? [],

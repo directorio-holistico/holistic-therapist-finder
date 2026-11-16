@@ -15,6 +15,7 @@ Single source: `src/app/globals.css`. Text contrasts are checked by `tests/brand
 
 - Claro: fondo `#FBF5EA`, superficie `#FFFFFF`, tinta `#26232F`, apagado `#5B5663`, acento `#8A5A00`, oro `#E9B949`.
 - Oscuro: fondo `#0F1233`, superficie `#181C46`, tinta `#F5EFE0`, apagado `#B9B6CC`, acento y oro `#E9B949`.
+- Bordes de campos de formulario (`campo`): 3,66:1 sobre superficie en claro y 3,45:1 en oscuro (mínimo 3:1, WCAG 1.4.11). Claro `#8C8576`, oscuro `#6B6FA8`.
 - Los 12 puntos de color de la estrella y el oro de la geometría sagrada son decorativos (ocultos para lectores de pantalla): no llevan texto encima.
 - Modo oscuro: lo elige el visitante (botón del pie), por defecto claro; se guarda en el navegador (`faro-tema`). No sigue la configuración del dispositivo.
 - Tipografías (licencia SIL OFL 1.1, copias en esta carpeta): Fraunces (títulos) y DM Sans (texto), archivos locales en `src/app/fonts/`; no se llama a servidores de Google.

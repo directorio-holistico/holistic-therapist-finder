@@ -1,67 +1,48 @@
-// One result. The contact data is NOT here: it is shown only through the contact reveal (later commit).
-// Un resultado. Los datos de contacto NO están acá: se muestran solo con la revelación de contacto (commit posterior).
+// One result: visual and short. Detail (headline, formats, languages, prices, contact) is on the profile.
+// Un resultado: visual y corto. El detalle (presentación, formatos, idiomas, precios, contacto) está en el perfil.
 
 import Link from "next/link";
-import { formatDate, formatMoney } from "@/lib/format";
-import { joinWithY, labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
+import { Avatar } from "@/components/avatar";
+import { ModeIcon } from "@/components/mode-icon";
+import { capItems } from "@/lib/card-view";
 import type { SearchCard } from "@/lib/search";
 
-function RatesLine({ card }: { card: SearchCard }) {
-  if (card.rates.length === 0) return <p className="text-sm text-zinc-600 dark:text-zinc-400">Precios: consultar con el terapeuta.</p>;
-  const date = formatDate(card.ratesConfirmedAt);
-  return (
-    <div className="text-sm text-zinc-700 dark:text-zinc-300">
-      <ul className="list-none p-0">
-        {card.rates.map((rate) => (
-          <li key={rate.audience}>
-            {labelRateAudience(rate.audience)}: desde {formatMoney(rate.amount, rate.currency)}
-          </li>
-        ))}
-      </ul>
-      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-        {card.ratesCurrent && date
-          ? `Precios al día · confirmados el ${date}`
-          : date
-            ? `Precios del ${date}: pueden haber cambiado`
-            : "Precios sin fecha de confirmación"}
-      </p>
-    </div>
-  );
-}
+const MAX_THERAPIES = 3;
 
 export function ProfileCard({ card }: { card: SearchCard }) {
+  const { shown, hidden } = capItems(card.therapyShorts, MAX_THERAPIES);
   return (
-    <article className="rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-      <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{card.displayName}</h3>
-      {card.isPinned && <p className="text-xs text-zinc-600 dark:text-zinc-400">Fundador del sitio</p>}
-      {card.headline && <p className="mt-1 text-zinc-800 dark:text-zinc-200">{card.headline}</p>}
-      {card.place && <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{card.place}</p>}
-      {card.therapies.length > 0 && (
-        <p className="mt-2 text-sm text-zinc-800 dark:text-zinc-200">
-          <span className="font-medium">Terapias:</span> {card.therapies.join(", ")}
-        </p>
+    <article className="flex min-w-0 flex-col items-center rounded-2xl border border-linea bg-superficie p-6 text-center shadow-sm motion-safe:transition-shadow motion-safe:hover:shadow-md">
+      <Avatar name={card.displayName} size="lg" />
+      <h3 className="mt-4 font-display text-xl font-semibold leading-tight text-tinta">{card.displayName}</h3>
+      {card.isPinned && <p className="mt-0.5 text-xs font-medium text-acento">Fundador del sitio</p>}
+      {card.place && <p className="mt-1 text-sm text-apagado">{card.place}</p>}
+      {shown.length > 0 && (
+        <ul className="mt-4 flex flex-wrap items-center justify-center gap-2" aria-label="Terapias">
+          {shown.map((therapy, index) => (
+            <li key={`${therapy}-${index}`} className="max-w-full truncate rounded-full bg-fondo px-3 py-1 text-sm text-tinta ring-1 ring-linea">
+              {therapy}
+            </li>
+          ))}
+          {hidden > 0 && <li className="text-sm text-apagado">y {hidden} más</li>}
+        </ul>
       )}
-      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
-        {[
-          joinWithY(card.serviceModes.map(labelServiceMode)),
-          joinWithY(card.sessionFormats.map(labelSessionFormat)),
-          card.languages.length > 0 ? `Idiomas: ${card.languages.map(labelLanguage).join(", ")}` : "",
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </p>
-      <div className="mt-2">
-        <RatesLine card={card} />
-      </div>
-      <p className="mt-3">
-        <Link
-          className="inline-block rounded-md border border-zinc-900 px-3 py-1.5 text-sm font-medium text-zinc-900 hover:bg-zinc-100 dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-800"
-          href={`/terapeuta/${card.profileId}`}
-          aria-label={`Ver perfil de ${card.displayName}`}
-        >
-          Ver perfil
-        </Link>
-      </p>
+      {card.serviceModes.length > 0 && (
+        <ul className="mt-4 flex justify-center gap-2" aria-label="Modo de atención">
+          {card.serviceModes.map((mode) => (
+            <li key={mode}>
+              <ModeIcon mode={mode} />
+            </li>
+          ))}
+        </ul>
+      )}
+      <Link
+        className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-tinta px-5 text-sm font-semibold text-tinta hover:bg-fondo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+        href={`/terapeuta/${card.profileId}`}
+        aria-label={`Ver perfil de ${card.displayName}`}
+      >
+        Ver perfil
+      </Link>
     </article>
   );
 }

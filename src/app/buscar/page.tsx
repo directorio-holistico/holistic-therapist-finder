@@ -10,6 +10,7 @@ import { getLocationOptions, getTherapies } from "@/lib/catalog-cache";
 import { SEARCH_GROUP_TITLES } from "@/lib/labels";
 import { logUnmetSearch, searchProfiles, splitByGroup } from "@/lib/search";
 import { PAGE_SIZE, buildSearchHref, locationIdOf, parseSearchQuery } from "@/lib/search-query";
+import { SiteHeader } from "@/components/site-header";
 import { createAnonClient } from "@/lib/supabase/anon-client";
 import { ProfileCard } from "./profile-card";
 import { SearchForm } from "./search-form";
@@ -23,16 +24,19 @@ type RawParams = Promise<Record<string, string | string[] | undefined>>;
 
 export default function SearchPage({ searchParams }: { searchParams: RawParams }) {
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Buscar terapeutas</h1>
-      <Suspense fallback={<p className="mt-4 text-zinc-700 dark:text-zinc-300">Cargando la búsqueda…</p>}>
+    <>
+    <SiteHeader />
+    <main className="mx-auto w-full max-w-4xl px-4 py-8">
+      <h1 className="font-display text-4xl font-semibold text-tinta">Buscar terapeutas</h1>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando la búsqueda…</p>}>
         <SearchContent searchParams={searchParams} />
       </Suspense>
-      <p className="mt-10 border-t border-zinc-300 pt-4 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
+      <p className="mt-10 border-t border-linea pt-4 text-sm text-apagado">
         Este sitio solo conecta personas con terapeutas: no da turnos ni cobra, y no reemplaza la atención médica ni
         psicológica. Desconfiá de quien prometa curas.
       </p>
     </main>
+    </>
   );
 }
 
@@ -58,7 +62,7 @@ async function SearchContent({ searchParams }: { searchParams: RawParams }) {
 
   return (
     <>
-      <div className="mt-4">
+      <div className="mt-4 max-w-2xl">
         <SearchForm therapies={therapies} countries={countries} regions={regions} cities={cities} query={query} />
       </div>
       <Results query={query} therapyId={query.therapyId} locationId={locationId} therapyName={therapies.find((o) => o.id === query.therapyId)?.name ?? ""} />
@@ -92,8 +96,8 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
         await logUnmetSearch(client, { therapyId, locationId, serviceMode: query.serviceMode });
         return (
           <section aria-labelledby="results-title" className="mt-8">
-            <h2 id="results-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Sin resultados</h2>
-            <p className="mt-2 text-zinc-800 dark:text-zinc-200">
+            <h2 id="results-title" className="font-display text-2xl font-semibold text-tinta">Sin resultados</h2>
+            <p className="mt-2 text-tinta">
               Todavía no hay terapeutas de {therapyName} para esa zona. Anotamos tu búsqueda, sin datos personales, para saber
               dónde hace falta. Podés probar con todo el país, con atención a distancia o con «Todos» en terapia o país.
             </p>
@@ -102,8 +106,8 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
       }
       return (
         <section aria-labelledby="results-title" className="mt-8">
-          <h2 id="results-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Sin resultados</h2>
-          <p className="mt-2 text-zinc-800 dark:text-zinc-200">
+          <h2 id="results-title" className="font-display text-2xl font-semibold text-tinta">Sin resultados</h2>
+          <p className="mt-2 text-tinta">
             Todavía no hay terapeutas con esos filtros. Probá con otra terapia, otro país o sin elegir el modo de atención.
           </p>
         </section>
@@ -111,7 +115,7 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
     }
     return (
       <section aria-labelledby="results-title" className="mt-8">
-        <h2 id="results-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">No hay más resultados</h2>
+        <h2 id="results-title" className="font-display text-2xl font-semibold text-tinta">No hay más resultados</h2>
         <p className="mt-2">
           <Link className="underline" href={buildSearchHref(query, 1)}>Volver a la primera página</Link>
         </p>
@@ -122,13 +126,13 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
   const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
   return (
     <section aria-labelledby="results-title" className="mt-8">
-      <h2 id="results-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">
+      <h2 id="results-title" className="font-display text-2xl font-semibold text-tinta">
         {total === 1 ? "1 terapeuta" : `${total} terapeutas`}
       </h2>
       {splitByGroup(cards).map((group) => (
         <div key={group.group} className="mt-6">
-          <h3 className="mb-3 text-base font-semibold text-zinc-800 dark:text-zinc-200">{SEARCH_GROUP_TITLES[group.group] ?? ""}</h3>
-          <div className="grid gap-4">
+          <h3 className="mb-3 text-base font-semibold text-tinta">{SEARCH_GROUP_TITLES[group.group] ?? ""}</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
             {group.cards.map((card) => (
               <ProfileCard key={card.profileId} card={card} />
             ))}
@@ -136,7 +140,7 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
         </div>
       ))}
       {lastPage > 1 && (
-        <nav aria-label="Páginas de resultados" className="mt-8 flex items-center justify-between text-zinc-900 dark:text-zinc-100">
+        <nav aria-label="Páginas de resultados" className="mt-8 flex items-center justify-between text-tinta">
           {query.page > 1 ? (
             <Link className="underline" href={buildSearchHref(query, query.page - 1)}>Anterior</Link>
           ) : (

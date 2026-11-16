@@ -15,6 +15,7 @@
   --acento: #8A5A00;
   --oro: #E9B949;
   --linea: #E6D9BF;
+  --campo: #8C8576;
   --boton: #26232F;
   --boton-texto: #FBF5EA;
 }
@@ -28,6 +29,7 @@
   --acento: #E9B949;
   --oro: #E9B949;
   --linea: #2C3066;
+  --campo: #6B6FA8;
   --boton: #E9B949;
   --boton-texto: #0F1233;
 }
@@ -40,6 +42,7 @@
   --color-acento: var(--acento);
   --color-oro: var(--oro);
   --color-linea: var(--linea);
+  --color-campo: var(--campo);
   --color-boton: var(--boton);
   --color-boton-texto: var(--boton-texto);
   --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;

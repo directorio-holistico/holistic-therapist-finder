@@ -4,7 +4,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { formatDate, formatMoney } from "../src/lib/format";
 import { joinWithY, labelRateAudience, labelServiceMode } from "../src/lib/labels";
-import { orderTherapies, parseRatesFrom, searchProfiles, splitByGroup, toCard, type SearchCard } from "../src/lib/search";
+import { orderTherapies, orderTherapyItems, parseRatesFrom, searchProfiles, splitByGroup, toCard, type SearchCard } from "../src/lib/search";
 import { MAX_PAGE, PAGE_SIZE, buildSearchHref, hrefFromFormValues, locationIdOf, parseSearchQuery } from "../src/lib/search-query";
 
 describe("parseSearchQuery", () => {
@@ -96,6 +96,26 @@ describe("rows to cards", () => {
     const groups = splitByGroup([make("a", 1), make("b", 1), make("c", 3)]);
     expect(groups.map((g) => [g.group, g.cards.map((c) => c.profileId)])).toEqual([[1, ["a", "b"]], [3, ["c"]]]);
     expect(splitByGroup([])).toEqual([]);
+  });
+});
+
+describe("orderTherapyItems (short names)", () => {
+  const ids = [1, 2, 3];
+  const names = ["Reiki", "LNT® - La Nueva Terapia - Método Schwiderski", "Constelaciones familiares"];
+  it("keeps each short name with its therapy, and uses the full name when there is none", () => {
+    const items = orderTherapyItems(ids, names, ["Reiki", "LNT®", "Constelaciones familiares"], 2);
+    expect(items.map((i) => i.short)).toEqual(["LNT®", "Constelaciones familiares", "Reiki"]);
+    expect(items[0]?.name).toBe("LNT® - La Nueva Terapia - Método Schwiderski");
+  });
+  it("falls back to full names if the short list is missing, empty strings or misaligned", () => {
+    expect(orderTherapyItems(ids, names, null).map((i) => i.short)).toEqual(["Constelaciones familiares", "LNT® - La Nueva Terapia - Método Schwiderski", "Reiki"]);
+    expect(orderTherapyItems(ids, names, ["", " ", "X"]).map((i) => i.short)).toContain("Reiki");
+    expect(orderTherapyItems(ids, names, ["solo uno"]).map((i) => i.short)).toEqual(orderTherapyItems(ids, names, null).map((i) => i.name));
+  });
+  it("toCard carries them", () => {
+    const card = toCard({ profile_id: "p", display_name: "Ana", therapy_ids: ids, therapy_names: names, therapy_short_names: ["Reiki", "LNT®", "Constelaciones familiares"] }, 2);
+    expect(card?.therapyShorts[0]).toBe("LNT®");
+    expect(card?.therapies[0]).toBe("LNT® - La Nueva Terapia - Método Schwiderski");
   });
 });
 

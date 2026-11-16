@@ -5,12 +5,12 @@
 
 import { labelServiceMode } from "@/lib/labels";
 
-function Icon({ mode, className }: { mode: string; className?: string }) {
+function Icon({ mode, className, size = 16 }: { mode: string; className?: string; size?: number }) {
   const common = {
     xmlns: "http://www.w3.org/2000/svg",
     viewBox: "0 0 24 24",
-    width: 16,
-    height: 16,
+    width: size,
+    height: size,
     fill: "none",
     stroke: "currentColor",
     strokeWidth: 2,
@@ -38,9 +38,23 @@ function Icon({ mode, className }: { mode: string; className?: string }) {
 
 export function ModeBadge({ mode }: { mode: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-300 px-2 py-0.5 text-sm text-zinc-800 dark:border-zinc-600 dark:text-zinc-200">
+    <span className="inline-flex items-center gap-1 rounded-full border border-linea px-2.5 py-0.5 text-sm text-tinta">
       <Icon mode={mode} />
       {labelServiceMode(mode)}
+    </span>
+  );
+}
+
+// Icon only, for cards: the label stays for screen readers and as a tooltip. / Solo ícono, para tarjetas: el texto queda para lectores de pantalla y como ayuda al pasar el mouse.
+export function ModeIcon({ mode }: { mode: string }) {
+  const label = labelServiceMode(mode);
+  return (
+    <span
+      title={label}
+      className="inline-flex size-10 items-center justify-center rounded-full bg-fondo text-tinta ring-1 ring-linea"
+    >
+      <Icon mode={mode} size={20} />
+      <span className="sr-only">{label}</span>
     </span>
   );
 }

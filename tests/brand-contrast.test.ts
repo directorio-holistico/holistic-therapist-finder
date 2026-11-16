@@ -41,6 +41,12 @@ const PAIRS: Array<[string, string]> = [
   ["boton-texto", "boton"],
 ];
 
+// Borders of form fields are interface parts: they need 3:1 (WCAG 1.4.11). / Los bordes de campos son partes de la interfaz: necesitan 3:1 (WCAG 1.4.11).
+const FIELD_PAIRS: Array<[string, string]> = [
+  ["campo", "superficie"],
+  ["campo", "fondo"],
+];
+
 describe("brand colours", () => {
   for (const [name, selector] of [
     ["claro", ":root"],
@@ -53,6 +59,21 @@ describe("brand colours", () => {
         const bgColor = vars[bg];
         if (!fgColor || !bgColor) throw new Error(`missing --${fg} or --${bg}`);
         expect(contrast(fgColor, bgColor)).toBeGreaterThanOrEqual(4.5);
+      });
+    }
+  }
+
+  for (const [name, selector] of [
+    ["claro", ":root"],
+    ["oscuro", '[data-theme="oscuro"]'],
+  ] as const) {
+    const vars = block(selector);
+    for (const [fg, bg] of FIELD_PAIRS) {
+      it(`${name}: ${fg} on ${bg} reaches 3:1`, () => {
+        const fgColor = vars[fg];
+        const bgColor = vars[bg];
+        if (!fgColor || !bgColor) throw new Error(`missing --${fg} or --${bg}`);
+        expect(contrast(fgColor, bgColor)).toBeGreaterThanOrEqual(3);
       });
     }
   }

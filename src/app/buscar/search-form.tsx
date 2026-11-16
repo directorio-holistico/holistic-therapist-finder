@@ -13,8 +13,8 @@ import type { CatalogOption } from "@/lib/catalogs";
 import { hrefFromFormValues, type SearchQuery } from "@/lib/search-query";
 
 const fieldClass =
-  "w-full rounded-md border border-zinc-400 bg-white px-3 py-2 text-base text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100";
-const labelClass = "mb-1 block text-sm font-medium text-zinc-800 dark:text-zinc-200";
+  "min-h-11 w-full rounded-xl border border-campo bg-superficie px-3 py-2 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento";
+const labelClass = "mb-1 block text-sm font-semibold text-tinta";
 const PAUSE_MS = 400;
 
 type Props = {
@@ -45,7 +45,7 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
   }
 
   return (
-    <form action="/buscar" method="get" className="grid gap-4" onChange={onChange} aria-busy={pending}>
+    <form action="/buscar" method="get" className="grid gap-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm" onChange={onChange} aria-busy={pending}>
       <div>
         <label htmlFor="therapy" className={labelClass}>Terapia</label>
         <select id="therapy" name="therapy" defaultValue={query.therapyId ?? ""} className={fieldClass}>
@@ -101,11 +101,11 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
 
       <button
         type="submit"
-        className="rounded-md bg-zinc-900 px-4 py-2 text-base font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        className="min-h-12 rounded-full bg-boton px-6 text-base font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
       >
         Buscar
       </button>
-      <p className="text-sm text-zinc-700 dark:text-zinc-300" role="status">
+      <p className="text-sm text-apagado" role="status">
         {pending ? "Actualizando resultados…" : "Los resultados se actualizan al cambiar un filtro."}
       </p>
     </form>

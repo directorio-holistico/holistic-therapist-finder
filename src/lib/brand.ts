@@ -16,3 +16,10 @@ export const STAR_DOT_COLORS = [
 ] as const;
 
 export const BRAND_NAME = "Camino Doce Doce";
+
+/** Hard-stop conic gradient with the 12 star colours, used as the ring of an avatar. / Degradé cónico con los 12 colores de la estrella, usado como aro de un avatar. */
+export function starRingGradient(): string {
+  const step = 360 / STAR_DOT_COLORS.length;
+  const stops = STAR_DOT_COLORS.map((color, i) => `${color} ${i * step}deg ${(i + 1) * step}deg`);
+  return `conic-gradient(${stops.join(", ")})`;
+}
