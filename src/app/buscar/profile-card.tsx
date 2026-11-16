@@ -16,7 +16,7 @@ export function ProfileCard({ card }: { card: SearchCard }) {
       {/* Avatar centered; the mode icons stack vertically at its right. / Avatar centrado; los íconos de modalidad apilados a su derecha. */}
       <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
         <span aria-hidden="true" />
-        <Avatar name={card.displayName} size="lg" />
+        <Avatar name={card.displayName} photoPath={card.photoPath} size="lg" />
         {card.serviceModes.length > 0 && (
           <ul className="flex flex-col items-start gap-2 pl-3" aria-label="Modo de atención">
             {card.serviceModes.map((mode) => (

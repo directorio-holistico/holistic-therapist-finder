@@ -82,7 +82,7 @@ foreach ($t in $columnOnly) { Check "read ALL columns of $t" (Get-Status "GET" "
 # 2b) Tables where anon has ALL columns by design (every column is public); rows are limited to published profiles by RLS.
 #     select=* answers 2xx here: that is correct. Tablas donde anon tiene TODAS las columnas por diseno (todas son publicas);
 #     las filas se limitan a perfiles publicados por RLS. select=* responde 2xx: es lo correcto.
-$allColumnsPublic = @("profile_languages", "profile_service_modes", "profile_session_formats", "profile_therapies", "profile_therapy_rates")
+$allColumnsPublic = @("profile_languages", "profile_therapy_service_modes", "profile_therapy_session_formats", "profile_therapies", "profile_therapy_rates")
 foreach ($t in $allColumnsPublic) { Check "read $t (all columns public, rows by RLS)" (Get-Status "GET" "$base/${t}?select=*&limit=1") $true }
 
 # 3) Every other table: refused / Toda otra tabla: rechazada
@@ -119,6 +119,28 @@ Check "call rates_validity_months() (visitors)" (Get-Status "POST" "$base/rpc/ra
 # therapy id 1 (the first active therapy) and location id 1 (the first country) are assumed from the seed migrations
 # se asumen el id 1 de terapia (la primera activa) y el id 1 de ubicacion (el primer pais) de las migraciones de carga
 Check "call search_profiles(1, 1) (visitors)" (Get-Status "POST" "$base/rpc/search_profiles" '{"p_therapy_id":1,"p_location_id":1}') $true
+
+# 7) Profile photos bucket: visitors can neither list it nor upload to it (a public bucket only serves a file by its exact address).
+#    Bucket de fotos de perfil: los visitantes no pueden listarlo ni subir archivos (un bucket publico solo entrega un archivo por su direccion exacta).
+$storage = "https://$ProjectRef.supabase.co/storage/v1/object"
+function Get-Response {
+  param([string]$Method, [string]$Url, [string]$Body, [hashtable]$Hdrs)
+  try {
+    $r = Invoke-WebRequest -Method $Method -Uri $Url -Headers $Hdrs -Body $Body -UseBasicParsing
+    return @{ Status = [int]$r.StatusCode; Text = [string]$r.Content }
+  } catch {
+    if ($_.Exception.Response) { return @{ Status = [int]$_.Exception.Response.StatusCode; Text = "" } }
+    throw
+  }
+}
+$list = Get-Response "POST" "$storage/list/profile-photos-public" '{"prefix":"","limit":10}' $headers
+$listOk = (($list.Status -lt 200 -or $list.Status -ge 300) -or ($list.Text.Trim() -eq "[]"))
+if ($listOk) { Write-Host ("PASS  {0,-55} {1}" -f "list profile-photos-public (empty or refused)", $list.Status) -ForegroundColor Green }
+else { Write-Host ("FAIL  {0,-55} {1} (the bucket can be listed)" -f "list profile-photos-public (empty or refused)", $list.Status) -ForegroundColor Red; $failures++ }
+$uploadHeaders = @{ "apikey" = $key; "Authorization" = "Bearer $key"; "Content-Type" = "image/jpeg" }
+$up = Get-Response "POST" "$storage/profile-photos-public/zz-anon-test.jpg" "x" $uploadHeaders
+Check "upload to profile-photos-public" $up.Status $false
+if ($up.Status -ge 200 -and $up.Status -lt 300) { Write-Host "A file zz-anon-test.jpg was created by anon: delete it in Supabase Storage and fix the policies / Se creo un archivo: borralo en Storage y corregi las politicas." -ForegroundColor Red }
 
 if ($failures -gt 0) { throw "$failures check(s) failed: do NOT publish / $failures comprobacion(es) fallaron: NO publicar." }
 Write-Host "Anonymous access is as designed / El acceso anonimo es el disenado." -ForegroundColor Green

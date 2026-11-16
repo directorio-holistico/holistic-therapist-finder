@@ -88,7 +88,7 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
       <header className="rounded-2xl border border-linea bg-superficie p-6 shadow-sm sm:flex sm:items-center sm:gap-6">
         {/* The avatar is where the photo will go. / El avatar es el lugar de la foto. */}
         <div className="flex justify-center sm:justify-start">
-          <Avatar name={profile.displayName} size="lg" />
+          <Avatar name={profile.displayName} photoPath={profile.photoPath} size="lg" />
         </div>
         <div className="mt-4 text-center sm:mt-0 sm:text-left">
           <h1 className="font-display text-3xl font-semibold leading-tight text-tinta">{profile.displayName}</h1>

@@ -18,6 +18,8 @@ export type SearchCard = {
   displayName: string;
   headline: string | null;
   place: string;
+  // Path of the photo inside the public bucket, or null. / Ruta de la foto dentro del bucket público, o null.
+  photoPath: string | null;
   therapies: string[];
   // Short names, same order as `therapies`; equal to the full name when a therapy has none. / Nombres cortos, mismo orden que `therapies`; igual al nombre completo si la terapia no tiene.
   therapyShorts: string[];
@@ -39,6 +41,7 @@ export type SearchRow = {
   total_count?: number | null;
   profile_id?: string | null;
   display_name?: string | null;
+  photo_path?: string | null;
   headline?: string | null;
   city_name?: string | null;
   region_name?: string | null;
@@ -110,6 +113,7 @@ export function toCard(row: SearchRow, searchedTherapyId: number | null = null):
     profileId: row.profile_id,
     group: row.result_group ?? 1,
     displayName: row.display_name,
+    photoPath: row.photo_path ?? null,
     headline: row.headline ?? null,
     place,
     therapies: therapyItems.map((item) => item.name),
