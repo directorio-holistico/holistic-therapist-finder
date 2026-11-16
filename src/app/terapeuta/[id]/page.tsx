@@ -7,7 +7,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { Avatar } from "@/components/avatar";
 import { ModeBadge } from "@/components/mode-icon";
+import { SiteHeader } from "@/components/site-header";
 import { getTurnstileSiteKey } from "@/lib/env";
 import { formatDate, formatMoney } from "@/lib/format";
 import { joinWithY, labelLanguage, labelRateAudience, labelSessionFormat } from "@/lib/labels";
@@ -28,23 +30,18 @@ const LINK_LABELS: Record<ProfileLinkKind, string> = {
   youtube: "YouTube",
 };
 
-function initialsOf(name: string): string {
-  const letters = name.replace(/\[[^\]]*\]/g, "").trim().split(/\s+/).filter(Boolean);
-  return ((letters[0]?.[0] ?? "") + (letters.length > 1 ? (letters[letters.length - 1]?.[0] ?? "") : "")).toUpperCase();
-}
-
 function TherapyBlock({ therapy }: { therapy: TherapyDetail }) {
   return (
-    <li className="rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-      <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{therapy.name}</h3>
+    <li className="rounded-2xl border border-linea bg-superficie p-5 shadow-sm">
+      <h3 className="font-display text-xl font-semibold text-tinta">{therapy.name}</h3>
       {therapy.serviceModes.length > 0 && (
-        <ul className="mt-2 flex list-none flex-wrap gap-2 p-0" aria-label="Modo de atención">
+        <ul className="mt-3 flex list-none flex-wrap gap-2 p-0" aria-label="Modo de atención">
           {therapy.serviceModes.map((mode) => (
             <li key={mode}><ModeBadge mode={mode} /></li>
           ))}
         </ul>
       )}
-      <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+      <p className="mt-3 text-sm text-apagado">
         {[
           therapy.sessionFormats.length > 0 ? joinWithY(therapy.sessionFormats.map(labelSessionFormat)) : "",
           therapy.sessionMinutes ? `Sesión de ${therapy.sessionMinutes} min` : "",
@@ -53,15 +50,16 @@ function TherapyBlock({ therapy }: { therapy: TherapyDetail }) {
           .join(" · ")}
       </p>
       {therapy.rates.length > 0 ? (
-        <ul className="mt-2 list-none p-0 text-sm text-zinc-800 dark:text-zinc-200">
+        <ul className="mt-3 list-none border-t border-linea p-0 pt-3 text-sm text-tinta">
           {therapy.rates.map((rate) => (
-            <li key={rate.audience}>
-              {labelRateAudience(rate.audience)}: <span className="font-medium">{formatMoney(rate.amount, rate.currency)}</span>
+            <li key={rate.audience} className="flex items-baseline justify-between gap-4 py-0.5">
+              <span className="text-apagado">{labelRateAudience(rate.audience)}</span>
+              <span className="text-base font-semibold">{formatMoney(rate.amount, rate.currency)}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Precio: consultar con el terapeuta.</p>
+        <p className="mt-3 border-t border-linea pt-3 text-sm text-apagado">Precio: consultar con el terapeuta.</p>
       )}
     </li>
   );
@@ -71,7 +69,7 @@ function RatesFreshness({ profile }: { profile: ProfileDetail }) {
   if (!profile.therapies.some((therapy) => therapy.rates.length > 0)) return null;
   const date = formatDate(profile.ratesConfirmedAt);
   return (
-    <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-400">
+    <p className="mt-3 text-xs text-apagado">
       {profile.ratesCurrent && date
         ? `Precios al día · confirmados el ${date}`
         : date
@@ -83,28 +81,34 @@ function RatesFreshness({ profile }: { profile: ProfileDetail }) {
 
 function ProfileView({ profile }: { profile: ProfileDetail }) {
   const siteKey = getTurnstileSiteKey();
+  const h2 = "font-display text-2xl font-semibold text-tinta";
   return (
     <article>
-      <header className="flex items-start gap-4">
-        {/* Space for the photo: until photos exist (later step) a neutral circle with the initials. / Lugar para la foto: hasta que existan, un círculo neutro con las iniciales. */}
-        <div
-          aria-hidden="true"
-          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-zinc-200 text-2xl font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
-        >
-          {initialsOf(profile.displayName)}
+      <header className="rounded-2xl border border-linea bg-superficie p-6 shadow-sm sm:flex sm:items-center sm:gap-6">
+        {/* The avatar is where the photo will go. / El avatar es el lugar de la foto. */}
+        <div className="flex justify-center sm:justify-start">
+          <Avatar name={profile.displayName} size="lg" />
         </div>
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">{profile.displayName}</h1>
-          {profile.isPinned && <p className="text-xs text-zinc-600 dark:text-zinc-400">Fundador del sitio</p>}
-          {profile.headline && <p className="mt-1 text-zinc-800 dark:text-zinc-200">{profile.headline}</p>}
-          {profile.place && <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{profile.place}</p>}
+        <div className="mt-4 text-center sm:mt-0 sm:text-left">
+          <h1 className="font-display text-3xl font-semibold leading-tight text-tinta">{profile.displayName}</h1>
+          {profile.isPinned && <p className="mt-0.5 text-xs font-medium text-acento">Fundador del sitio</p>}
+          {profile.headline && <p className="mt-2 text-tinta">{profile.headline}</p>}
+          {profile.place && <p className="mt-1 text-sm text-apagado">{profile.place}</p>}
+          {siteKey && (
+            <a
+              href="#contacto"
+              className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-boton px-8 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+            >
+              Contactar
+            </a>
+          )}
         </div>
       </header>
 
       {profile.therapies.length > 0 && (
         <section aria-labelledby="therapies-title" className="mt-8">
-          <h2 id="therapies-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Terapias</h2>
-          <ul className="mt-3 grid list-none gap-4 p-0">
+          <h2 id="therapies-title" className={h2}>Terapias</h2>
+          <ul className="mt-3 grid list-none gap-4 p-0 sm:grid-cols-2">
             {profile.therapies.map((therapy) => (
               <TherapyBlock key={therapy.therapyId} therapy={therapy} />
             ))}
@@ -115,31 +119,31 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
 
       {(profile.languages.length > 0 || profile.practiceStartYear !== null) && (
         <section aria-labelledby="about-title" className="mt-8">
-          <h2 id="about-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Datos</h2>
-          <ul className="mt-2 list-none p-0 text-zinc-800 dark:text-zinc-200">
+          <h2 id="about-title" className={h2}>Datos</h2>
+          <ul className="mt-3 list-none rounded-2xl border border-linea bg-superficie p-5 text-tinta shadow-sm">
             {profile.languages.length > 0 && <li>Idiomas: {profile.languages.map(labelLanguage).join(", ")}</li>}
             {profile.practiceStartYear !== null && <li>Atiende desde {profile.practiceStartYear}</li>}
           </ul>
         </section>
       )}
 
-      <section aria-labelledby="contact-title" className="mt-8">
-        <h2 id="contact-title" className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Contacto</h2>
-        {profile.links.length > 0 && (
-          <ul className="mt-2 list-none p-0 text-zinc-800 dark:text-zinc-200">
-            {profile.links.map((link) => (
-              <li key={link.kind}>
-                {LINK_LABELS[link.kind]}:{" "}
-                <a className="underline" href={link.href} target="_blank" rel="noopener noreferrer nofollow">{link.text}</a>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-3">
+      <section id="contacto" aria-labelledby="contact-title" className="mt-8 scroll-mt-6">
+        <h2 id="contact-title" className={h2}>Contacto</h2>
+        <div className="mt-3 rounded-2xl border border-linea bg-superficie p-5 text-tinta shadow-sm">
+          {profile.links.length > 0 && (
+            <ul className="mb-4 list-none p-0">
+              {profile.links.map((link) => (
+                <li key={link.kind}>
+                  {LINK_LABELS[link.kind]}:{" "}
+                  <a className="font-medium text-acento underline" href={link.href} target="_blank" rel="noopener noreferrer nofollow">{link.text}</a>
+                </li>
+              ))}
+            </ul>
+          )}
           {siteKey ? (
             <ContactReveal profileId={profile.profileId} siteKey={siteKey} />
           ) : (
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">El contacto directo no está disponible por ahora.</p>
+            <p className="text-sm text-apagado">El contacto directo no está disponible por ahora.</p>
           )}
         </div>
       </section>
@@ -162,17 +166,20 @@ async function ProfileContent({ params }: PageProps) {
 
 export default function ProfilePage({ params }: PageProps) {
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
-      <p className="mb-4">
-        <Link className="underline" href="/buscar">← Volver a la búsqueda</Link>
-      </p>
-      <Suspense fallback={<p className="text-zinc-700 dark:text-zinc-300">Cargando el perfil…</p>}>
-        <ProfileContent params={params} />
-      </Suspense>
-      <p className="mt-10 border-t border-zinc-300 pt-4 text-sm text-zinc-700 dark:border-zinc-700 dark:text-zinc-300">
-        Este sitio solo conecta personas con terapeutas: no da turnos ni cobra, y no reemplaza la atención médica ni
-        psicológica. Desconfiá de quien prometa curas.
-      </p>
-    </main>
+    <>
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-3xl px-4 py-8">
+        <p className="mb-4">
+          <Link className="text-sm text-apagado underline hover:text-tinta" href="/buscar">← Volver a la búsqueda</Link>
+        </p>
+        <Suspense fallback={<p className="text-apagado">Cargando el perfil…</p>}>
+          <ProfileContent params={params} />
+        </Suspense>
+        <p className="mt-10 border-t border-linea pt-4 text-sm text-apagado">
+          Este sitio solo conecta personas con terapeutas: no da turnos ni cobra, y no reemplaza la atención médica ni
+          psicológica. Desconfiá de quien prometa curas.
+        </p>
+      </main>
+    </>
   );
 }

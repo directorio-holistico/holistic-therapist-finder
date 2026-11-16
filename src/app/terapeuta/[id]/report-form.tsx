@@ -86,16 +86,16 @@ export function ReportForm({ profileId, siteKey }: Props) {
   }
 
   if (sent) {
-    return <p role="status" className="text-zinc-800 dark:text-zinc-200">{REPORT_SUCCESS_MESSAGE}</p>;
+    return <p role="status" className="text-tinta">{REPORT_SUCCESS_MESSAGE}</p>;
   }
 
-  const field = "mt-1 w-full rounded-md border border-zinc-400 bg-white px-3 py-2 text-base text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100";
+  const field = "mt-1 min-h-11 w-full rounded-xl border border-campo bg-superficie px-3 py-2 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento";
 
   return (
-    <details className="text-zinc-800 dark:text-zinc-200">
+    <details className="text-tinta">
       <summary className="cursor-pointer text-sm underline">Denunciar este perfil</summary>
       <form onSubmit={(event) => void onSubmit(event)} className="mt-3 grid max-w-xl gap-4">
-        <p className="text-sm text-zinc-700 dark:text-zinc-300">
+        <p className="text-sm text-apagado">
           Usalo si el perfil promete curas, tiene información falsa o algo no está bien. No hace falta que des tu nombre. Una persona
           revisa cada denuncia; el perfil no se baja de forma automática.
         </p>
@@ -118,7 +118,7 @@ export function ReportForm({ profileId, siteKey }: Props) {
             onChange={(event) => setDetails(event.target.value)}
             className={field}
           />
-          <p className="mt-1 text-xs text-zinc-700 dark:text-zinc-300">Hasta {REPORT_DETAILS_MAX} caracteres. No escribas datos de salud.</p>
+          <p className="mt-1 text-xs text-apagado">Hasta {REPORT_DETAILS_MAX} caracteres. No escribas datos de salud.</p>
         </div>
         <div>
           <label htmlFor={`${ids}-email`} className="block text-sm font-medium">Tu mail (opcional)</label>
@@ -132,7 +132,7 @@ export function ReportForm({ profileId, siteKey }: Props) {
             aria-describedby={`${ids}-email-help`}
             className={field}
           />
-          <p id={`${ids}-email-help`} className="mt-1 text-xs text-zinc-700 dark:text-zinc-300">
+          <p id={`${ids}-email-help`} className="mt-1 text-xs text-apagado">
             Solo lo ve quien revisa las denuncias, para pedirte más datos. Si el motivo es un mail o un dato de contacto
             incorrecto, escribí acá el correcto.
           </p>
@@ -141,12 +141,12 @@ export function ReportForm({ profileId, siteKey }: Props) {
           <button
             type="submit"
             disabled={busy}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-base font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+            className="min-h-10 rounded-full bg-boton px-6 text-sm font-semibold text-boton-texto hover:opacity-90 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
           >
             {busy ? "Enviando…" : "Enviar denuncia"}
           </button>
           <div ref={container} className="mt-2" />
-          <p role="status" className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{message}</p>
+          <p role="status" className="mt-2 text-sm text-apagado">{message}</p>
         </div>
       </form>
     </details>

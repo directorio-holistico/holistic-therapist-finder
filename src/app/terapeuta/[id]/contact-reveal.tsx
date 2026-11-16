@@ -80,9 +80,9 @@ export function ContactReveal({ profileId, siteKey }: Props) {
     return (
       <div>
         {contacts.length === 0 ? (
-          <p className="text-zinc-800 dark:text-zinc-200">Este terapeuta no publicó teléfono ni mail. Podés usar sus redes o su sitio web.</p>
+          <p className="text-tinta">Este terapeuta no publicó teléfono ni mail. Podés usar sus redes o su sitio web.</p>
         ) : (
-          <ul className="list-none p-0 text-zinc-800 dark:text-zinc-200">
+          <ul className="list-none p-0 text-tinta">
             {contacts.map((contact) => {
               const href = contact.type === "phone" ? phoneHref(contact.value) : contact.type === "email" ? emailHref(contact.value) : null;
               const whatsapp = contact.type === "phone" && contact.whatsapp ? whatsappHref(contact.value) : null;
@@ -111,12 +111,12 @@ export function ContactReveal({ profileId, siteKey }: Props) {
         type="button"
         onClick={() => void onClick()}
         disabled={busy}
-        className="rounded-md bg-zinc-900 px-4 py-2 text-base font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        className="min-h-10 rounded-full bg-boton px-6 text-sm font-semibold text-boton-texto hover:opacity-90 disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
       >
         {busy ? "Verificando…" : "Ver contacto"}
       </button>
       <div ref={container} className="mt-2" />
-      <p role="status" className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{message}</p>
+      <p role="status" className="mt-2 text-sm text-apagado">{message}</p>
     </div>
   );
 }

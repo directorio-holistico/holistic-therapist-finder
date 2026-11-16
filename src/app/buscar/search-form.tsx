@@ -93,7 +93,7 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
       <div>
         <label htmlFor="mode" className={labelClass}>Modo de atención</label>
         <select id="mode" name="mode" defaultValue={query.serviceMode ?? ""} className={fieldClass}>
-          <option value="">Cualquiera</option>
+          <option value="">Presencial/Distancia</option>
           <option value="in_person">Presencial</option>
           <option value="remote">A distancia</option>
         </select>
@@ -101,7 +101,7 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
 
       <button
         type="submit"
-        className="col-span-full min-h-12 rounded-full bg-boton px-6 text-base font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+        className="col-span-full min-h-10 justify-self-center rounded-full bg-boton px-10 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
       >
         Buscar
       </button>
