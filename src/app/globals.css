@@ -1,24 +1,66 @@
 @import "tailwindcss";
 
+/* Dark mode is chosen by the visitor (data-theme on <html>), not by the device.
+   El modo oscuro lo elige el visitante (data-theme en <html>), no el dispositivo. */
+@custom-variant dark (&:where([data-theme="oscuro"], [data-theme="oscuro"] *));
+
+/* Colour pairs and their contrast ratios: docs/design/colores.md (checked by tests/brand-contrast.test.ts).
+   Pares de colores y su contraste: docs/design/colores.md (lo verifica tests/brand-contrast.test.ts). */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --fondo: #FBF5EA;
+  --superficie: #FFFFFF;
+  --tinta: #26232F;
+  --apagado: #5B5663;
+  --acento: #8A5A00;
+  --oro: #E9B949;
+  --linea: #E6D9BF;
+  --boton: #26232F;
+  --boton-texto: #FBF5EA;
+}
+
+[data-theme="oscuro"] {
+  color-scheme: dark;
+  --fondo: #0F1233;
+  --superficie: #181C46;
+  --tinta: #F5EFE0;
+  --apagado: #B9B6CC;
+  --acento: #E9B949;
+  --oro: #E9B949;
+  --linea: #2C3066;
+  --boton: #E9B949;
+  --boton-texto: #0F1233;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-fondo: var(--fondo);
+  --color-superficie: var(--superficie);
+  --color-tinta: var(--tinta);
+  --color-apagado: var(--apagado);
+  --color-acento: var(--acento);
+  --color-oro: var(--oro);
+  --color-linea: var(--linea);
+  --color-boton: var(--boton);
+  --color-boton-texto: var(--boton-texto);
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--fondo);
+  color: var(--tinta);
+  font-family: var(--font-sans);
+}
+
+@keyframes estrella-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The star turns slowly only if the visitor has not asked for less motion. / La estrella gira despacio solo si el visitante no pidió menos movimiento. */
+@media (prefers-reduced-motion: no-preference) {
+  .estrella-gira {
+    animation: estrella-gira 120s linear infinite;
+  }
 }
