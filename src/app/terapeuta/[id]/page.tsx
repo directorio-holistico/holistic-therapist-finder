@@ -86,9 +86,9 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
   return (
     <article>
       <header className="rounded-2xl border border-linea bg-superficie p-6 shadow-sm sm:flex sm:items-center sm:gap-6">
-        {/* The avatar is where the photo will go. / El avatar es el lugar de la foto. */}
+        {/* Large photo (or initials when there is none). / Foto grande (o iniciales si no hay). */}
         <div className="flex justify-center sm:justify-start">
-          <Avatar name={profile.displayName} photoPath={profile.photoPath} size="lg" />
+          <Avatar name={profile.displayName} photoPath={profile.photoPath} size="xl" />
         </div>
         <div className="mt-4 text-center sm:mt-0 sm:text-left">
           <h1 className="font-display text-3xl font-semibold leading-tight text-tinta">{profile.displayName}</h1>
