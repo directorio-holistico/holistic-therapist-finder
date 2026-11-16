@@ -1691,6 +1691,10 @@ export type Database = {
         Args: { p_value: boolean; p_version?: string }
         Returns: undefined
       }
+      set_photo_consent: {
+        Args: { p_value: boolean; p_version?: string }
+        Returns: undefined
+      }
       set_profile_pinned: {
         Args: { p_pinned: boolean; p_profile_id: string }
         Returns: undefined
