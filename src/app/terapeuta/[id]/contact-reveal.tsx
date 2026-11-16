@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { emailHref, labelContactType, phoneHref, whatsappHref } from "@/lib/contact-links";
+import { SocialIcon } from "@/components/social-icon";
 import { loadTurnstile } from "@/lib/turnstile-client";
 
 // Small line icons; the text label stays for screen readers. / Íconos de línea; el texto queda para lectores de pantalla.
@@ -19,7 +20,6 @@ function LineIcon({ children }: { children: React.ReactNode }) {
 }
 const MailIcon = () => (<LineIcon><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></LineIcon>);
 const PhoneIcon = () => (<LineIcon><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /></LineIcon>);
-const ChatIcon = () => (<LineIcon><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></LineIcon>);
 
 type Contact = { type: string; value: string; whatsapp: boolean };
 const GENERIC_ERROR = "No pudimos mostrar el contacto. Probá de nuevo en unos minutos.";
@@ -107,7 +107,7 @@ export function ContactReveal({ profileId, siteKey }: Props) {
                   </span>
                   {whatsapp && (
                     <a className="inline-flex items-center gap-2 underline" href={whatsapp} target="_blank" rel="noopener noreferrer">
-                      <ChatIcon />
+                      <span className="text-acento"><SocialIcon kind="whatsapp" size={18} /></span>
                       WhatsApp
                     </a>
                   )}
