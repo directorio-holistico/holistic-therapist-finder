@@ -9,6 +9,18 @@ import { useEffect, useRef, useState } from "react";
 import { emailHref, labelContactType, phoneHref, whatsappHref } from "@/lib/contact-links";
 import { loadTurnstile } from "@/lib/turnstile-client";
 
+// Small line icons; the text label stays for screen readers. / Íconos de línea; el texto queda para lectores de pantalla.
+function LineIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false" className="shrink-0 text-acento">
+      {children}
+    </svg>
+  );
+}
+const MailIcon = () => (<LineIcon><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></LineIcon>);
+const PhoneIcon = () => (<LineIcon><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" /></LineIcon>);
+const ChatIcon = () => (<LineIcon><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></LineIcon>);
+
 type Contact = { type: string; value: string; whatsapp: boolean };
 const GENERIC_ERROR = "No pudimos mostrar el contacto. Probá de nuevo en unos minutos.";
 
@@ -82,19 +94,22 @@ export function ContactReveal({ profileId, siteKey }: Props) {
         {contacts.length === 0 ? (
           <p className="text-tinta">Este terapeuta no publicó teléfono ni mail. Podés usar sus redes o su sitio web.</p>
         ) : (
-          <ul className="list-none p-0 text-tinta">
+          <ul className="list-none space-y-2 p-0 text-tinta">
             {contacts.map((contact) => {
               const href = contact.type === "phone" ? phoneHref(contact.value) : contact.type === "email" ? emailHref(contact.value) : null;
               const whatsapp = contact.type === "phone" && contact.whatsapp ? whatsappHref(contact.value) : null;
               return (
-                <li key={`${contact.type}-${contact.value}`}>
-                  {labelContactType(contact.type)}:{" "}
-                  {href ? <a className="underline" href={href}>{contact.value}</a> : <span>{contact.value}</span>}
+                <li key={`${contact.type}-${contact.value}`} className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:justify-start">
+                  <span className="inline-flex items-center gap-2">
+                    {contact.type === "email" ? <MailIcon /> : <PhoneIcon />}
+                    <span className="sr-only">{labelContactType(contact.type)}: </span>
+                    {href ? <a className="underline" href={href}>{contact.value}</a> : <span>{contact.value}</span>}
+                  </span>
                   {whatsapp && (
-                    <>
-                      {" · "}
-                      <a className="underline" href={whatsapp} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-                    </>
+                    <a className="inline-flex items-center gap-2 underline" href={whatsapp} target="_blank" rel="noopener noreferrer">
+                      <ChatIcon />
+                      WhatsApp
+                    </a>
                   )}
                 </li>
               );

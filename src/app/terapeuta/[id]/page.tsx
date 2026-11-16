@@ -94,14 +94,13 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
           {profile.isPinned && <p className="mt-0.5 text-xs font-medium text-acento">Fundador del sitio</p>}
           {profile.headline && <p className="mt-2 text-tinta">{profile.headline}</p>}
           {profile.place && <p className="mt-1 text-sm text-apagado">{profile.place}</p>}
-          {siteKey && (
-            <a
-              href="#contacto"
-              className="mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-boton px-8 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
-            >
-              Contactar
-            </a>
-          )}
+          <div className="mt-4">
+            {siteKey ? (
+              <ContactReveal profileId={profile.profileId} siteKey={siteKey} />
+            ) : (
+              <p className="text-sm text-apagado">El contacto directo no está disponible por ahora.</p>
+            )}
+          </div>
         </div>
       </header>
 
@@ -127,26 +126,19 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
         </section>
       )}
 
-      <section id="contacto" aria-labelledby="contact-title" className="mt-8 scroll-mt-6">
-        <h2 id="contact-title" className={h2}>Contacto</h2>
-        <div className="mt-3 rounded-2xl border border-linea bg-superficie p-5 text-tinta shadow-sm">
-          {profile.links.length > 0 && (
-            <ul className="mb-4 list-none p-0">
-              {profile.links.map((link) => (
-                <li key={link.kind}>
-                  {LINK_LABELS[link.kind]}:{" "}
-                  <a className="font-medium text-acento underline" href={link.href} target="_blank" rel="noopener noreferrer nofollow">{link.text}</a>
-                </li>
-              ))}
-            </ul>
-          )}
-          {siteKey ? (
-            <ContactReveal profileId={profile.profileId} siteKey={siteKey} />
-          ) : (
-            <p className="text-sm text-apagado">El contacto directo no está disponible por ahora.</p>
-          )}
-        </div>
-      </section>
+      {profile.links.length > 0 && (
+        <section aria-labelledby="links-title" className="mt-8">
+          <h2 id="links-title" className={h2}>Redes y sitio web</h2>
+          <ul className="mt-3 list-none rounded-2xl border border-linea bg-superficie p-5 text-tinta shadow-sm">
+            {profile.links.map((link) => (
+              <li key={link.kind}>
+                {LINK_LABELS[link.kind]}:{" "}
+                <a className="font-medium text-acento underline" href={link.href} target="_blank" rel="noopener noreferrer nofollow">{link.text}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {siteKey && (
         <section aria-label="Denunciar este perfil" className="mt-8">
