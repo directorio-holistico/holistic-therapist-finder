@@ -10,7 +10,7 @@ import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
 import { ModeBadge } from "@/components/mode-icon";
 import { SiteHeader } from "@/components/site-header";
-import { SocialIcon } from "@/components/social-icon";
+import { SOCIAL_HOVER, SocialIcon } from "@/components/social-icon";
 import { getTurnstileSiteKey } from "@/lib/env";
 import { formatDate, formatMoney } from "@/lib/format";
 import { joinWithY, labelLanguage, labelRateAudience, labelSessionFormat } from "@/lib/labels";
@@ -138,7 +138,7 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
                   target="_blank"
                   rel="noopener noreferrer nofollow"
                   title={`${LINK_LABELS[link.kind]}: ${link.text}`}
-                  className="inline-flex size-11 items-center justify-center rounded-full border border-linea bg-superficie text-tinta shadow-sm hover:bg-fondo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                  className={`inline-flex size-11 items-center justify-center rounded-full border border-linea bg-superficie text-tinta shadow-sm motion-safe:transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento ${SOCIAL_HOVER[link.kind]}`}
                 >
                   <SocialIcon kind={link.kind} />
                   <span className="sr-only">{LINK_LABELS[link.kind]}: {link.text}</span>

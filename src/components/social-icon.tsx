@@ -8,6 +8,16 @@
 import { Facebook, Globe, Instagram, Tiktok, Whatsapp, Youtube } from "react-bootstrap-icons";
 import type { ProfileLinkKind } from "@/lib/profile-detail";
 
+// Colour a link takes on hover/focus (the icon is one colour at rest). Full class names so Tailwind can see them.
+// Color que toma el enlace al pasar el mouse o enfocar (en reposo el ícono es de un solo color). Clases completas para que Tailwind las vea.
+export const SOCIAL_HOVER: Record<ProfileLinkKind, string> = {
+  website: "hover:text-acento focus-visible:text-acento",
+  instagram: "hover:text-[#E4405F] focus-visible:text-[#E4405F]",
+  facebook: "hover:text-[#1877F2] focus-visible:text-[#1877F2]",
+  tiktok: "hover:text-[#FE2C55] focus-visible:text-[#FE2C55]",
+  youtube: "hover:text-[#FF0000] focus-visible:text-[#FF0000]",
+};
+
 export function SocialIcon({ kind, size = 20 }: { kind: ProfileLinkKind | "whatsapp"; size?: number }) {
   const props = { size, "aria-hidden": true, focusable: false } as const;
   switch (kind) {
