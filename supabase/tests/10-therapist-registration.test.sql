@@ -158,7 +158,7 @@ begin
     begin execute stmt; exception when insufficient_privilege then denied := true; end;
     if not denied then raise exception 'authenticated could run: %', stmt; end if;
   end loop;
-  if (select count(*) from public.legal_document_types) <> 4 then raise exception 'authenticated must read the document catalog'; end if;
+  if (select count(*) from public.legal_document_types) <> 5 then raise exception 'authenticated must read the document catalog (5 documents: 3 required, offers and photo consent)'; end if;
 end
 $$;
 

@@ -126,7 +126,8 @@ $storage = "https://$ProjectRef.supabase.co/storage/v1/object"
 function Get-Response {
   param([string]$Method, [string]$Url, [string]$Body, [hashtable]$Hdrs)
   try {
-    $r = Invoke-WebRequest -Method $Method -Uri $Url -Headers $Hdrs -Body $Body -UseBasicParsing
+    if ($Body) { $r = Invoke-WebRequest -Method $Method -Uri $Url -Headers $Hdrs -Body $Body -UseBasicParsing }
+    else { $r = Invoke-WebRequest -Method $Method -Uri $Url -Headers $Hdrs -UseBasicParsing }
     return @{ Status = [int]$r.StatusCode; Text = [string]$r.Content }
   } catch {
     if ($_.Exception.Response) { return @{ Status = [int]$_.Exception.Response.StatusCode; Text = "" } }
@@ -141,6 +142,19 @@ $uploadHeaders = @{ "apikey" = $key; "Authorization" = "Bearer $key"; "Content-T
 $up = Get-Response "POST" "$storage/profile-photos-public/zz-anon-test.jpg" "x" $uploadHeaders
 Check "upload to profile-photos-public" $up.Status $false
 if ($up.Status -ge 200 -and $up.Status -lt 300) { Write-Host "A file zz-anon-test.jpg was created by anon: delete it in Supabase Storage and fix the policies / Se creo un archivo: borralo en Storage y corregi las politicas." -ForegroundColor Red }
+
+# 8) Pending photos bucket (PRIVATE): visitors can neither list, read nor upload; and cannot give a photo consent.
+#    Bucket de fotos pendientes (PRIVADO): los visitantes no pueden listar, leer ni subir; ni dar un consentimiento de foto.
+$pend = Get-Response "POST" "$storage/list/profile-photos-pending" '{"prefix":"","limit":10}' $headers
+$pendOk = (($pend.Status -lt 200 -or $pend.Status -ge 300) -or ($pend.Text.Trim() -eq "[]"))
+if ($pendOk) { Write-Host ("PASS  {0,-55} {1}" -f "list profile-photos-pending (empty or refused)", $pend.Status) -ForegroundColor Green }
+else { Write-Host ("FAIL  {0,-55} {1} (the private bucket can be listed)" -f "list profile-photos-pending (empty or refused)", $pend.Status) -ForegroundColor Red; $failures++ }
+$pendRead = Get-Response "GET" "$storage/public/profile-photos-pending/zz-anon-test.jpg" "" $headers
+Check "read profile-photos-pending as public" $pendRead.Status $false
+$pendUp = Get-Response "POST" "$storage/profile-photos-pending/zz-anon-test.jpg" "x" $uploadHeaders
+Check "upload to profile-photos-pending" $pendUp.Status $false
+if ($pendUp.Status -ge 200 -and $pendUp.Status -lt 300) { Write-Host "A file zz-anon-test.jpg was created by anon in the private bucket: delete it in Supabase Storage and fix the policies / Se creo un archivo en el bucket privado: borralo y corregi las politicas." -ForegroundColor Red }
+Check "call set_photo_consent(boolean, text)" (Get-Status "POST" "$base/rpc/set_photo_consent" '{"p_value":true,"p_version":"x"}') $false
 
 if ($failures -gt 0) { throw "$failures check(s) failed: do NOT publish / $failures comprobacion(es) fallaron: NO publicar." }
 Write-Host "Anonymous access is as designed / El acceso anonimo es el disenado." -ForegroundColor Green
