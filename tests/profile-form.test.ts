@@ -231,7 +231,7 @@ describe("therapies and rates", () => {
       { therapy_id: 11, session_minutes: null, service_modes: [2], session_formats: [1, 2], rates: [{ rate_audience_id: 1, amount: 9000, currency_id: 1 }] },
     ]);
     const back = defaultsFromPayload(payload, TYPES, AUD);
-    expect(back.therapies).toHaveLength(4);
+    expect(back.therapies).toHaveLength(6);
     expect(back.therapies[0]).toEqual({ therapyId: 10, minutes: "60", rateOwn: "15000", rateOther: "40", serviceModes: [1, 2], sessionFormats: [1] });
     expect(back.therapies[1]).toMatchObject({ therapyId: 11, serviceModes: [2], sessionFormats: [1, 2] });
     expect(back.therapies[2]).toEqual({ therapyId: null, minutes: "", rateOwn: "", rateOther: "", serviceModes: [], sessionFormats: [] });

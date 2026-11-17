@@ -7,7 +7,7 @@
 import type { LegalDocumentCode } from "./types";
 
 export const LEGAL_VERSIONS: Record<LegalDocumentCode, string> = {
-  terms: "2026-11-a",
+  terms: "2026-11-b",
   privacy: "2026-11-c",
   legal_declaration: "2026-11-a",
   offers_consent: "2026-11-a",

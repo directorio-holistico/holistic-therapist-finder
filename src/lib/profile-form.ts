@@ -19,9 +19,9 @@ export const LIMITS = {
   maxAmount: 100_000_000,
 } as const;
 
-// How many therapies the form offers. The database enforces the real limit (setting max_therapies_per_profile, 4 at launch).
-// Cuántas terapias ofrece el formulario. La base impone el límite real (ajuste max_therapies_per_profile, 4 al lanzar).
-export const MAX_THERAPIES = 4;
+// How many therapies the form offers. The database enforces the real limit (setting max_therapies_per_profile, 6 since 17/11/2026).
+// Cuántas terapias ofrece el formulario. La base impone el límite real (ajuste max_therapies_per_profile, 6 desde el 17/11/2026).
+export const MAX_THERAPIES = 6;
 
 // Rates are for two audiences (codes of the rate_audiences catalog). / Las tarifas son para dos audiencias (códigos del catálogo).
 export const AUDIENCE_CODES = { own: "own_country", other: "other_countries" } as const;

@@ -21,7 +21,7 @@ export const RETENTION = {
 
 export const REVIEW_BUSINESS_DAYS = { firstSubmission: 7, change: 3, priority: 1 } as const;
 export const RATES_VALIDITY_MONTHS = 6;
-export const MAX_THERAPIES_PER_PROFILE = 4;
+export const MAX_THERAPIES_PER_PROFILE = 6;
 
 // Contact email of the controller, read from the environment (never written in the repository). null if missing or invalid.
 // Mail de contacto del responsable, leído del entorno (nunca escrito en el repositorio). null si falta o no es válido.
