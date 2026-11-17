@@ -18,12 +18,13 @@ type Props = {
   initialPreviewUrl: string | null; // signed address of the pending photo / dirección firmada de la foto pendiente
   liveUrl: string | null; // photo public today / foto pública hoy
   disabled?: boolean;
+  onEdit?: () => void; // the person changed the photo choice: the form has unsent changes / la persona cambió la foto: el formulario tiene cambios sin enviar
 };
 
 type Picked = { url: string; image: HTMLImageElement };
 const STEP = 16;
 
-export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveUrl, disabled }: Props) {
+export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveUrl, disabled, onEdit }: Props) {
   const [newPath, setNewPath] = useState(initialNew);
   const [removeCurrent, setRemoveCurrent] = useState(initialRemove);
   const [previewUrl, setPreviewUrl] = useState(initialPreviewUrl);
@@ -94,6 +95,7 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
       setRemoveCurrent(false);
       setPicked(null);
       setConsent(false);
+      onEdit?.();
     } catch {
       setMessage(PHOTO_ERRORS.storage);
     } finally {
@@ -107,6 +109,7 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
     setNewPath("");
     setPreviewUrl(null);
     setBusy(false);
+    onEdit?.();
   }
 
   const window = picked ? drawRect(picked.image.naturalWidth, picked.image.naturalHeight, crop, CROP_VIEW, CROP_VIEW) : null;
@@ -125,8 +128,8 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
             {shown ? <img src={shown} alt="Tu foto de perfil" className="size-full object-cover" /> : null}
           </div>
           <div className="grid gap-1 text-sm text-zinc-700 dark:text-zinc-300">
-            {newPath && <p role="status">Foto nueva lista. Se publica cuando la aprobemos, después de que envíes tu perfil a revisión.</p>}
-            {removeCurrent && <p role="status">Se va a quitar tu foto cuando se apruebe este cambio.</p>}
+            {newPath && <p role="status">Foto nueva lista, pero todavía no se envió. Apretá «Enviar a revisión» al final: la publicamos cuando la aprobemos.</p>}
+            {removeCurrent && <p role="status">Marcaste quitar tu foto, pero todavía no se envió. Apretá «Enviar a revisión» al final: la quitamos cuando se apruebe.</p>}
             {!newPath && !removeCurrent && !liveUrl && <p>Todavía no tenés foto. Es opcional.</p>}
           </div>
         </div>
@@ -172,8 +175,8 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
               onChange={(event) => { choose(event.target.files?.[0]); event.target.value = ""; }} />
           </label>
           {newPath && <button type="button" onClick={dropNew} disabled={busy} className="rounded-md border border-zinc-400 px-4 py-3">Descartar foto nueva</button>}
-          {!newPath && liveUrl && !removeCurrent && <button type="button" onClick={() => setRemoveCurrent(true)} className="rounded-md border border-zinc-400 px-4 py-3">Quitar foto</button>}
-          {removeCurrent && <button type="button" onClick={() => setRemoveCurrent(false)} className="rounded-md border border-zinc-400 px-4 py-3">Mantener mi foto</button>}
+          {!newPath && liveUrl && !removeCurrent && <button type="button" onClick={() => { setRemoveCurrent(true); onEdit?.(); }} className="rounded-md border border-zinc-400 px-4 py-3">Quitar foto</button>}
+          {removeCurrent && <button type="button" onClick={() => { setRemoveCurrent(false); onEdit?.(); }} className="rounded-md border border-zinc-400 px-4 py-3">Mantener mi foto</button>}
         </div>
       )}
       <p className="text-sm text-zinc-600 dark:text-zinc-400">Usá una foto tuya, de frente. No se aceptan logos ni fotos de otras personas. La revisamos antes de publicarla.</p>

@@ -51,6 +51,8 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
   const [, startTransition] = useTransition();
   const [countryId, setCountryId] = useState<number | null>(initialCountryId);
   const [regionId, setRegionId] = useState<number | null>(initialRegionId);
+  // true from the first edit until the person saves or sends / true desde la primera edición hasta que guarda o envía
+  const [dirty, setDirty] = useState(false);
   const [cityMissing, setCityMissing] = useState<boolean>(missingCity !== null);
   const regionOptions = regions.filter((region) => region.parentId === countryId);
   const cityOptions = cities.filter((city) => city.parentId === regionId);
@@ -82,11 +84,12 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
     event.preventDefault();
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
     const data = new FormData(event.currentTarget, submitter);
+    setDirty(false);
     startTransition(() => action(data));
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 grid gap-6" noValidate>
+    <form onSubmit={handleSubmit} onChange={() => setDirty(true)} className="mt-6 grid gap-6" noValidate>
       {lastRejection && (
         <p role="note" className="rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
           Tu última revisión fue rechazada: {lastRejection}
@@ -113,7 +116,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         </div>
       </section>
 
-      <PhotoField initialNew={defaults.photoNew} initialRemove={defaults.photoRemove} initialPreviewUrl={pendingPhotoUrl} liveUrl={livePhotoUrl} />
+      <PhotoField initialNew={defaults.photoNew} initialRemove={defaults.photoRemove} initialPreviewUrl={pendingPhotoUrl} liveUrl={livePhotoUrl} onEdit={() => setDirty(true)} />
 
       <section className="grid gap-4" aria-labelledby="sec-lugar">
         <h2 id="sec-lugar" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Dónde atendés</h2>
@@ -262,20 +265,28 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         </div>
       </section>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <button type="submit" name="intent" value="save" disabled={pending}
-          className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 disabled:opacity-60 dark:text-zinc-100">
-          {pending ? "Guardando…" : "Guardar borrador"}
-        </button>
-        <button type="submit" name="intent" value="submit" disabled={pending}
-          className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900">
-          {pending ? "Enviando…" : "Enviar a revisión"}
-        </button>
+      {/* always reachable: the buttons stay at the bottom of the screen while there is something unsent / siempre a mano: los botones quedan al pie mientras haya algo sin enviar */}
+      <div className="sticky bottom-0 -mx-2 grid gap-2 border-t border-zinc-300 bg-[var(--fondo)] px-2 py-3 dark:border-zinc-700">
+        {(dirty || state.status === "error") && (
+          <p role="status" className="rounded-md border border-amber-500 bg-amber-50 p-2 text-sm text-amber-900">
+            Tenés cambios sin enviar. Para que los revisemos y se publiquen, apretá «Enviar a revisión». Si salís de esta pantalla ahora, se pierden.
+          </p>
+        )}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button type="submit" name="intent" value="save" disabled={pending}
+            className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 disabled:opacity-60 dark:text-zinc-100">
+            {pending ? "Guardando…" : "Guardar borrador"}
+          </button>
+          <button type="submit" name="intent" value="submit" disabled={pending}
+            className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900">
+            {pending ? "Enviando…" : "Enviar a revisión"}
+          </button>
+        </div>
+        <p role={state.status === "error" ? "alert" : "status"} aria-live="polite"
+          className={state.status === "error" ? "text-red-700 dark:text-red-400" : "text-zinc-800 dark:text-zinc-200"}>
+          {state.message}
+        </p>
       </div>
-      <p role={state.status === "error" ? "alert" : "status"} aria-live="polite"
-        className={state.status === "error" ? "text-red-700 dark:text-red-400" : "text-zinc-800 dark:text-zinc-200"}>
-        {state.message}
-      </p>
     </form>
   );
 }
