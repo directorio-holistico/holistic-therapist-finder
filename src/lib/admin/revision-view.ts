@@ -132,3 +132,51 @@ export function decisionFacts(payload: unknown, contactTypeCodes: ReadonlyMap<nu
   const photoOk = change.kind !== "set" || (profileId !== undefined && isPendingPhotoPath(change.path, profileId));
   return { hasCity: parsed.data.location_id != null, linksToCheck: links, photoOk };
 }
+
+// ---- What changed compared with the last approved version / Qué cambió respecto de la última versión aprobada ----
+// The live profile only changes through an approved revision, so the last approved payload is what the public sees today.
+// El perfil vigente solo cambia con una revisión aprobada, así que el último payload aprobado es lo que el público ve hoy.
+export type FieldKey = "photo" | "displayName" | "headline" | "location" | "zone" | "practiceStartYear" | "languages" | "therapies" | "phone" | "email" | "links";
+
+export const FIELD_NAMES: Record<FieldKey, string> = {
+  photo: "Foto", displayName: "Nombre público", headline: "Presentación", location: "Ciudad", zone: "Zona o barrio",
+  practiceStartYear: "Empezó a atender", languages: "Idiomas", therapies: "Terapias", phone: "Teléfono", email: "Mail", links: "Enlaces públicos",
+};
+
+export type RevisionChanges =
+  | { kind: "first" } // no approved version before: everything is new / no hay versión aprobada previa: todo es nuevo
+  | { kind: "unavailable" } // the previous content cannot be read: no comparison / no se puede leer lo anterior: sin comparación
+  | { kind: "diff"; changed: ReadonlySet<FieldKey> };
+
+// Phone and e-mail are compared but NEVER shown: only "changed" is reported. / El teléfono y el mail se comparan pero NUNCA se muestran.
+function rawContact(payload: unknown, lookups: ViewLookups, code: string): string {
+  const parsed = payloadSchema.safeParse(payload);
+  if (!parsed.success) return "";
+  const found = (parsed.data.contacts ?? []).find((contact) => lookups.contactTypes.get(contact.contact_type_id) === code);
+  return found ? `${found.value}|${found.accepts_whatsapp === true}` : "";
+}
+
+const same = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+const sorted = (values: readonly string[]): string[] => [...values].sort();
+
+export function changedFields(payload: unknown, previousPayload: unknown | null, lookups: ViewLookups): RevisionChanges | null {
+  const current = describeRevision(payload, lookups);
+  if (!current) return null;
+  if (previousPayload === null) return { kind: "first" };
+  const before = describeRevision(previousPayload, lookups);
+  if (!before) return { kind: "unavailable" };
+  const changed = new Set<FieldKey>();
+  const check = (key: FieldKey, differs: boolean) => { if (differs) changed.add(key); };
+  check("photo", current.photo.kind !== "none");
+  check("displayName", !same(current.displayName, before.displayName));
+  check("headline", !same(current.headline, before.headline));
+  check("location", !same(current.locationId, before.locationId));
+  check("zone", !same(current.zone, before.zone));
+  check("practiceStartYear", !same(current.practiceStartYear, before.practiceStartYear));
+  check("languages", !same(sorted(current.languages), sorted(before.languages)));
+  check("therapies", !same(sorted(current.therapies.map((t) => JSON.stringify(t))), sorted(before.therapies.map((t) => JSON.stringify(t)))));
+  check("phone", rawContact(payload, lookups, "phone") !== rawContact(previousPayload, lookups, "phone"));
+  check("email", rawContact(payload, lookups, "email") !== rawContact(previousPayload, lookups, "email"));
+  check("links", !same(sorted(current.links.map((l) => `${l.kind}|${l.value}`)), sorted(before.links.map((l) => `${l.kind}|${l.value}`))));
+  return { kind: "diff", changed };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decisionFacts, describeRevision, safeHref, type ViewLookups } from "@/lib/admin/revision-view";
+import { changedFields, decisionFacts, describeRevision, safeHref, type ViewLookups } from "@/lib/admin/revision-view";
 
 const LOOKUPS: ViewLookups = {
   therapies: new Map([[10, "Reiki"]]),
@@ -98,5 +98,50 @@ describe("decisionFacts", () => {
     expect(decisionFacts({ location_id: 5, photo_path: `${PROFILE}/${FILE}.jpg` }, types, "00000000-0000-4000-8000-000000000000")?.photoOk).toBe(false);
     expect(decisionFacts({ location_id: 5, photo_path: "../x.jpg" }, types, PROFILE)?.photoOk).toBe(false);
     expect(decisionFacts({ location_id: 5, photo_path: null }, types, PROFILE)?.photoOk).toBe(true);
+  });
+});
+
+describe("changedFields (what changed since the last approved version)", () => {
+  const base = {
+    display_name: "Ana", headline: "Hola", location_id: 79, zone: null, practice_start_year: 2024, languages: [1],
+    therapies: [{ therapy_id: 10, session_minutes: 60, service_modes: [1], session_formats: [1], rates: [] }],
+    contacts: [{ contact_type_id: 1, value: "+54 299 555 0101", accepts_whatsapp: true }, { contact_type_id: 4, value: "ana.terapias" }],
+  };
+  const changedOf = (next: object, previous: unknown = base) => {
+    const result = changedFields(next, previous, LOOKUPS);
+    return result?.kind === "diff" ? [...result.changed].sort() : result?.kind ?? null;
+  };
+
+  it("reports nothing when the content is the same", () => {
+    expect(changedOf({ ...base })).toEqual([]);
+  });
+  it("reports only the fields that changed", () => {
+    expect(changedOf({ ...base, headline: "Otra frase", zone: "Centro" })).toEqual(["headline", "zone"]);
+    expect(changedOf({ ...base, languages: [] })).toEqual(["languages"]);
+  });
+  it("detects a photo request (set or remove) and ignores its absence", () => {
+    expect(changedOf({ ...base, photo_path: null })).toEqual(["photo"]);
+    expect(changedOf({ ...base, photo_path: "x/y.jpg" })).toEqual(["photo"]);
+    expect(changedOf({ ...base })).toEqual([]);
+  });
+  it("detects a phone or e-mail change without exposing the value", () => {
+    const withPhone = { ...base, contacts: [{ contact_type_id: 1, value: "+54 299 555 9999", accepts_whatsapp: true }, { contact_type_id: 4, value: "ana.terapias" }] };
+    expect(changedOf(withPhone)).toEqual(["phone"]);
+    const withEmail = { ...base, contacts: [...base.contacts, { contact_type_id: 2, value: "ana@example.com" }] };
+    expect(changedOf(withEmail)).toEqual(["email"]);
+    expect(JSON.stringify(changedFields(withPhone, base, LOOKUPS))).not.toContain("9999");
+  });
+  it("detects a link change", () => {
+    expect(changedOf({ ...base, contacts: [base.contacts[0], { contact_type_id: 4, value: "ana.otra" }] })).toEqual(["links"]);
+  });
+  it("does not care about the order of languages or therapies", () => {
+    const two = { ...base, languages: [1, 2], therapies: [base.therapies[0], { therapy_id: 11 }] };
+    const swapped = { ...two, languages: [2, 1], therapies: [{ therapy_id: 11 }, base.therapies[0]] };
+    expect(changedOf(swapped, two)).toEqual([]);
+  });
+  it("says so when there is no previous version, or it cannot be read, or the new one is invalid", () => {
+    expect(changedFields(base, null, LOOKUPS)).toEqual({ kind: "first" });
+    expect(changedFields(base, "garbage", LOOKUPS)).toEqual({ kind: "unavailable" });
+    expect(changedFields("garbage", base, LOOKUPS)).toBeNull();
   });
 });
