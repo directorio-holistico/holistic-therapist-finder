@@ -66,13 +66,17 @@ begin
   if not (select prosecdef from pg_proc where oid = 'public.log_search(integer,integer,text)'::regprocedure) then
     raise exception 'log_search must be SECURITY DEFINER';
   end if;
-  if not has_function_privilege('anon', 'public.search_profiles(integer,integer,text,integer,integer)', 'execute')
-     or not has_function_privilege('anon', 'public.log_search(integer,integer,text)', 'execute') then
-    raise exception 'anon must execute search_profiles and log_search';
+  -- log_search is now closed to every API role; the only door is log_search_limited (service_role), see test 34
+  -- log_search ahora está cerrada para todos los roles de la API; la única puerta es log_search_limited (service_role), ver prueba 34
+  if not has_function_privilege('anon', 'public.search_profiles(integer,integer,text,integer,integer)', 'execute') then
+    raise exception 'anon must execute search_profiles';
   end if;
-  if has_function_privilege('authenticated', 'public.search_profiles(integer,integer,text,integer,integer)', 'execute')
+  if has_function_privilege('authenticated', 'public.search_profiles(integer,integer,text,integer,integer)', 'execute') then
+    raise exception 'authenticated must not execute search_profiles (anon only)';
+  end if;
+  if has_function_privilege('anon', 'public.log_search(integer,integer,text)', 'execute')
      or has_function_privilege('authenticated', 'public.log_search(integer,integer,text)', 'execute') then
-    raise exception 'authenticated must not execute search_profiles or log_search (anon only)';
+    raise exception 'no API role may execute log_search directly';
   end if;
   if has_function_privilege('anon', 'public.purge_expired_unmet_searches()', 'execute')
      or has_function_privilege('authenticated', 'public.purge_expired_unmet_searches()', 'execute')
@@ -80,7 +84,7 @@ begin
     raise exception 'purge_expired_unmet_searches must be executable by service_role only';
   end if;
   if has_function_privilege('service_role', 'public.log_search(integer,integer,text)', 'execute') then
-    raise exception 'service_role should not execute log_search';
+    raise exception 'service_role should not execute log_search directly';
   end if;
   if not exists (select 1 from public.service_modes where code = 'in_person' and is_active)
      or not exists (select 1 from public.service_modes where code = 'remote' and is_active) then
@@ -185,24 +189,33 @@ begin
   exception when insufficient_privilege then null; end;
 end $$;
 
--- 3) LOGGING AS ANON / REGISTRO COMO ANON
+-- 3) LOGGING: anon cannot call the direct door; the server (service_role) logs through the limited one
+--    REGISTRO: anon no puede usar la puerta directa; el servidor (service_role) registra por la limitada
+do $$
+begin
+  begin perform public.log_search(current_setting('test.t2')::int, current_setting('test.cordoba_city')::int); raise exception 'anon ran log_search';
+  exception when insufficient_privilege then null; end;
+  begin perform public.log_search_limited(current_setting('test.t2')::int, current_setting('test.cordoba_city')::int, null, repeat('a', 64)); raise exception 'anon ran log_search_limited';
+  exception when insufficient_privilege then null; end;
+end $$;
+set role service_role;
 do $$
 declare
   t1 int := current_setting('test.t1')::int; t2 int := current_setting('test.t2')::int;
-  city int := current_setting('test.cordoba_city')::int;
+  city int := current_setting('test.cordoba_city')::int; h text := repeat('b', 64);
 begin
-  if public.log_search(t1, city) then raise exception 'a search WITH results must not be logged'; end if;
-  if public.log_search(t1, city, 'remote') then raise exception 'a search WITH results (remote) must not be logged'; end if;
-  if not public.log_search(t2, city) then raise exception 'a search with no results must be logged'; end if;
-  if not public.log_search(t2, city) then raise exception 'second identical search must be logged'; end if;
-  if not public.log_search(t2, city, 'in_person') then raise exception 'search with mode must be logged'; end if;
-  begin perform public.log_search(null, city); raise exception 'accepted null therapy';
+  if public.log_search_limited(t1, city, null, h) then raise exception 'a search WITH results must not be logged'; end if;
+  if public.log_search_limited(t1, city, 'remote', h) then raise exception 'a search WITH results (remote) must not be logged'; end if;
+  if not public.log_search_limited(t2, city, null, h) then raise exception 'a search with no results must be logged'; end if;
+  if not public.log_search_limited(t2, city, null, h) then raise exception 'second identical search must be logged'; end if;
+  if not public.log_search_limited(t2, city, 'in_person', h) then raise exception 'search with mode must be logged'; end if;
+  begin perform public.log_search_limited(null, city, null, h); raise exception 'accepted null therapy';
   exception when sqlstate '22023' then null; end;
-  begin perform public.log_search(t2, -1); raise exception 'accepted unknown location';
+  begin perform public.log_search_limited(t2, -1, null, h); raise exception 'accepted unknown location';
   exception when sqlstate '22023' then null; end;
-  begin perform public.log_search(-1, city); raise exception 'accepted unknown therapy';
+  begin perform public.log_search_limited(-1, city, null, h); raise exception 'accepted unknown therapy';
   exception when sqlstate '22023' then null; end;
-  begin perform public.log_search(t2, city, 'inventado'); raise exception 'accepted unknown mode';
+  begin perform public.log_search_limited(t2, city, 'inventado', h); raise exception 'accepted unknown mode';
   exception when sqlstate '22023' then null; end;
 end $$;
 reset role;

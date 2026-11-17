@@ -1582,6 +1582,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_search_limited: {
+        Args: {
+          p_location_id: number
+          p_origin_hash: string
+          p_service_mode: string
+          p_therapy_id: number
+        }
+        Returns: boolean
+      }
       match_restricted_terms: { Args: { p_text: string }; Returns: string[] }
       normalize_text: { Args: { t: string }; Returns: string }
       parse_fingerprints: {
@@ -1598,6 +1607,10 @@ export type Database = {
       purge_expired_rate_limit_hits: { Args: never; Returns: number }
       purge_expired_reports: { Args: never; Returns: number }
       purge_expired_unmet_searches: { Args: never; Returns: number }
+      rate_limit_hit: {
+        Args: { p_action: string; p_origin_hash: string }
+        Returns: boolean
+      }
       rates_validity_months: { Args: never; Returns: number }
       register_therapist: {
         Args: { p_acceptances: Json; p_full_name: string }
