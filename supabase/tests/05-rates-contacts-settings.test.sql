@@ -18,27 +18,27 @@ insert into public.therapist_profiles (id, person_id, status_id) values
   ('20000000-0000-0000-0000-0000000000a1', '10000000-0000-0000-0000-0000000000a1', (select id from public.profile_statuses where code = 'unpublished')),
   ('20000000-0000-0000-0000-0000000000b2', '10000000-0000-0000-0000-0000000000b2', (select id from public.profile_statuses where code = 'unpublished'));
 
--- 1) Maximum therapies (setting = 4 by default; then lowered) / Máximo de terapias (4 por defecto; luego se baja)
+-- 1) Maximum therapies (setting = 6 by default; then lowered) / Máximo de terapias (6 por defecto; luego se baja)
 do $$
 declare
   ok boolean;
-  ids integer[] := array(select id from public.therapies order by id limit 5);
+  ids integer[] := array(select id from public.therapies order by id limit 7);
 begin
-  if array_length(ids, 1) < 5 then raise exception 'the dev seed must provide at least 5 therapies'; end if;
-  insert into public.profile_therapies (profile_id, therapy_id) select '20000000-0000-0000-0000-0000000000a1', unnest(ids[1:4]);
+  if array_length(ids, 1) < 7 then raise exception 'the catalog must provide at least 7 therapies'; end if;
+  insert into public.profile_therapies (profile_id, therapy_id) select '20000000-0000-0000-0000-0000000000a1', unnest(ids[1:6]);
   ok := false;
-  begin insert into public.profile_therapies (profile_id, therapy_id) values ('20000000-0000-0000-0000-0000000000a1', ids[5]);
+  begin insert into public.profile_therapies (profile_id, therapy_id) values ('20000000-0000-0000-0000-0000000000a1', ids[7]);
   exception when check_violation then ok := true; end;
-  if not ok then raise exception 'a 5th therapy was accepted with the default limit of 4'; end if;
+  if not ok then raise exception 'a 7th therapy was accepted with the default limit of 6'; end if;
   -- another profile has its own count / otro perfil cuenta aparte
-  insert into public.profile_therapies (profile_id, therapy_id) values ('20000000-0000-0000-0000-0000000000b2', ids[5]);
+  insert into public.profile_therapies (profile_id, therapy_id) values ('20000000-0000-0000-0000-0000000000b2', ids[7]);
   -- lowering the setting applies to new rows / bajar el ajuste rige para filas nuevas
   update public.app_settings set value = '1' where key = 'max_therapies_per_profile';
   ok := false;
   begin insert into public.profile_therapies (profile_id, therapy_id) values ('20000000-0000-0000-0000-0000000000b2', ids[1]);
   exception when check_violation then ok := true; end;
   if not ok then raise exception 'the lowered limit (1) was not applied'; end if;
-  update public.app_settings set value = '4' where key = 'max_therapies_per_profile';
+  update public.app_settings set value = '6' where key = 'max_therapies_per_profile';
 end
 $$;
 

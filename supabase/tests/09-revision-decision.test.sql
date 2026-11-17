@@ -183,7 +183,7 @@ begin
   perform pg_temp.try_bad('published profile without phone', '{"contacts":[]}', '23514');
   perform pg_temp.try_bad('invalid phone', jsonb_build_object('contacts', jsonb_build_array(jsonb_build_object('contact_type_id', phone, 'value', 'abc'))), '23514');
   perform pg_temp.try_bad('more therapies than allowed', jsonb_build_object('therapies',
-    (select jsonb_agg(jsonb_build_object('therapy_id', id) || opts) from (select id from public.therapies where is_active order by id limit 5) t)), '23514');
+    (select jsonb_agg(jsonb_build_object('therapy_id', id) || opts) from (select id from public.therapies where is_active order by id limit 7) t)), '23514');
   -- each therapy needs its own non-empty modes and formats / cada terapia necesita sus modalidades y formatos no vacíos
   perform pg_temp.try_bad('therapy without modes', jsonb_build_object('therapies', jsonb_build_array(jsonb_build_object('therapy_id', t1,
     'session_formats', opts -> 'session_formats'))), '22023');
