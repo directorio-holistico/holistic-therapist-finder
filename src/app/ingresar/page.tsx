@@ -4,7 +4,11 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
+import { afterLoginPath } from "@/lib/auth/params";
+import { createServerSupabase } from "@/lib/supabase/server-client";
 import { ForgotPasswordForm, FirstTimeForm, PasswordLoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Ingresar · Terapeutas" };
@@ -16,6 +20,21 @@ async function Content({ searchParams }: PageProps) {
   const mode = modo === "nuevo" || modo === "olvide" ? modo : "clave";
   const linkProblem = error === "enlace";
   const LINK = "underline";
+  // Someone who is already logged in does not need the login form: send them where a login would (administrators to the panel,
+  // everybody else to their profile). Only the default mode, and not when the link failed (that message must be seen).
+  // The session is read on a real request (it checks the token's expiry), and /ingresar goes through proxy.ts, which renews it.
+  // Quien ya está ingresado no necesita el formulario: se lo manda adonde iría tras ingresar (administración al panel, el resto
+  // a su perfil). Solo en el modo por defecto, y no cuando falló el enlace (ese mensaje tiene que verse). La sesión se lee en un
+  // pedido real (revisa el vencimiento del token), y /ingresar pasa por proxy.ts, que la renueva.
+  if (mode === "clave" && !linkProblem) {
+    await connection();
+    const supabase = await createServerSupabase();
+    const { data: auth } = await supabase.auth.getUser();
+    if (auth.user) {
+      const { data: isAdmin } = await supabase.rpc("is_admin");
+      redirect(afterLoginPath(isAdmin));
+    }
+  }
   return (
     <>
       {linkProblem && (
