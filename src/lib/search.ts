@@ -160,17 +160,3 @@ export async function searchProfiles(client: Client, input: SearchInput): Promis
   const total = rows.length > 0 ? Number(rows[0]?.total_count ?? rows.length) : 0;
   return { cards, total };
 }
-
-// Best effort: the database counts the search only if it truly has no result. A failure here never breaks the page.
-// Mejor esfuerzo: la base cuenta la búsqueda solo si de verdad no tiene resultado. Un fallo acá nunca rompe la página.
-export async function logUnmetSearch(client: Client, input: UnmetSearchInput): Promise<void> {
-  try {
-    await client.rpc("log_search", {
-      p_therapy_id: input.therapyId,
-      p_location_id: input.locationId,
-      p_service_mode: input.serviceMode ?? undefined,
-    });
-  } catch {
-    // intentionally ignored / ignorado a propósito
-  }
-}

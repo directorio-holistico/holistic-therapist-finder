@@ -53,7 +53,9 @@ export function clientAddress(headers: Headers): string | null {
 }
 
 // The purpose is part of what is hashed, so the same visitor has a different hash for each action ("reveal", "report").
-// El propósito entra en lo que se calcula, así el mismo visitante tiene un hash distinto por acción ("reveal", "report").
-export function originHash(address: string, key: string, purpose: "reveal" | "report" = "reveal"): string {
+// El propósito entra en lo que se calcula, así el mismo visitante tiene un hash distinto por acción ("reveal", "report", "login"...).
+export type OriginPurpose = "reveal" | "report" | "login" | "login_link" | "unmet_search";
+
+export function originHash(address: string, key: string, purpose: OriginPurpose = "reveal"): string {
   return createHmac("sha256", key).update(`${purpose}|${address}`).digest("hex");
 }

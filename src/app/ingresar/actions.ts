@@ -3,7 +3,7 @@
 // Three ways in (decision 37): mail + password (the normal one), an email LINK for the first time (the account is created
 // when the link is asked for), and "forgot my password" (an email link that leads to choosing a new one).
 // Every answer is the SAME whether or not the email has an account (nobody can use these forms to find out who is
-// registered). Nothing personal and no password is ever logged. Limits on sending are Supabase's own for now (ADR-0003 pending).
+// registered). Nothing personal and no password is ever logged. Daily limit per origin: src/lib/rate-limit.ts.
 // Tres formas de entrar (decisión 37): mail + contraseña (la normal), un ENLACE al mail la primera vez (la cuenta se crea al
 // pedir el enlace) y "olvidé mi contraseña" (un enlace al mail que lleva a elegir una nueva).
 // Cada respuesta es LA MISMA exista o no la cuenta. Nunca se registra nada personal ni contraseñas.
@@ -12,11 +12,20 @@ import { redirect } from "next/navigation";
 import { passwordLoginSchema } from "@/lib/auth/password";
 import { DEFAULT_AFTER_LOGIN, afterLoginPath, loginSchema } from "@/lib/auth/params";
 import { getSiteUrl } from "@/lib/env";
+import { limitMessage } from "@/lib/rate-limit";
+import { limitOrigin } from "@/lib/rate-limit-server";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 
 export type LoginState = { status: "idle" | "sent" | "error"; message: string };
 
 const LATER = "No pudimos enviar el enlace ahora. Probá de nuevo en unos minutos.";
+// Daily limit per origin BEFORE calling Supabase Auth (which would only see this server's address). Counts after the form is valid.
+// Límite diario por origen ANTES de llamar a Supabase Auth (que solo vería la dirección de este servidor). Cuenta con el formulario ya válido.
+async function refusedByLimit(action: "login" | "login_link"): Promise<LoginState | null> {
+  const outcome = await limitOrigin(action);
+  return outcome === "allowed" ? null : { status: "error", message: limitMessage(outcome) };
+}
+
 const SENT = "Si el mail es correcto, te enviamos un enlace. Revisá también la carpeta de spam.";
 
 // 1) First time: the link creates the account if needed. After it, the person must choose a password (see password-gate).
@@ -24,6 +33,8 @@ const SENT = "Si el mail es correcto, te enviamos un enlace. Revisá también la
 export async function sendLoginLink(_previous: LoginState, formData: FormData): Promise<LoginState> {
   const parsed = loginSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { status: "error", message: "Escribí un mail válido, por ejemplo nombre@dominio.com." };
+  const refused = await refusedByLimit("login_link");
+  if (refused) return refused;
 
   const supabase = await createServerSupabase();
   // The link in the mail comes back to /auth/callback (same browser: PKCE). Supabase only accepts addresses on its allow list.
@@ -42,6 +53,8 @@ export async function sendLoginLink(_previous: LoginState, formData: FormData): 
 export async function sendPasswordReset(_previous: LoginState, formData: FormData): Promise<LoginState> {
   const parsed = loginSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { status: "error", message: "Escribí un mail válido, por ejemplo nombre@dominio.com." };
+  const refused = await refusedByLimit("login_link");
+  if (refused) return refused;
 
   const supabase = await createServerSupabase();
   const redirectTo = `${getSiteUrl()}/auth/callback?next=${encodeURIComponent("/mi-perfil/contrasena")}`;
@@ -58,6 +71,8 @@ export async function sendPasswordReset(_previous: LoginState, formData: FormDat
 export async function signInWithPassword(_previous: LoginState, formData: FormData): Promise<LoginState> {
   const parsed = passwordLoginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
   if (!parsed.success) return { status: "error", message: "Escribí tu mail y tu contraseña." };
+  const refused = await refusedByLimit("login");
+  if (refused) return refused;
 
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });

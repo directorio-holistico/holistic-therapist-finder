@@ -8,7 +8,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getLocationOptions, getTherapies } from "@/lib/catalog-cache";
 import { SEARCH_GROUP_TITLES } from "@/lib/labels";
-import { logUnmetSearch, searchProfiles, splitByGroup } from "@/lib/search";
+import { recordUnmetSearch } from "@/lib/rate-limit-server";
+import { searchProfiles, splitByGroup } from "@/lib/search";
 import { PAGE_SIZE, buildSearchHref, locationIdOf, parseSearchQuery } from "@/lib/search-query";
 import { SiteHeader } from "@/components/site-header";
 import { createAnonClient } from "@/lib/supabase/anon-client";
@@ -93,7 +94,7 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
       // Only a search with a specific therapy and place is unmet demand; with "Todos" there is nothing specific to count.
       // Solo una búsqueda con terapia y lugar concretos es demanda no cubierta; con "Todos" no hay nada concreto que contar.
       if (therapyId !== null && locationId !== null) {
-        await logUnmetSearch(client, { therapyId, locationId, serviceMode: query.serviceMode });
+        await recordUnmetSearch({ therapyId, locationId, serviceMode: query.serviceMode });
         return (
           <section aria-labelledby="results-title" className="mt-8">
             <h2 id="results-title" className="font-display text-2xl font-semibold text-tinta">Sin resultados</h2>
