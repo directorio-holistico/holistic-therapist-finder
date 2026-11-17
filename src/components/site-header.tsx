@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
+import { HeaderAccount, LoggedOutLink } from "@/components/header-account";
 import { SITE_NAME } from "@/lib/site";
 
 export function SiteHeader() {
@@ -14,12 +16,10 @@ export function SiteHeader() {
         <Link href="/buscar" className="hidden min-h-11 items-center rounded-md px-3 font-medium text-tinta hover:underline sm:inline-flex focus-visible:outline-2 focus-visible:outline-acento">
           Buscar
         </Link>
-        <Link
-          href="/ingresar"
-          className="inline-flex min-h-11 items-center whitespace-nowrap rounded-full border border-tinta px-4 font-medium text-tinta hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
-        >
-          Soy terapeuta
-        </Link>
+        {/* the session is read on the server inside Suspense: the rest of the page stays static / la sesión se lee en el servidor dentro de Suspense: el resto de la página sigue estática */}
+        <Suspense fallback={<LoggedOutLink />}>
+          <HeaderAccount />
+        </Suspense>
       </nav>
     </header>
   );

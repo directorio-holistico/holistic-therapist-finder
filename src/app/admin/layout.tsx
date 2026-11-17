@@ -13,9 +13,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <Link href="/admin/revisiones" className="underline">Revisiones</Link>
         <Link href="/admin/denuncias" className="underline">Denuncias</Link>
         {/* a way out of the panel: an administrator account has no other page with a "Salir" button / una salida del panel: una cuenta de administración no tiene otra página con botón "Salir" */}
-        <form action={signOut} className="ml-auto">
-          <button type="submit" className="rounded-md border border-zinc-400 px-3 py-1 text-sm text-zinc-900 dark:text-zinc-100">Salir</button>
-        </form>
+        <div className="ml-auto flex items-center gap-2">
+          {/* a way back to the public site without logging out, next to "Salir" so both exits are together / un camino de vuelta al sitio público sin cerrar sesión, junto a "Salir" para que las dos salidas estén juntas */}
+          <Link href="/" className="rounded-md border border-zinc-400 px-3 py-1 text-sm text-zinc-900 dark:text-zinc-100">Volver al sitio</Link>
+          <form action={signOut}>
+            <button type="submit" className="rounded-md border border-zinc-400 px-3 py-1 text-sm text-zinc-900 dark:text-zinc-100">Salir</button>
+          </form>
+        </div>
       </nav>
       {children}
     </div>
