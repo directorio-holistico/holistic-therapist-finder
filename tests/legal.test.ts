@@ -38,6 +38,15 @@ describe("legal documents", () => {
     expect(terms).toContain("No presta servicios de salud");
   });
 
+  it("privacy policy covers the face photo (consent, withdrawal) and the rate-limit counters", () => {
+    const privacy = JSON.stringify(findLegalDocument("privacidad"));
+    expect(privacy).toContain("consentimiento expreso");
+    expect(privacy).toContain("quitándola de tu perfil");
+    expect(privacy).toContain("sin metadatos");
+    expect(privacy).toContain("Protección del ingreso");
+    expect(privacy).toContain("registrar búsquedas sin resultado");
+  });
+
   it("cannot go live without the controller address", () => {
     if (!LEGAL_REVIEW_PENDING) expect(CONTROLLER_ADDRESS).not.toBeNull();
   });

@@ -22,7 +22,7 @@ export const PRIVACY: LegalDocument = {
         { type: "ul", items: [
           `Búsquedas sin resultado: guardamos la terapia, la zona, el modo de atención y la fecha, sin tu dirección ni ningún identificador, para saber qué falta en el directorio. Se conservan ${RETENTION.unmetSearchesMonths} meses.`,
           `Cuando pedís ver un contacto: guardamos que se vio el contacto de un perfil y la fecha, sin ningún dato tuyo. Se conserva ${RETENTION.contactRevealsMonths} meses.`,
-          `Protección contra abusos: para limitar pedidos repetidos guardamos, durante ${RETENTION.rateLimitDays} días, una huella irreversible calculada con una clave secreta a partir de tu dirección de red; la dirección en sí no se guarda. Al pedir un contacto o al enviar una denuncia, esa dirección se envía al servicio de verificación anti-bots que usamos (ver el apartado de proveedores).`,
+          `Protección contra abusos: para limitar pedidos repetidos (ver contactos, enviar denuncias y registrar búsquedas sin resultado) guardamos, durante ${RETENTION.rateLimitDays} días, un contador asociado a una huella irreversible calculada con una clave secreta a partir de tu dirección de red; la dirección en sí no se guarda. Al pedir un contacto o al enviar una denuncia, esa dirección se envía al servicio de verificación anti-bots que usamos (ver el apartado de proveedores).`,
           `Si denunciás un perfil: guardamos el motivo, el detalle que escribas y la fecha. El mail es opcional y solo lo ve quien revisa las denuncias; no escribas datos de salud en el detalle. Las denuncias cerradas se conservan ${RETENTION.closedReportsMonths} meses.`,
         ] },
       ],
@@ -34,11 +34,14 @@ export const PRIVACY: LegalDocument = {
         { type: "p", text: "Guardamos lo que cargás para tu cuenta y tu perfil:" },
         { type: "ul", items: [
           "Cuenta: nombre completo y mail (para ingresar y contactarte).",
-          "Perfil: nombre que se muestra, foto (opcional), ciudad, zona o barrio (opcional), frase de presentación, año de inicio de tu práctica, terapias, idiomas, modos de atención (presencial o a distancia), formato (individual o grupal), duración aproximada y tarifas (opcionales).",
+          "Perfil: nombre que se muestra, ciudad, zona o barrio (opcional), frase de presentación, año de inicio de tu práctica, terapias, idiomas, modos de atención (presencial o a distancia), formato (individual o grupal), duración aproximada y tarifas (opcionales).",
+          "Foto (opcional): una imagen de tu rostro es un dato personal. Solo la mostramos si das tu consentimiento expreso al subirla; guardamos ese consentimiento con su fecha y la versión del texto que aceptaste. Hasta que se aprueba el cambio, tu foto está en un espacio privado; recién después pasa a ser pública. En nuestro servidor la recortamos y la volvemos a codificar sin metadatos (sin posición GPS ni datos de la cámara). Solo se usa para mostrarla en tu perfil: no hacemos reconocimiento facial ni otro tratamiento de la imagen.",
           "Contacto: teléfono (obligatorio), mail y página web (opcionales).",
+          `Protección del ingreso: para limitar intentos repetidos de ingreso y de pedido de enlaces por mail guardamos, durante ${RETENTION.rateLimitDays} días, un contador asociado a una huella irreversible de tu dirección de red, igual que se explica en el apartado 2. No se guarda la dirección ni el mail.`,
           "Registros: las versiones de los documentos legales que aceptaste y cuándo, las decisiones de moderación (quién, cuándo y por qué) y un registro de auditoría con quién cambió qué y cuándo, que guarda solo los nombres de los campos cambiados y no sus valores personales.",
         ] },
         { type: "p", text: `El registro de auditoría se conserva ${RETENTION.auditLogMonths} meses.` },
+        { type: "p", text: "Podés retirar el consentimiento de la foto cuando quieras quitándola de tu perfil. Al quitarla, tu consentimiento queda retirado y registrado, y la foto deja de mostrarse cuando se aprueba ese cambio. Para cualquier duda sobre tu foto, escribinos al contacto indicado al final." },
       ],
     },
     {
@@ -82,7 +85,7 @@ export const PRIVACY: LegalDocument = {
       blocks: [
         { type: "p", text: "No vendemos datos. Usamos proveedores que los tratan por nuestra cuenta para que el sitio funcione:" },
         { type: "ul", items: [
-          "Supabase: base de datos e ingreso con enlace por mail. La base está alojada en São Paulo, Brasil.",
+          "Supabase: base de datos, almacenamiento de las fotos e ingreso con enlace por mail. La base está alojada en São Paulo, Brasil.",
           "Vercel: alojamiento del sitio.",
           "Un proveedor de envío de correo para los enlaces de ingreso (se informará su nombre cuando esté definido).",
           "Cloudflare (servicio Turnstile): verificación anti-bots al pedir un contacto o enviar una denuncia; recibe la dirección de red del visitante.",
@@ -98,8 +101,9 @@ export const PRIVACY: LegalDocument = {
           "Cuenta y perfil: mientras tu perfil exista. Si lo eliminás, se borran tu perfil, contactos, terapias, tarifas, foto y revisiones, y tu ficha queda anonimizada (sin nombre ni mail).",
           `Tras una eliminación conservamos ${RETENTION.erasureFingerprintMonths} meses una huella irreversible de tu mail y de tu teléfono: no permite recuperar el dato y sirve para detectar a quien se elimina y vuelve a registrarse para evitar una decisión de moderación. También quedan el historial de aceptaciones y los registros de moderación, ya sin datos personales.`,
           `Denuncias cerradas: ${RETENTION.closedReportsMonths} meses. Las abiertas se conservan hasta cerrarse. Si una denuncia incluye un mail de contacto opcional, se guarda hasta ese plazo.`,
+          "Foto: mientras tu perfil la muestre. Si la quitás o eliminás tu perfil, deja de mostrarse y se retira tu consentimiento; el registro de cuándo lo diste y lo retiraste se conserva con el historial de aceptaciones.",
           `Búsquedas sin resultado y contactos vistos: ${RETENTION.unmetSearchesMonths} y ${RETENTION.contactRevealsMonths} meses, respectivamente.`,
-          `Huellas contra abusos: ${RETENTION.rateLimitDays} días. Registro de auditoría: ${RETENTION.auditLogMonths} meses.`,
+          `Contadores contra abusos: ${RETENTION.rateLimitDays} días. Registro de auditoría: ${RETENTION.auditLogMonths} meses.`,
         ] },
       ],
     },
@@ -107,7 +111,7 @@ export const PRIVACY: LegalDocument = {
       id: "derechos",
       title: "10. Tus derechos",
       blocks: [
-        { type: "p", text: "Podés pedir acceso a tus datos, que los corrijamos o actualicemos, que los suprimamos, y retirar tu consentimiento. Como terapeuta podés editar tu perfil y eliminarlo desde tu panel. Para cualquier otro pedido, escribinos al contacto indicado al final." },
+        { type: "p", text: "Podés pedir acceso a tus datos, que los corrijamos o actualicemos, que los suprimamos, y retirar tu consentimiento (el de la foto, quitándola de tu perfil). Como terapeuta podés editar tu perfil y eliminarlo desde tu panel. Para cualquier otro pedido, escribinos al contacto indicado al final." },
         { type: "p", text: "Si no estás conforme con la respuesta, podés reclamar ante la autoridad de protección de datos de tu país. En Argentina, el acceso gratuito a tus datos puede ejercerse a intervalos no inferiores a seis meses salvo interés legítimo acreditado, y la Agencia de Acceso a la Información Pública, como órgano de control de la Ley 25.326, atiende las denuncias y reclamos por incumplimientos." },
       ],
     },
