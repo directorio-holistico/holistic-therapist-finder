@@ -10,7 +10,7 @@
 
 import { redirect } from "next/navigation";
 import { passwordLoginSchema } from "@/lib/auth/password";
-import { DEFAULT_AFTER_LOGIN, loginSchema } from "@/lib/auth/params";
+import { DEFAULT_AFTER_LOGIN, afterLoginPath, loginSchema } from "@/lib/auth/params";
 import { getSiteUrl } from "@/lib/env";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 
@@ -66,5 +66,8 @@ export async function signInWithPassword(_previous: LoginState, formData: FormDa
     if (error.code === "over_request_rate_limit") return { status: "error", message: "Hiciste muchos intentos. Esperá unos minutos y probá de nuevo." };
     return { status: "error", message: "El mail o la contraseña no son correctos." };
   }
-  redirect(DEFAULT_AFTER_LOGIN);
+  // An administrator lands on the panel. If the question fails, it falls back to the profile page (never blocks the login).
+  // Quien administra cae en el panel. Si la consulta falla, se va a la página de perfil (nunca bloquea el ingreso).
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  redirect(afterLoginPath(isAdmin));
 }

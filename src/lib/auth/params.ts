@@ -3,6 +3,15 @@
 import { z } from "zod";
 
 export const DEFAULT_AFTER_LOGIN = "/mi-perfil";
+export const ADMIN_AFTER_LOGIN = "/admin";
+
+// Where to go right after a password login: an administrator goes to the panel, everybody else to their profile. Only a
+// convenience: /admin still asks the database (is_admin) on its own, so a wrong answer here never opens anything.
+// A dónde ir justo después de ingresar con contraseña: quien administra va al panel, todos los demás a su perfil. Es solo
+// comodidad: /admin vuelve a preguntarle a la base (is_admin), así que un error acá nunca abre nada.
+export function afterLoginPath(isAdmin: unknown): string {
+  return isAdmin === true ? ADMIN_AFTER_LOGIN : DEFAULT_AFTER_LOGIN;
+}
 
 // Only a path inside this site is accepted as a destination ("/x", never "//x", "/\x" or "https://…"): otherwise a crafted
 // link could send the person to another site right after logging in (open redirect).

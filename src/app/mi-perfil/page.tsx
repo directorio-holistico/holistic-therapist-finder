@@ -46,10 +46,21 @@ async function Account() {
     ? await supabase.from("profile_statuses").select("code").eq("id", profile.status_id).maybeSingle()
     : { data: null };
 
+  // An administrator without a therapist profile has nothing to "create": the panel is their place.
+  // Quien administra y no tiene perfil de terapeuta no tiene nada que "crear": su lugar es el panel.
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  const adminOnly = isAdmin === true && (!person || !profile);
+
   return (
     <>
       <p className="mt-2 text-zinc-700 dark:text-zinc-300">Ingresaste como <strong>{auth.user.email}</strong>.</p>
-      {!person || !profile ? (
+      {adminOnly ? (
+        <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Cuenta de administración</h2>
+          <p className="mt-1 text-zinc-700 dark:text-zinc-300">Esta cuenta administra el sitio. No tiene perfil de terapeuta.</p>
+          <Link href="/admin" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">Ir a administración</Link>
+        </section>
+      ) : !person || !profile ? (
         <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tu alta todavía no está completa</h2>
           <p className="mt-1 text-zinc-700 dark:text-zinc-300">Tu mail ya está verificado. Falta crear tu perfil de terapeuta.</p>
@@ -66,6 +77,7 @@ async function Account() {
           <Link href="/mi-perfil/editar" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">Editar mi perfil</Link>
         </section>
       )}
+      {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className="underline" href="/admin">Ir a administración</Link></p>}
       <p className="mt-6 text-sm"><Link className="underline" href="/mi-perfil/contrasena">Cambiar mi contraseña</Link></p>
       <form action={signOut} className="mt-4">
         <button type="submit" className="rounded-md border border-zinc-400 px-4 py-2 text-zinc-900 dark:text-zinc-100">Salir</button>

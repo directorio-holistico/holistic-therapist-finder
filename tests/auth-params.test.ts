@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_AFTER_LOGIN, confirmSchema, loginSchema, safeNextPath } from "../src/lib/auth/params";
+import { ADMIN_AFTER_LOGIN, DEFAULT_AFTER_LOGIN, afterLoginPath, confirmSchema, loginSchema, safeNextPath } from "../src/lib/auth/params";
 
 describe("safeNextPath", () => {
   it("keeps a path inside the site", () => {
@@ -43,5 +43,12 @@ describe("confirmSchema", () => {
     expect(confirmSchema.safeParse({ token_hash: "short", type: "email" }).success).toBe(false);
     expect(confirmSchema.safeParse({ token_hash: "has space 1234567", type: "email" }).success).toBe(false);
     expect(confirmSchema.safeParse({ type: "email" }).success).toBe(false);
+  });
+});
+
+describe("afterLoginPath", () => {
+  it("sends only a confirmed administrator to the panel / solo un administrador confirmado va al panel", () => {
+    expect(afterLoginPath(true)).toBe(ADMIN_AFTER_LOGIN);
+    for (const other of [false, null, undefined, "true", 1, {}]) expect(afterLoginPath(other)).toBe(DEFAULT_AFTER_LOGIN);
   });
 });
