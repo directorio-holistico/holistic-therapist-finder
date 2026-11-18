@@ -7,7 +7,7 @@
 import type { InfoDocumentCode, LegalDocumentCode } from "./types";
 
 export const LEGAL_VERSIONS: Record<LegalDocumentCode, string> = {
-  terms: "2026-11-d",
+  terms: "2026-11-e",
   privacy: "2026-11-e",
   legal_declaration: "2026-11-a",
   offers_consent: "2026-11-a",
@@ -16,7 +16,7 @@ export const LEGAL_VERSIONS: Record<LegalDocumentCode, string> = {
 // Version of each informational page (no acceptance is stored for them). Change it when the wording changes.
 // Versión de cada página informativa (no se guarda aceptación). Cambiarla cuando cambie el texto.
 export const INFO_VERSIONS: Record<InfoDocumentCode, string> = {
-  legal_notice: "2026-11-a",
+  legal_notice: "2026-11-b",
   cookies: "2026-11-a",
 };
 

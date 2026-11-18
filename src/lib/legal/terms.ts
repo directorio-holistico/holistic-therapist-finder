@@ -34,7 +34,7 @@ export const TERMS: LegalDocument = {
           "No presta servicios de salud ni de terapia: los presta cada terapeuta, por su cuenta y bajo su responsabilidad.",
           "No da consejo médico ni recomienda una terapia en particular. No garantiza resultados.",
           "No verifica títulos, formación ni habilitaciones de los terapeutas. Que un perfil esté publicado significa que cumplió las reglas de contenido de estos términos, no que el sitio avale a la persona o a su práctica.",
-          "Las terapias del directorio son complementarias y no reemplazan la atención médica ni psicológica. Ante una enfermedad o un malestar, consultá a un profesional de la salud habilitado.",
+          "Las terapias del directorio no son medicina ni tratamientos médicos: son complementarias y no reemplazan la atención médica ni psicológica. Ante una enfermedad o un malestar, consultá a un profesional de la salud habilitado.",
         ] },
       ],
     },
