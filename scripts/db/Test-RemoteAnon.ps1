@@ -63,6 +63,15 @@ function Check {
   else { Write-Host ("FAIL  {0,-55} {1} (expected {2})" -f $Label, $Status, $(if ($ExpectOk) { "2xx" } else { "refused" })) -ForegroundColor Red; $script:failures++ }
 }
 
+# A function that EXISTS but is closed to anon answers 401 or 403. A 404 means the name or the argument names are wrong, so the
+# check would prove nothing: it counts as a failure. / Una funcion que EXISTE pero esta cerrada a anon responde 401 o 403. Un 404
+# significa que el nombre o los argumentos estan mal y la prueba no probaria nada: cuenta como falla.
+function CheckDenied {
+  param([string]$Label, [int]$Status)
+  if ($Status -eq 401 -or $Status -eq 403) { Write-Host ("PASS  {0,-55} {1}" -f $Label, $Status) -ForegroundColor Green }
+  else { Write-Host ("FAIL  {0,-55} {1} (expected 401 or 403; 404 = wrong name or arguments)" -f $Label, $Status) -ForegroundColor Red; $script:failures++ }
+}
+
 # 1) Public catalogs and views: must answer / Catalogos y vistas publicas: deben responder
 $allowed = @("currencies", "languages", "location_levels", "location_translations", "locations", "rate_audiences",
              "service_modes", "session_formats", "therapies", "therapy_translations", "public_profile_cards", "public_profile_detail")
@@ -155,6 +164,24 @@ $pendUp = Get-Response "POST" "$storage/profile-photos-pending/zz-anon-test.jpg"
 Check "upload to profile-photos-pending" $pendUp.Status $false
 if ($pendUp.Status -ge 200 -and $pendUp.Status -lt 300) { Write-Host "A file zz-anon-test.jpg was created by anon in the private bucket: delete it in Supabase Storage and fix the policies / Se creo un archivo en el bucket privado: borralo y corregi las politicas." -ForegroundColor Red }
 Check "call set_photo_consent(boolean, text)" (Get-Status "POST" "$base/rpc/set_photo_consent" '{"p_value":true,"p_version":"x"}') $false
+
+# 9) Migrations of 17/11: rate limit, texts of the profile, acceptances. Functions closed to anon must answer 401/403 (see CheckDenied).
+#    Migraciones del 17/11: limite de pedidos, textos del perfil, aceptaciones. Las funciones cerradas a anon deben dar 401/403.
+Check "read about of therapist_profiles (column grant)" (Get-Status "GET" "$base/therapist_profiles?select=about&limit=1") $true
+Check "read about, therapies_detail of public_profile_detail" (Get-Status "GET" "$base/public_profile_detail?select=about,therapies_detail&limit=1") $true
+CheckDenied "call rate_limit_hit(text, text)" (Get-Status "POST" "$base/rpc/rate_limit_hit" ('{"p_action":"login","p_origin_hash":"' + $zeroHash + '"}'))
+CheckDenied "call log_search_limited(...)" (Get-Status "POST" "$base/rpc/log_search_limited" ('{"p_therapy_id":1,"p_location_id":1,"p_service_mode":"in_person","p_origin_hash":"' + $zeroHash + '"}'))
+CheckDenied "call log_search(integer, integer, text)" (Get-Status "POST" "$base/rpc/log_search" '{"p_therapy_id":1,"p_location_id":1,"p_service_mode":"in_person"}')
+CheckDenied "call check_erasure_fingerprints(jsonb)" (Get-Status "POST" "$base/rpc/check_erasure_fingerprints" '{"p_fingerprints":{}}')
+CheckDenied "call validate_profile_texts(jsonb)" (Get-Status "POST" "$base/rpc/validate_profile_texts" '{"p_payload":{}}')
+CheckDenied "call contains_contact_data(text)" (Get-Status "POST" "$base/rpc/contains_contact_data" '{"p_text":"x"}')
+CheckDenied "call register_therapist(text, jsonb)" (Get-Status "POST" "$base/rpc/register_therapist" '{"p_full_name":"x","p_acceptances":{}}')
+CheckDenied "call set_offers_consent(boolean, text)" (Get-Status "POST" "$base/rpc/set_offers_consent" '{"p_value":false}')
+CheckDenied "call submit_revision(uuid)" (Get-Status "POST" "$base/rpc/submit_revision" ('{"p_revision_id":"' + $zeroUuid + '"}'))
+foreach ($t in @("terms_acceptances", "profile_revisions", "therapist_profiles", "profile_therapies")) {
+  Check "insert into $t" (Get-Status "POST" "$base/$t" "{}") $false
+}
+Check "update about of therapist_profiles" (Get-Status "PATCH" "$base/therapist_profiles?id=not.is.null" '{"about":"x"}') $false
 
 if ($failures -gt 0) { throw "$failures check(s) failed: do NOT publish / $failures comprobacion(es) fallaron: NO publicar." }
 Write-Host "Anonymous access is as designed / El acceso anonimo es el disenado." -ForegroundColor Green
