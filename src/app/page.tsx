@@ -37,7 +37,6 @@ export default function Home() {
               Soy terapeuta: ingresar
             </Link>
           </div>
-          <p className="mt-10 text-sm text-apagado">Sitio en construcción.</p>
         </div>
       </main>
     </>
