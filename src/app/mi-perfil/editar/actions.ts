@@ -8,6 +8,7 @@
 import { redirect } from "next/navigation";
 import { requirePassword } from "@/lib/auth/password-gate";
 import { listFormCatalogs } from "@/lib/catalogs";
+import { ACCEPTANCE_REQUIRED_MESSAGE, isAcceptanceRequired } from "@/lib/legal/acceptance";
 import { isPendingPhotoPath } from "@/lib/photo-rules";
 import { buildPayload, firstIssue, readProfileForm } from "@/lib/profile-form";
 import { audienceIds, contactTypeIds } from "@/lib/profile-load";
@@ -74,12 +75,14 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
     const written = request.data
       ? await supabase.from("location_requests").update({ region_id: values.regionId, city_name: values.cityName }).eq("id", request.data.id)
       : await supabase.from("location_requests").insert({ profile_id: profile.data.id, region_id: values.regionId, city_name: values.cityName });
+    if (isAcceptanceRequired(written.error)) return fail(ACCEPTANCE_REQUIRED_MESSAGE);
     if (written.error) {
       console.error(`location request failed / falló el pedido de ciudad: ${written.error.code ?? "unknown"}`);
       return fail("No pudimos guardar tu ciudad. Revisá la región y el nombre, o probá de nuevo.");
     }
   } else if (request.data) {
     const removed = await supabase.from("location_requests").delete().eq("id", request.data.id);
+    if (isAcceptanceRequired(removed.error)) return fail(ACCEPTANCE_REQUIRED_MESSAGE);
     if (removed.error) return fail("No pudimos guardar ahora. Probá de nuevo en unos minutos.");
   }
 
@@ -88,6 +91,7 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
   let revisionId = open.data?.id ?? null;
   if (revisionId) {
     const updated = await supabase.from("profile_revisions").update({ payload }).eq("id", revisionId);
+    if (isAcceptanceRequired(updated.error)) return fail(ACCEPTANCE_REQUIRED_MESSAGE);
     if (updated.error) {
       console.error(`draft update failed / falló la actualización del borrador: ${updated.error.code ?? "unknown"}`);
       return fail("No pudimos guardar el borrador. Probá de nuevo en unos minutos.");
@@ -99,6 +103,7 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
     // pone "draft". Por eso la fila se tipa a mano con SOLO las dos columnas que el terapeuta puede escribir.
     const draft = { profile_id: profile.data.id, payload } as unknown as Database["public"]["Tables"]["profile_revisions"]["Insert"];
     const created = await supabase.from("profile_revisions").insert(draft).select("id").single();
+    if (isAcceptanceRequired(created.error)) return fail(ACCEPTANCE_REQUIRED_MESSAGE);
     if (created.error || !created.data) {
       console.error(`draft insert failed / falló la creación del borrador: ${created.error?.code ?? "unknown"}`);
       return fail("No pudimos guardar el borrador. Probá de nuevo en unos minutos.");
@@ -111,6 +116,7 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
   // 4) Send to review. The restricted terms only FLAG the revision (the administrator sees them); they never block it.
   // 4) Enviar a revisión. Los términos restringidos solo MARCAN la revisión (los ve el administrador); nunca la bloquean.
   const submitted = await supabase.rpc("submit_revision", { p_revision_id: revisionId });
+  if (isAcceptanceRequired(submitted.error)) return fail(ACCEPTANCE_REQUIRED_MESSAGE);
   if (submitted.error) {
     console.error(`submit_revision failed / falló submit_revision: ${submitted.error.code ?? "unknown"}`);
     return fail("Guardamos el borrador, pero no pudimos enviarlo a revisión. Probá de nuevo.");

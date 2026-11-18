@@ -8,7 +8,9 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { requirePassword } from "@/lib/auth/password-gate";
 import { formatDate } from "@/lib/format";
+import { loadPendingDocuments } from "@/lib/legal/pending";
 import { createServerSupabase } from "@/lib/supabase/server-client";
+import { AcceptanceBanner } from "./acceptance-banner";
 import { signOut } from "./actions";
 
 export const metadata: Metadata = { title: "Mi perfil", robots: { index: false } };
@@ -21,7 +23,7 @@ const STATUS_LABELS: Record<string, string> = {
   erased: "Eliminado",
 };
 
-async function Account() {
+async function Account({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   // The session check reads the clock (token expiry): it must run on a real request, never in a prerender pass.
   // La verificación de sesión lee el reloj (vencimiento del token): debe correr en un pedido real, nunca en un prerender.
   await connection();
@@ -51,9 +53,20 @@ async function Account() {
   const { data: isAdmin } = await supabase.rpc("is_admin");
   const adminOnly = isAdmin === true && (!person || !profile);
 
+  // Documents with a new version to accept: only for someone who already has a profile (the database raises for a login without a person).
+  // Administrators are never blocked, but they can still accept. / Documentos con versión nueva por aceptar: solo para quien ya tiene perfil.
+  // Quien administra nunca se bloquea, pero igual puede aceptar.
+  const pendingDocuments = person && profile ? await loadPendingDocuments(supabase) : [];
+  const acceptanceFailed = (await searchParams).aceptacion === "error";
+
   return (
     <>
       <p className="mt-2 text-zinc-700 dark:text-zinc-300">Ingresaste como <strong>{auth.user.email}</strong>.</p>
+      {pendingDocuments === null ? (
+        <p role="alert" className="mt-4 text-sm font-medium text-red-700 dark:text-red-400">No pudimos comprobar si hay documentos nuevos por aceptar. Recargá la página en unos minutos.</p>
+      ) : pendingDocuments.length > 0 ? (
+        <AcceptanceBanner pending={pendingDocuments} blocking={isAdmin !== true} failed={acceptanceFailed} />
+      ) : null}
       {adminOnly ? (
         <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Cuenta de administración</h2>
@@ -86,12 +99,12 @@ async function Account() {
   );
 }
 
-export default function MyProfilePage() {
+export default function MyProfilePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   return (
     <main className="mx-auto max-w-xl px-4 py-10">
       <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Mi perfil</h1>
       <Suspense fallback={<p className="mt-2 text-zinc-600">Cargando…</p>}>
-        <Account />
+        <Account searchParams={searchParams} />
       </Suspense>
     </main>
   );

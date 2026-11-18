@@ -11,8 +11,10 @@ import { getPublicEnv } from "@/lib/env";
 import { photoPublicUrl } from "@/lib/photo";
 import { isPendingPhotoPath } from "@/lib/photo-rules";
 import { pendingPhotoUrl } from "@/lib/photo-storage";
+import { loadPendingDocuments } from "@/lib/legal/pending";
 import { loadProfileEditor } from "@/lib/profile-load";
 import { createServerSupabase } from "@/lib/supabase/server-client";
+import { AcceptanceBanner } from "../acceptance-banner";
 import { ProfileForm } from "./profile-form";
 
 export const metadata: Metadata = { title: "Editar mi perfil", robots: { index: false } };
@@ -35,6 +37,18 @@ async function Editor() {
         Tu perfil está en revisión. No se puede cambiar hasta que lo revisemos. <Link className="underline" href="/mi-perfil">Volver</Link>
       </p>
     );
+  }
+  // New legal versions to accept: nothing can be edited until accepted (administrators are never blocked, like in the database).
+  // The published profile stays published. If the check fails we do not guess: we show an error instead of the form.
+  // Versiones legales nuevas por aceptar: no se puede editar nada hasta aceptar (quien administra nunca se bloquea, igual que en la base).
+  // El perfil publicado sigue publicado. Si la comprobación falla no adivinamos: mostramos un error en vez del formulario.
+  const pendingDocuments = await loadPendingDocuments(supabase);
+  if (pendingDocuments === null) {
+    return <p role="alert" className="mt-4 text-red-700 dark:text-red-400">No pudimos comprobar tu estado. Probá de nuevo en unos minutos.</p>;
+  }
+  if (pendingDocuments.length > 0) {
+    const { data: isAdmin } = await supabase.rpc("is_admin");
+    if (isAdmin !== true) return <AcceptanceBanner pending={pendingDocuments} blocking />;
   }
   // a pending photo is shown with a short-lived signed address; only if it belongs to this profile
   // la foto pendiente se muestra con una dirección firmada de corta vida; solo si es de este perfil
