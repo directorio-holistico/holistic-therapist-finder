@@ -71,7 +71,7 @@ begin
   end if;
   select string_agg(column_name, ',' order by ordinal_position) into cols from information_schema.columns
     where table_schema = 'public' and table_name = 'public_profile_detail';
-  if cols <> 'profile_id,display_name,photo_path,headline,zone,approved_at,city_id,city_name,region_id,region_name,country_id,country_name,country_iso,therapy_ids,therapy_names,service_modes,session_formats,languages,rates_from,rates_confirmed_at,rates_current,is_pinned,practice_start_year,website,therapies_detail,instagram,facebook,tiktok,youtube' then
+  if cols <> 'profile_id,display_name,photo_path,headline,zone,approved_at,city_id,city_name,region_id,region_name,country_id,country_name,country_iso,therapy_ids,therapy_names,service_modes,session_formats,languages,rates_from,rates_confirmed_at,rates_current,is_pinned,practice_start_year,website,therapies_detail,instagram,facebook,tiktok,youtube,about' then
     raise exception 'the columns of public_profile_detail changed: %', cols;
   end if;
 end
@@ -86,12 +86,12 @@ begin
   expected := array[
     'profile_contacts.contact_type_id:SELECT', 'profile_contacts.profile_id:SELECT', 'profile_contacts.value:SELECT',
     'profile_languages.language_id:SELECT', 'profile_languages.profile_id:SELECT',
-    'profile_therapies.profile_id:SELECT', 'profile_therapies.session_minutes:SELECT', 'profile_therapies.therapy_id:SELECT',
+    'profile_therapies.description:SELECT', 'profile_therapies.profile_id:SELECT', 'profile_therapies.session_minutes:SELECT', 'profile_therapies.therapy_id:SELECT',
     'profile_therapy_rates.amount:SELECT', 'profile_therapy_rates.currency_id:SELECT', 'profile_therapy_rates.profile_id:SELECT',
     'profile_therapy_rates.rate_audience_id:SELECT', 'profile_therapy_rates.therapy_id:SELECT',
     'profile_therapy_service_modes.profile_id:SELECT', 'profile_therapy_service_modes.service_mode_id:SELECT', 'profile_therapy_service_modes.therapy_id:SELECT',
     'profile_therapy_session_formats.profile_id:SELECT', 'profile_therapy_session_formats.session_format_id:SELECT', 'profile_therapy_session_formats.therapy_id:SELECT',
-    'therapist_profiles.approved_at:SELECT', 'therapist_profiles.display_name:SELECT', 'therapist_profiles.headline:SELECT',
+    'therapist_profiles.about:SELECT', 'therapist_profiles.approved_at:SELECT', 'therapist_profiles.display_name:SELECT', 'therapist_profiles.headline:SELECT',
     'therapist_profiles.id:SELECT', 'therapist_profiles.is_pinned:SELECT', 'therapist_profiles.location_id:SELECT',
     'therapist_profiles.photo_path:SELECT', 'therapist_profiles.practice_start_year:SELECT',
     'therapist_profiles.rates_confirmed_at:SELECT', 'therapist_profiles.zone:SELECT'];
