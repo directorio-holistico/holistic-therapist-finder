@@ -12,7 +12,7 @@ This project is a free, no-sign-up directory:
 
 - The **patient** picks a therapy and a place (country, region or city) and sees the therapists who offer it, with their contact details. No account is needed.
 - The system **only creates the connection**. It does not book appointments or take payments.
-- Searches that return no results are meant to be recorded as **unmet demand**, so new therapists can be invited where people are actually looking.
+- Searches that return no results are recorded as **unmet demand**, so new therapists can be invited where people are actually looking.
 
 ## Features (MVP)
 
@@ -24,7 +24,7 @@ This project is a free, no-sign-up directory:
 - [x] Moderation: every profile change is a revision that the admin reviews; admin screens for revisions and reports
 - [x] Public reports: anyone can report a profile (bot check and rate limit)
 - [x] Legal pages: legal notice, terms of use, privacy policy and cookies policy (plus the therapist declaration at sign-up)
-- [ ] Log of searches with no results (demand signal)
+- [x] Log of searches with no results (demand signal): only therapy, place and mode are stored, plus a keyed hash of the origin for the daily limit
 - [ ] Admin screens for the therapy catalog (catalog changes are database migrations for now)
 
 ## Stack
@@ -87,7 +87,7 @@ Fill `.env.local` with your own values. **Never commit it.** The variables are v
 | `NEXT_PUBLIC_SITE_URL` | Public address of the site (`http://localhost:3000` in development) |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public values (the anon/publishable key only) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only. Never expose it to the browser |
-| `FINGERPRINT_HMAC_KEY`, `RATE_LIMIT_HMAC_KEY` | Server only. Secrets for irreversible fingerprints and the daily rate limit (random, 32+ characters, all different) |
+| `RATE_LIMIT_HMAC_KEY` | Server only. Secret for the keyed hash of the visitor's origin used by the daily rate limit (random, 32+ characters, different from every other key) |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile. Use Cloudflare's dummy keys for local tests |
 | `CONTROLLER_CONTACT_EMAIL` | Contact shown in the legal pages |
 
@@ -112,11 +112,11 @@ Database helpers (PowerShell, Windows) live in `scripts/db/`: `Reset-LocalDb.ps1
 
 ## Resumen en español
 
-Directorio gratuito y sin registro para pacientes: se elige una terapia y una zona, y el sistema muestra los terapeutas disponibles con su contacto. El sistema solo conecta, no gestiona turnos. Las búsquedas sin resultados se guardarán como demanda no cubierta para invitar terapeutas donde hacen falta.
+Directorio gratuito y sin registro para pacientes: se elige una terapia y una zona, y el sistema muestra los terapeutas disponibles con su contacto. El sistema solo conecta, no gestiona turnos. Las búsquedas sin resultados se guardan como demanda no cubierta para invitar terapeutas donde hacen falta.
 
 **Estado:** previo al lanzamiento. El sitio está desplegado en <https://faroholistico.com> y en desarrollo activo; todavía no se incorporan terapeutas.
 
-**Qué funciona hoy:** catálogo de terapias, búsqueda por terapia y zona, perfil público, "Ver contacto" con verificación anti-bots y límite diario, alta y panel del terapeuta (con foto opcional y consentimiento), moderación de cada cambio de perfil, denuncias públicas y páginas legales. **Pendiente:** registro de búsquedas sin resultado y administración del catálogo de terapias.
+**Qué funciona hoy:** catálogo de terapias, búsqueda por terapia y zona, perfil público, "Ver contacto" con verificación anti-bots y límite diario, alta y panel del terapeuta (con foto opcional y consentimiento), moderación de cada cambio de perfil, denuncias públicas y páginas legales, y registro de búsquedas sin resultado. **Pendiente:** administración del catálogo de terapias.
 
 **Cómo correrlo:** Node.js 20.9 o superior, un proyecto de Supabase, copiar `.env.example` a `.env.local`, completar los valores (nunca subirlo al repositorio) y ejecutar `npm install` y `npm run dev`. Los límites de los planes gratuitos están en la sección de arriba.
 
