@@ -56,7 +56,7 @@ describe("describeRevision", () => {
     if (!view) return;
     expect(view.displayName).toBe("<img src=x onerror=alert(1)>Ana"); // plain text: React escapes it on screen
     expect(view.therapies[0]).toEqual({
-      name: "Reiki", minutes: 60, serviceModes: ["Presencial"], sessionFormats: ["Individual"],
+      name: "Reiki", description: null, minutes: 60, serviceModes: ["Presencial"], sessionFormats: ["Individual"],
       rates: [{ audience: "Residentes", amount: 15000, currency: "ARS" }],
     });
     // a therapy without lists (an old payload) shows empty lists, never invented ones / sin listas (payload viejo): listas vacías

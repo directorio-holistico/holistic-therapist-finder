@@ -10,6 +10,8 @@ import { z } from "zod";
 export const LIMITS = {
   displayName: 80,
   headline: 280,
+  about: 1500,
+  therapyDescription: 200,
   zone: 80,
   cityName: 80,
   contactValue: 300,
@@ -41,8 +43,8 @@ export function parseAmount(raw: string): number | null {
 
 // Each row carries its OWN service modes and session formats (a therapist may give one therapy in person and another remote).
 // Cada fila lleva SUS PROPIAS modalidades y formatos de sesión (un terapeuta puede dar una terapia presencial y otra a distancia).
-export type TherapySlotInput = { therapyId: number | null; minutes: string; rateOwn: string; rateOther: string; serviceModes: number[]; sessionFormats: number[] };
-export type TherapySlot = { therapyId: number; minutes: number | null; rateOwn: number | null; rateOther: number | null; serviceModes: number[]; sessionFormats: number[] };
+export type TherapySlotInput = { therapyId: number | null; description: string; minutes: string; rateOwn: string; rateOther: string; serviceModes: number[]; sessionFormats: number[] };
+export type TherapySlot = { therapyId: number; description: string | null; minutes: number | null; rateOwn: number | null; rateOther: number | null; serviceModes: number[]; sessionFormats: number[] };
 type SlotResult = { skip: true } | { skip: false; value: TherapySlot } | { skip: false; error: { message: string; field: string } };
 
 // One row of the therapies block: empty rows are skipped; a half filled row is an error. / Una fila del bloque de terapias.
@@ -50,9 +52,10 @@ export function readTherapySlot(slot: TherapySlotInput, index: number): SlotResu
   const minutesText = slot.minutes.trim();
   const own = parseAmount(slot.rateOwn);
   const other = parseAmount(slot.rateOther);
+  const description = oneLine(slot.description);
   if (slot.therapyId === null) {
-    if (minutesText === "" && own === null && other === null && slot.serviceModes.length === 0 && slot.sessionFormats.length === 0) return { skip: true };
-    return { skip: false, error: { message: `Terapia ${index + 1}: elegí la terapia o vaciá toda la fila (duración, tarifas, modalidad y formato).`, field: `therapyId_${index}` } };
+    if (description === "" && minutesText === "" && own === null && other === null && slot.serviceModes.length === 0 && slot.sessionFormats.length === 0) return { skip: true };
+    return { skip: false, error: { message: `Terapia ${index + 1}: elegí la terapia o vaciá toda la fila (descripción, duración, tarifas, modalidad y formato).`, field: `therapyId_${index}` } };
   }
   let minutes: number | null = null;
   if (minutesText !== "") {
@@ -60,6 +63,12 @@ export function readTherapySlot(slot: TherapySlotInput, index: number): SlotResu
     if (!(minutes >= LIMITS.minMinutes && minutes <= LIMITS.maxMinutes)) {
       return { skip: false, error: { message: `Duración: entre ${LIMITS.minMinutes} y ${LIMITS.maxMinutes} minutos.`, field: `minutes_${index}` } };
     }
+  }
+  if (description.length > LIMITS.therapyDescription) {
+    return { skip: false, error: { message: `Terapia ${index + 1}: la descripción admite hasta ${LIMITS.therapyDescription} caracteres.`, field: `description_${index}` } };
+  }
+  if (containsContactData(description)) {
+    return { skip: false, error: { message: `Terapia ${index + 1}: la descripción no admite ${NO_CONTACT_IN_TEXT}.`, field: `description_${index}` } };
   }
   if (slot.serviceModes.length === 0) {
     return { skip: false, error: { message: `Terapia ${index + 1}: elegí al menos una modalidad de atención (presencial o a distancia).`, field: `serviceModes_${index}` } };
@@ -74,7 +83,7 @@ export function readTherapySlot(slot: TherapySlotInput, index: number): SlotResu
     if (amount <= 0) return { skip: false, error: { message: "La tarifa debe ser mayor que cero. Si no querés mostrarla, dejala vacía.", field } };
     if (amount > LIMITS.maxAmount) return { skip: false, error: { message: "La tarifa es demasiado alta.", field } };
   }
-  return { skip: false, value: { therapyId: slot.therapyId, minutes, rateOwn: own, rateOther: other, serviceModes: slot.serviceModes, sessionFormats: slot.sessionFormats } };
+  return { skip: false, value: { therapyId: slot.therapyId, description: description === "" ? null : description, minutes, rateOwn: own, rateOther: other, serviceModes: slot.serviceModes, sessionFormats: slot.sessionFormats } };
 }
 
 const hasDecimals = (amount: number, minorUnits: number) => {
@@ -88,6 +97,35 @@ export const CONTACT_CODES = {
 } as const;
 
 const oneLine = (value: string) => value.replace(/\s+/g, " ").trim();
+
+// Several lines are allowed in "Sobre mí": spaces are tidied inside each line, at most one blank line in a row, no blank lines at the ends.
+// En "Sobre mí" se admiten varias líneas: se ordenan los espacios de cada línea, como mucho una línea vacía seguida y ninguna en los extremos.
+export function tidyParagraphs(value: string): string {
+  return value
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+// Contact data inside a free text (owner decision: no links, e-mails, @handles or long phone numbers; they have their own contact
+// fields and a phone or a link here would skip the "Ver contacto" protection). The database applies the same rule
+// (contains_contact_data); this copy only gives the message early. It is meant to be at least as strict as the database one.
+// Datos de contacto dentro de un texto libre (decisión del titular: sin enlaces, mails, @usuarios ni teléfonos largos; tienen sus
+// campos de contacto y un teléfono o enlace acá se saltearía la protección de "Ver contacto"). La base aplica la misma regla
+// (contains_contact_data); esta copia solo da el mensaje temprano y busca ser al menos tan estricta como la de la base.
+const WORD = "[\\p{L}\\p{N}_]";
+const CONTACT_PATTERNS: readonly RegExp[] = [
+  /https?:|www\./i,
+  new RegExp(`(?<!${WORD})wa\\.me`, "iu"),
+  new RegExp(`(?<!${WORD})[\\p{L}\\p{N}-]+\\.(?:com|net|org|info|ar|cl|mx|es|io|me|co|app|link|bio|site|online|ly)(?:(?!${WORD})|/)`, "iu"),
+  /@[\p{L}\p{N}_.]{3,}/u,
+  /(?:\d[ .()-]*){9,}/,
+];
+export const containsContactData = (value: string): boolean => CONTACT_PATTERNS.some((pattern) => pattern.test(value));
+export const NO_CONTACT_IN_TEXT = "enlaces, mails, @usuarios ni teléfonos (para eso están los campos de contacto)";
 const emptyToNull = (value: string) => (value === "" ? null : value);
 
 const optionalText = (max: number, label: string) =>
@@ -96,6 +134,17 @@ const optionalText = (max: number, label: string) =>
     .transform(oneLine)
     .pipe(z.string().max(max, `${label}: máximo ${max} caracteres.`))
     .transform(emptyToNull);
+
+const aboutField = z
+  .string()
+  .transform(tidyParagraphs)
+  .pipe(
+    z
+      .string()
+      .max(LIMITS.about, `Sobre mí: máximo ${LIMITS.about} caracteres.`)
+      .refine((value) => !containsContactData(value), `Sobre mí: no admite ${NO_CONTACT_IN_TEXT}.`),
+  )
+  .transform(emptyToNull);
 
 const idList = (message: string) =>
   z.array(z.number().int().positive()).min(1, message).max(20, "Elegiste demasiadas opciones.");
@@ -171,6 +220,7 @@ export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: Read
         .transform(oneLine)
         .pipe(z.string().min(2, "Escribí el nombre que se va a mostrar.").max(LIMITS.displayName, `Nombre: máximo ${LIMITS.displayName} caracteres.`)),
       headline: optionalText(LIMITS.headline, "Frase de presentación"),
+      about: aboutField,
       zone: optionalText(LIMITS.zone, "Zona o barrio"),
       practiceStartYear: z
         .number()
@@ -213,6 +263,7 @@ export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: Read
       therapies: z
         .array(z.object({
           therapyId: z.number().int().positive().nullable(),
+          description: z.string(),
           minutes: z.string(),
           rateOwn: z.string(),
           rateOther: z.string(),
@@ -311,6 +362,7 @@ const text = (value: FormDataEntryValue | null) => (typeof value === "string" ? 
 export function readProfileForm(formData: FormData, maxYear: number, currencyMinorUnits: ReadonlyMap<number, number> = new Map()) {
   const therapies = Array.from({ length: MAX_THERAPIES }, (_, index) => ({
     therapyId: toInt(formData.get(`therapyId_${index}`)),
+    description: text(formData.get(`description_${index}`)),
     minutes: text(formData.get(`minutes_${index}`)),
     rateOwn: text(formData.get(`rateOwn_${index}`)),
     rateOther: text(formData.get(`rateOther_${index}`)),
@@ -320,6 +372,7 @@ export function readProfileForm(formData: FormData, maxYear: number, currencyMin
   return buildProfileFormSchema(maxYear, currencyMinorUnits).safeParse({
     displayName: text(formData.get("displayName")),
     headline: text(formData.get("headline")),
+    about: text(formData.get("about")),
     zone: text(formData.get("zone")),
     practiceStartYear: toInt(formData.get("practiceStartYear")),
     cityMissing: formData.get("cityMissing") === "on",
@@ -348,6 +401,8 @@ export type ContactTypeIds = { phone: number; email: number; website: number; in
 export type ProfilePayload = {
   display_name: string;
   headline: string | null;
+  // "Sobre mí": always present (null = none); the database clears it when it is null / siempre presente (null = ninguno)
+  about: string | null;
   zone: string | null;
   practice_start_year: number | null;
   location_id: number | null;
@@ -358,6 +413,7 @@ export type ProfilePayload = {
   contacts: { contact_type_id: number; value: string; accepts_whatsapp: boolean }[];
   therapies: {
     therapy_id: number;
+    description: string | null;
     session_minutes: number | null;
     service_modes: number[];
     session_formats: number[];
@@ -386,6 +442,7 @@ export function buildPayload(values: ProfileFormValues, contactTypes: ContactTyp
     display_name: values.displayName,
     ...photo,
     headline: values.headline,
+    about: values.about,
     zone: values.zone,
     practice_start_year: values.practiceStartYear,
     location_id: values.cityMissing ? null : values.cityId,
@@ -397,6 +454,7 @@ export function buildPayload(values: ProfileFormValues, contactTypes: ContactTyp
       if (slot.rateOther !== null && values.currencyOther !== null) rates.push({ rate_audience_id: audiences.other, amount: slot.rateOther, currency_id: values.currencyOther });
       return {
         therapy_id: slot.therapyId,
+        description: slot.description,
         session_minutes: slot.minutes,
         service_modes: unique(slot.serviceModes),
         session_formats: unique(slot.sessionFormats),
@@ -411,6 +469,7 @@ export function buildPayload(values: ProfileFormValues, contactTypes: ContactTyp
 export type FormDefaults = {
   displayName: string;
   headline: string;
+  about: string;
   zone: string;
   practiceStartYear: string;
   cityId: number | null;
@@ -430,14 +489,14 @@ export type FormDefaults = {
   photoNew: string;
   photoRemove: boolean;
 };
-export type TherapyDefaults = { therapyId: number | null; minutes: string; rateOwn: string; rateOther: string; serviceModes: number[]; sessionFormats: number[] };
-export const EMPTY_THERAPY_SLOT: TherapyDefaults = { therapyId: null, minutes: "", rateOwn: "", rateOther: "", serviceModes: [], sessionFormats: [] };
+export type TherapyDefaults = { therapyId: number | null; description: string; minutes: string; rateOwn: string; rateOther: string; serviceModes: number[]; sessionFormats: number[] };
+export const EMPTY_THERAPY_SLOT: TherapyDefaults = { therapyId: null, description: "", minutes: "", rateOwn: "", rateOther: "", serviceModes: [], sessionFormats: [] };
 // Always MAX_THERAPIES rows for the form: the stored ones first, then empty rows. / Siempre MAX_THERAPIES filas: primero las guardadas, luego vacías.
 export const padTherapies = (rows: TherapyDefaults[]): TherapyDefaults[] =>
   Array.from({ length: MAX_THERAPIES }, (_, index) => rows[index] ?? EMPTY_THERAPY_SLOT);
 
 export const EMPTY_DEFAULTS: FormDefaults = {
-  displayName: "", headline: "", zone: "", practiceStartYear: "", cityId: null,
+  displayName: "", headline: "", about: "", zone: "", practiceStartYear: "", cityId: null,
   languages: [], phone: "", phoneWhatsapp: false, email: "", website: "", instagram: "",
   facebook: "", tiktok: "", youtube: "",
   therapies: Array.from({ length: MAX_THERAPIES }, () => EMPTY_THERAPY_SLOT), currencyOwn: null, currencyOther: null,
@@ -447,6 +506,7 @@ export const EMPTY_DEFAULTS: FormDefaults = {
 const payloadSchema = z.object({
   display_name: z.string().nullish(),
   headline: z.string().nullish(),
+  about: z.string().nullish(),
   zone: z.string().nullish(),
   practice_start_year: z.number().int().nullish(),
   location_id: z.number().int().nullish(),
@@ -456,6 +516,7 @@ const payloadSchema = z.object({
   therapies: z
     .array(z.object({
       therapy_id: z.number().int(),
+      description: z.string().nullish(),
       session_minutes: z.number().int().nullish(),
       service_modes: z.array(z.number().int()).optional(),
       session_formats: z.array(z.number().int()).optional(),
@@ -473,6 +534,7 @@ export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeI
   const rateOf = (rates: NonNullable<typeof stored[number]["rates"]> | undefined, audienceId: number) => rates?.find((rate) => rate.rate_audience_id === audienceId);
   const therapies = stored.slice(0, MAX_THERAPIES).map((row) => ({
     therapyId: row.therapy_id,
+    description: row.description ?? "",
     minutes: row.session_minutes != null ? String(row.session_minutes) : "",
     rateOwn: rateOf(row.rates, audiences.own) ? String(rateOf(row.rates, audiences.own)?.amount) : "",
     rateOther: rateOf(row.rates, audiences.other) ? String(rateOf(row.rates, audiences.other)?.amount) : "",
@@ -483,6 +545,7 @@ export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeI
   return {
     displayName: p.display_name ?? base.displayName,
     headline: p.headline ?? "",
+    about: p.about ?? "",
     zone: p.zone ?? "",
     practiceStartYear: p.practice_start_year != null ? String(p.practice_start_year) : "",
     cityId: p.location_id ?? null,

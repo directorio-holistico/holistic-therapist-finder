@@ -34,7 +34,7 @@ export const PRIVACY: LegalDocument = {
         { type: "p", text: "Guardamos lo que cargás para tu cuenta y tu perfil:" },
         { type: "ul", items: [
           "Cuenta: nombre completo y mail (para ingresar y contactarte).",
-          "Perfil: nombre que se muestra, ciudad, zona o barrio (opcional), frase de presentación, año de inicio de tu práctica, terapias, idiomas, modos de atención (presencial o a distancia), formato (individual o grupal), duración aproximada y tarifas (opcionales).",
+          "Perfil: nombre que se muestra, ciudad, zona o barrio (opcional), frase de presentación, un texto «Sobre mí» (opcional, hasta 1.500 caracteres), año en que empezaste a trabajar como terapeuta, terapias (con una descripción breve opcional de cada una, hasta 200 caracteres), idiomas, modos de atención (presencial o a distancia), formato (individual o grupal), duración aproximada y tarifas (opcionales).",
           "Foto (opcional): una imagen de tu rostro es un dato personal. Solo la mostramos si das tu consentimiento expreso al subirla; guardamos ese consentimiento con su fecha y la versión del texto que aceptaste. Hasta que se aprueba el cambio, tu foto está en un espacio privado; recién después pasa a ser pública. En nuestro servidor la recortamos y la volvemos a codificar sin metadatos (sin posición GPS ni datos de la cámara). Solo se usa para mostrarla en tu perfil: no hacemos reconocimiento facial ni otro tratamiento de la imagen.",
           "Contacto: teléfono (obligatorio), mail y página web (opcionales).",
           `Protección del ingreso: para limitar intentos repetidos de ingreso y de pedido de enlaces por mail guardamos, durante ${RETENTION.rateLimitDays} días, un contador asociado a una huella irreversible de tu dirección de red, igual que se explica en el apartado 2. No se guarda la dirección ni el mail.`,
@@ -48,7 +48,7 @@ export const PRIVACY: LegalDocument = {
       id: "publico",
       title: "4. Qué se muestra públicamente",
       blocks: [
-        { type: "p", text: "Una vez aprobado tu perfil se muestran: nombre de perfil, foto, país, región y ciudad (y la zona si la cargaste), terapias, frase de presentación, modos y formatos, idiomas, tarifas \"desde\" y tu página web. Nunca mostramos tu dirección." },
+        { type: "p", text: "Una vez aprobado tu perfil se muestran: nombre de perfil, foto, país, región y ciudad (y la zona si la cargaste), terapias con su descripción breve, frase de presentación, el texto «Sobre mí» (solo en el perfil completo), modos y formatos, idiomas, tarifas \"desde\" y tu página web. Nunca mostramos tu dirección." },
         { type: "p", text: "Tu teléfono y tu mail no aparecen en el perfil: se muestran únicamente cuando un visitante aprieta el botón para ver el contacto." },
       ],
     },

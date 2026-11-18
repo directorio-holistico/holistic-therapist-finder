@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
-import type { FormDefaults } from "@/lib/profile-form";
+import { LIMITS, type FormDefaults } from "@/lib/profile-form";
 import { saveProfile, type EditState } from "./actions";
 import { PhotoField } from "./photo-field";
 
@@ -29,6 +29,21 @@ type Props = {
   livePhotoUrl: string | null;
   pendingPhotoUrl: string | null;
 };
+
+// A text box with a live character counter (the counter is announced politely, not on every key). / Caja de texto con contador de caracteres.
+function CountedText({ id, name, label, rows, max, defaultValue, help, invalid }: {
+  id: string; name: string; label: string; rows: number; max: number; defaultValue: string; help: string; invalid: boolean;
+}) {
+  const [length, setLength] = useState(defaultValue.length);
+  return (
+    <div className="grid gap-1">
+      <label htmlFor={id} className={LABEL}>{label}</label>
+      <textarea id={id} name={name} rows={rows} maxLength={max} defaultValue={defaultValue} aria-describedby={`${id}-help`} aria-invalid={invalid}
+        onChange={(event) => setLength(event.target.value.length)} className={FIELD} />
+      <p id={`${id}-help`} className={HELP}>{help} <span aria-live="off">({length}/{max})</span></p>
+    </div>
+  );
+}
 
 function CheckGroup({ legend, name, options, selected, label }: {
   legend: string; name: string; options: { id: number; code: string }[]; selected: number[]; label: (code: string) => string;
@@ -109,8 +124,11 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             aria-describedby="headline-help" aria-invalid={invalid("headline")} className={FIELD} />
           <p id="headline-help" className={HELP}>Hasta 280 caracteres. No prometas curas ni hables de enfermedades.</p>
         </div>
+        <CountedText id="about" name="about" label="Sobre mí (opcional)" rows={8} max={LIMITS.about} defaultValue={defaults.about}
+          invalid={invalid("about")}
+          help="Contá tu formación y tu manera de trabajar, en tus palabras. Se ve solo en tu perfil completo. Sin enlaces, mails, @usuarios ni teléfonos: para eso están los campos de contacto. No prometas curas ni hables de enfermedades." />
         <div className="grid gap-1">
-          <label htmlFor="practiceStartYear" className={LABEL}>Año en que empezaste a atender (opcional)</label>
+          <label htmlFor="practiceStartYear" className={LABEL}>Año en que empezaste a trabajar como terapeuta, en cualquier terapia (opcional)</label>
           <input id="practiceStartYear" name="practiceStartYear" type="number" inputMode="numeric" min={1900} max={2100} autoComplete={NO_AUTOFILL}
             defaultValue={defaults.practiceStartYear} aria-invalid={invalid("practiceStartYear")} className={FIELD} />
         </div>
@@ -189,6 +207,9 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
                 {catalogs.therapies.map((therapy) => <option key={therapy.id} value={therapy.id}>{therapy.name}</option>)}
               </select>
             </div>
+            <CountedText id={`description_${index}`} name={`description_${index}`} label="Descripción breve de esta terapia (opcional)" rows={3} max={LIMITS.therapyDescription}
+              defaultValue={slot.description} invalid={invalid(`description_${index}`)}
+              help="Qué técnicas usás o cómo es tu sesión. Se ve en tu perfil completo. Sin enlaces ni teléfonos." />
             <CheckGroup legend="Modo de atención de esta terapia" name={`serviceModes_${index}`} options={catalogs.serviceModes} selected={slot.serviceModes} label={labelServiceMode} />
             <CheckGroup legend="Formato de sesión de esta terapia" name={`sessionFormats_${index}`} options={catalogs.sessionFormats} selected={slot.sessionFormats} label={labelSessionFormat} />
             <div className="grid gap-1">

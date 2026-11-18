@@ -19,6 +19,7 @@ export type ProfileLink = { kind: ProfileLinkKind; href: string; text: string };
 export type TherapyDetail = {
   therapyId: number;
   name: string;
+  description: string | null;
   sessionMinutes: number | null;
   serviceModes: string[];
   sessionFormats: string[];
@@ -29,6 +30,7 @@ export type ProfileDetail = {
   profileId: string;
   displayName: string;
   headline: string | null;
+  about: string | null;
   place: string;
   countryIso: string | null;
   photoPath: string | null;
@@ -48,6 +50,7 @@ export type DetailRow = {
   display_name?: string | null;
   photo_path?: string | null;
   headline?: string | null;
+  about?: string | null;
   city_name?: string | null;
   region_name?: string | null;
   country_name?: string | null;
@@ -68,6 +71,7 @@ export type DetailRow = {
 const therapySchema = z.object({
   therapy_id: z.number().int(),
   name: z.string().min(1),
+  description: z.string().nullable().optional(),
   session_minutes: z.number().int().nullable().optional(),
   service_modes: z.array(z.string()),
   session_formats: z.array(z.string()),
@@ -81,6 +85,7 @@ export function parseTherapies(value: unknown): TherapyDetail[] {
     .map((item) => ({
       therapyId: item.therapy_id,
       name: item.name,
+      description: item.description?.trim() ? item.description : null,
       sessionMinutes: item.session_minutes ?? null,
       serviceModes: item.service_modes,
       sessionFormats: item.session_formats,
@@ -155,6 +160,7 @@ export function toProfileDetail(row: DetailRow): ProfileDetail | null {
     profileId: row.profile_id,
     displayName: row.display_name,
     headline: row.headline ?? null,
+    about: row.about?.trim() ? row.about : null,
     place,
     countryIso: row.country_iso ?? null,
     photoPath: row.photo_path ?? null,

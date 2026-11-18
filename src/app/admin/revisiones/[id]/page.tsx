@@ -152,9 +152,10 @@ async function Detail({ params }: Props) {
           </Row>
           <Row label="Nombre público" changed={mark("displayName")} before={was?.displayName ?? null}>{view.displayName ?? "—"}</Row>
           <Row label="Presentación" changed={mark("headline")} before={was?.headline ?? null}>{view.headline ?? "—"}</Row>
+          <Row label="Sobre mí" changed={mark("about")} before={was?.about ?? null}><span className="whitespace-pre-line">{view.about ?? "—"}</span></Row>
           <Row label="Ciudad" changed={mark("location")} before={previousPlace}>{place ?? (view.locationId === null ? "Sin ciudad" : `#${view.locationId}`)}</Row>
           <Row label="Zona o barrio" changed={mark("zone")} before={was?.zone ?? null}>{view.zone ?? "—"}</Row>
-          <Row label="Empezó a atender" changed={mark("practiceStartYear")} before={was?.practiceStartYear != null ? String(was.practiceStartYear) : null}>{view.practiceStartYear ?? "—"}</Row>
+          <Row label="Empezó como terapeuta" changed={mark("practiceStartYear")} before={was?.practiceStartYear != null ? String(was.practiceStartYear) : null}>{view.practiceStartYear ?? "—"}</Row>
           <Row label="Idiomas" changed={mark("languages")} before={was ? was.languages.join(", ") || null : null}>{view.languages.join(", ") || "—"}</Row>
           <Row label="Terapias" changed={mark("therapies")}>
             {view.therapies.length === 0 ? "—" : (
@@ -162,6 +163,7 @@ async function Detail({ params }: Props) {
                 {view.therapies.map((therapy, index) => (
                   <li key={index}>
                     <strong>{therapy.name}</strong>
+                    {therapy.description ? ` · «${therapy.description}»` : ""}
                     {therapy.minutes !== null ? ` · ${therapy.minutes} min` : ""}
                     {` · ${therapy.serviceModes.join(", ") || "sin modalidad"} · ${therapy.sessionFormats.join(", ") || "sin formato"}`}
                     {therapy.rates.map((rate) => ` · ${rate.audience}: ${formatMoney(rate.amount, rate.currency)}`).join("")}

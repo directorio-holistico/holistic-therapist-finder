@@ -69,6 +69,7 @@ export const TERMS: LegalDocument = {
           "Contenido ilícito, discriminatorio, engañoso o que suplante a otra persona; publicidad ajena al servicio ofrecido; correo no deseado.",
           "Fotos de las que no tengas derecho de uso.",
         ] },
+        { type: "p", text: "Los textos libres del perfil (la frase de presentación, \"Sobre mí\" y la descripción de cada terapia) no pueden incluir enlaces, mails, @usuarios ni teléfonos: para eso están los campos de contacto. Tampoco pueden prometer curas ni hablar de enfermedades. Se revisan junto con el perfil." },
         { type: "p", text: "El enlace a tu página web, si lo cargás, se revisa junto con el perfil y debe cumplir las mismas reglas." },
       ],
     },

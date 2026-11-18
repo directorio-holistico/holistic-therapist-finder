@@ -24,11 +24,12 @@ export type ViewLookups = {
 export type LinkKind = "website" | "instagram" | "facebook" | "tiktok" | "youtube";
 export type ContactLink = { kind: LinkKind; value: string; href: string | null };
 export type RateView = { audience: string; amount: number; currency: string };
-export type TherapyView = { name: string; minutes: number | null; serviceModes: string[]; sessionFormats: string[]; rates: RateView[] };
+export type TherapyView = { name: string; description: string | null; minutes: number | null; serviceModes: string[]; sessionFormats: string[]; rates: RateView[] };
 
 export type RevisionView = {
   displayName: string | null;
   headline: string | null;
+  about: string | null;
   zone: string | null;
   practiceStartYear: number | null;
   locationId: number | null;
@@ -44,6 +45,7 @@ export type RevisionView = {
 const payloadSchema = z.looseObject({
   display_name: z.string().nullish(),
   headline: z.string().nullish(),
+  about: z.string().nullish(),
   zone: z.string().nullish(),
   practice_start_year: z.number().int().nullish(),
   location_id: z.number().int().nullish(),
@@ -53,6 +55,7 @@ const payloadSchema = z.looseObject({
   therapies: z
     .array(z.looseObject({
       therapy_id: z.number().int(),
+      description: z.string().nullish(),
       session_minutes: z.number().int().nullish(),
       service_modes: z.array(z.number().int()).optional(),
       session_formats: z.array(z.number().int()).optional(),
@@ -98,12 +101,14 @@ export function describeRevision(payload: unknown, lookups: ViewLookups): Revisi
   return {
     displayName: p.display_name ?? null,
     headline: p.headline ?? null,
+    about: p.about ?? null,
     zone: p.zone ?? null,
     practiceStartYear: p.practice_start_year ?? null,
     locationId: p.location_id ?? null,
     languages: names(p.languages, lookups.languages),
     therapies: (p.therapies ?? []).map((therapy) => ({
       name: lookups.therapies.get(therapy.therapy_id) ?? `#${therapy.therapy_id}`,
+      description: therapy.description ?? null,
       minutes: therapy.session_minutes ?? null,
       serviceModes: names(therapy.service_modes, lookups.serviceModes),
       sessionFormats: names(therapy.session_formats, lookups.sessionFormats),
@@ -136,11 +141,11 @@ export function decisionFacts(payload: unknown, contactTypeCodes: ReadonlyMap<nu
 // ---- What changed compared with the last approved version / Qué cambió respecto de la última versión aprobada ----
 // The live profile only changes through an approved revision, so the last approved payload is what the public sees today.
 // El perfil vigente solo cambia con una revisión aprobada, así que el último payload aprobado es lo que el público ve hoy.
-export type FieldKey = "photo" | "displayName" | "headline" | "location" | "zone" | "practiceStartYear" | "languages" | "therapies" | "phone" | "email" | "links";
+export type FieldKey = "photo" | "displayName" | "headline" | "about" | "location" | "zone" | "practiceStartYear" | "languages" | "therapies" | "phone" | "email" | "links";
 
 export const FIELD_NAMES: Record<FieldKey, string> = {
-  photo: "Foto", displayName: "Nombre público", headline: "Presentación", location: "Ciudad", zone: "Zona o barrio",
-  practiceStartYear: "Empezó a atender", languages: "Idiomas", therapies: "Terapias", phone: "Teléfono", email: "Mail", links: "Enlaces públicos",
+  photo: "Foto", displayName: "Nombre público", headline: "Presentación", about: "Sobre mí", location: "Ciudad", zone: "Zona o barrio",
+  practiceStartYear: "Empezó como terapeuta", languages: "Idiomas", therapies: "Terapias", phone: "Teléfono", email: "Mail", links: "Enlaces públicos",
 };
 
 export type RevisionChanges =
@@ -170,6 +175,7 @@ export function changedFields(payload: unknown, previousPayload: unknown | null,
   check("photo", current.photo.kind !== "none");
   check("displayName", !same(current.displayName, before.displayName));
   check("headline", !same(current.headline, before.headline));
+  check("about", !same(current.about, before.about));
   check("location", !same(current.locationId, before.locationId));
   check("zone", !same(current.zone, before.zone));
   check("practiceStartYear", !same(current.practiceStartYear, before.practiceStartYear));

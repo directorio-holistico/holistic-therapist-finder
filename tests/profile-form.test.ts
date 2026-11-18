@@ -177,8 +177,8 @@ describe("therapies and rates", () => {
     expect(none.success).toBe(false);
     const ok = withTherapies({ therapyId_1: "11", minutes_1: "60", serviceModes_1: ["1"], sessionFormats_1: ["2"] });
     expect(ok.success && ok.data.therapies).toEqual([
-      { therapyId: 10, minutes: null, rateOwn: null, rateOther: null, serviceModes: [1, 2], sessionFormats: [1] },
-      { therapyId: 11, minutes: 60, rateOwn: null, rateOther: null, serviceModes: [1], sessionFormats: [2] },
+      { therapyId: 10, description: null, minutes: null, rateOwn: null, rateOther: null, serviceModes: [1, 2], sessionFormats: [1] },
+      { therapyId: 11, description: null, minutes: 60, rateOwn: null, rateOther: null, serviceModes: [1], sessionFormats: [2] },
     ]);
   });
 
@@ -225,16 +225,16 @@ describe("therapies and rates", () => {
     const payload = buildPayload(parsed.data, TYPES, AUD);
     expect(payload.therapies).toEqual([
       {
-        therapy_id: 10, session_minutes: 60, service_modes: [1, 2], session_formats: [1],
+        therapy_id: 10, description: null, session_minutes: 60, service_modes: [1, 2], session_formats: [1],
         rates: [{ rate_audience_id: 1, amount: 15000, currency_id: 1 }, { rate_audience_id: 2, amount: 40, currency_id: 1 }],
       },
-      { therapy_id: 11, session_minutes: null, service_modes: [2], session_formats: [1, 2], rates: [{ rate_audience_id: 1, amount: 9000, currency_id: 1 }] },
+      { therapy_id: 11, description: null, session_minutes: null, service_modes: [2], session_formats: [1, 2], rates: [{ rate_audience_id: 1, amount: 9000, currency_id: 1 }] },
     ]);
     const back = defaultsFromPayload(payload, TYPES, AUD);
     expect(back.therapies).toHaveLength(6);
-    expect(back.therapies[0]).toEqual({ therapyId: 10, minutes: "60", rateOwn: "15000", rateOther: "40", serviceModes: [1, 2], sessionFormats: [1] });
+    expect(back.therapies[0]).toEqual({ therapyId: 10, description: "", minutes: "60", rateOwn: "15000", rateOther: "40", serviceModes: [1, 2], sessionFormats: [1] });
     expect(back.therapies[1]).toMatchObject({ therapyId: 11, serviceModes: [2], sessionFormats: [1, 2] });
-    expect(back.therapies[2]).toEqual({ therapyId: null, minutes: "", rateOwn: "", rateOther: "", serviceModes: [], sessionFormats: [] });
+    expect(back.therapies[2]).toEqual({ therapyId: null, description: "", minutes: "", rateOwn: "", rateOther: "", serviceModes: [], sessionFormats: [] });
     expect(back.currencyOwn).toBe(1);
     expect(back.currencyOther).toBe(1);
   });
@@ -246,10 +246,10 @@ describe("payload", () => {
     if (!parsed.success) throw new Error("must parse");
     const payload = buildPayload(parsed.data, TYPES, AUD);
     expect(Object.keys(payload).sort()).toEqual([
-      "contacts", "display_name", "headline", "languages", "location_id", "practice_start_year", "therapies", "zone",
+      "about", "contacts", "display_name", "headline", "languages", "location_id", "practice_start_year", "therapies", "zone",
     ]);
     // the modes and formats travel INSIDE each therapy, never at the profile level / viajan DENTRO de cada terapia, nunca a nivel perfil
-    expect(Object.keys(payload.therapies[0] ?? {}).sort()).toEqual(["rates", "service_modes", "session_formats", "session_minutes", "therapy_id"]);
+    expect(Object.keys(payload.therapies[0] ?? {}).sort()).toEqual(["description", "rates", "service_modes", "session_formats", "session_minutes", "therapy_id"]);
     expect(payload.languages).toEqual([1, 2]);
     expect(payload.contacts).toEqual([
       { contact_type_id: 1, value: "+54 299 555 0101", accepts_whatsapp: true },
@@ -264,6 +264,49 @@ describe("payload", () => {
     expect(back).toMatchObject({ displayName: "Lucía Ferrante", headline: "Hola", zone: "Centro", practiceStartYear: "2015", cityId: 7, phone: "+54 299 555 0101" });
     expect(defaultsFromPayload("basura", TYPES, AUD)).toEqual(EMPTY_DEFAULTS);
     expect(defaultsFromPayload({ languages: "no" }, TYPES, AUD)).toEqual(EMPTY_DEFAULTS);
+  });
+});
+
+describe("free texts: Sobre mí and therapy description", () => {
+  const parse = (extra: Record<string, string>) => readProfileForm(form({ ...VALID, ...extra }), YEAR);
+
+  it("tidies Sobre mí (keeps paragraphs) and turns empty into null", () => {
+    const ok = parse({ about: "  Hola.   Soy Ana.\r\n\r\n\r\n\r\nTrabajo a distancia.  " });
+    expect(ok.success && ok.data.about).toBe("Hola. Soy Ana.\n\nTrabajo a distancia.");
+    const empty = parse({ about: "   \n " });
+    expect(empty.success && empty.data.about).toBeNull();
+    expect(parse({}).success && (parse({}) as { data: { about: null } }).data.about).toBeNull();
+  });
+
+  it("limits Sobre mí to 1,500 and each description to 200", () => {
+    expect(parse({ about: "a".repeat(1500) }).success).toBe(true);
+    expect(parse({ about: "a".repeat(1501) }).success).toBe(false);
+    expect(parse({ description_0: "a".repeat(200) }).success).toBe(true);
+    const long = parse({ description_0: "a".repeat(201) });
+    expect(long.success).toBe(false);
+    if (!long.success) expect(long.error.issues[0]?.path[0]).toBe("description_0");
+  });
+
+  it("rejects links, mails, @handles and phone numbers, but lets years and plain text through", () => {
+    for (const bad of ["mirá https://x.com", "www.mio.com", "escribime a ana@mail.com", "seguime en @ana.terapias", "wa.me/549299", "mi sitio es ana.com.ar", "llamá al 299 555-0101", "llamame 2995550101"]) {
+      expect(parse({ about: bad }).success, bad).toBe(false);
+      expect(parse({ description_0: bad }).success, bad).toBe(false);
+    }
+    for (const good of ["Formación desde 2013-2024, más de 380 sesiones.", "Sesiones de 60 min. Método Schwiderski.", "Trabajo con el Dr. García. Ver más abajo."]) {
+      expect(parse({ about: good }).success, good).toBe(true);
+    }
+  });
+
+  it("a description without a therapy is an error; the payload carries about and descriptions and they refill", () => {
+    expect(parse({ therapyId_1: "", description_1: "algo" }).success).toBe(false);
+    const parsed = parse({ about: "Sobre mí.", description_0: "  Método   Schwiderski. " });
+    if (!parsed.success) throw new Error("must parse");
+    const payload = buildPayload(parsed.data, TYPES, AUD);
+    expect(payload.about).toBe("Sobre mí.");
+    expect(payload.therapies[0]?.description).toBe("Método Schwiderski.");
+    const back = defaultsFromPayload(payload, TYPES, AUD);
+    expect(back.about).toBe("Sobre mí.");
+    expect(back.therapies[0]?.description).toBe("Método Schwiderski.");
   });
 });
 

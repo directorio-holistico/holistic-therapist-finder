@@ -791,16 +791,19 @@ export type Database = {
       }
       profile_therapies: {
         Row: {
+          description: string | null
           profile_id: string
           session_minutes: number | null
           therapy_id: number
         }
         Insert: {
+          description?: string | null
           profile_id: string
           session_minutes?: number | null
           therapy_id: number
         }
         Update: {
+          description?: string | null
           profile_id?: string
           session_minutes?: number | null
           therapy_id?: number
@@ -1293,6 +1296,7 @@ export type Database = {
       }
       therapist_profiles: {
         Row: {
+          about: string | null
           approved_at: string | null
           created_at: string
           display_name: string | null
@@ -1309,6 +1313,7 @@ export type Database = {
           zone: string | null
         }
         Insert: {
+          about?: string | null
           approved_at?: string | null
           created_at?: string
           display_name?: string | null
@@ -1325,6 +1330,7 @@ export type Database = {
           zone?: string | null
         }
         Update: {
+          about?: string | null
           approved_at?: string | null
           created_at?: string
           display_name?: string | null
@@ -1489,6 +1495,7 @@ export type Database = {
       }
       public_profile_detail: {
         Row: {
+          about: string | null
           approved_at: string | null
           city_id: number | null
           city_name: string | null
@@ -1549,6 +1556,7 @@ export type Database = {
         Returns: undefined
       }
       confirm_my_rates: { Args: never; Returns: undefined }
+      contains_contact_data: { Args: { p_text: string }; Returns: boolean }
       current_person_id: { Args: never; Returns: string }
       current_user_has_password: { Args: never; Returns: boolean }
       discard_revision: { Args: { p_revision_id: string }; Returns: undefined }
@@ -1718,6 +1726,7 @@ export type Database = {
         Returns: undefined
       }
       update_my_rates: { Args: { p_rates: Json }; Returns: undefined }
+      validate_profile_texts: { Args: { p_payload: Json }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

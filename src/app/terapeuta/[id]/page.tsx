@@ -35,6 +35,7 @@ function TherapyBlock({ therapy }: { therapy: TherapyDetail }) {
   return (
     <li className="rounded-2xl border border-linea bg-superficie p-5 shadow-sm">
       <h3 className="font-display text-xl font-semibold text-tinta">{therapy.name}</h3>
+      {therapy.description && <p className="mt-2 text-sm text-tinta">{therapy.description}</p>}
       {therapy.serviceModes.length > 0 && (
         <ul className="mt-3 flex list-none flex-wrap gap-2 p-0" aria-label="Modo de atención">
           {therapy.serviceModes.map((mode) => (
@@ -105,6 +106,14 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
         </div>
       </header>
 
+      {profile.about && (
+        <section aria-labelledby="sobre-mi-title" className="mt-8">
+          <h2 id="sobre-mi-title" className={h2}>Sobre mí</h2>
+          {/* plain text, line breaks kept; never HTML / texto plano, con saltos de línea; nunca HTML */}
+          <p className="mt-3 whitespace-pre-line rounded-2xl border border-linea bg-superficie p-5 text-tinta shadow-sm">{profile.about}</p>
+        </section>
+      )}
+
       {profile.therapies.length > 0 && (
         <section aria-labelledby="therapies-title" className="mt-8">
           <h2 id="therapies-title" className={h2}>Terapias</h2>
@@ -122,7 +131,7 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
           <h2 id="about-title" className={h2}>Datos</h2>
           <ul className="mt-3 list-none rounded-2xl border border-linea bg-superficie p-5 text-tinta shadow-sm">
             {profile.languages.length > 0 && <li>Idiomas: {profile.languages.map(labelLanguage).join(", ")}</li>}
-            {profile.practiceStartYear !== null && <li>Atiende desde {profile.practiceStartYear}</li>}
+            {profile.practiceStartYear !== null && <li>Terapeuta desde {profile.practiceStartYear}</li>}
           </ul>
         </section>
       )}

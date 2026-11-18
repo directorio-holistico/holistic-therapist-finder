@@ -68,7 +68,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
   if (!person.data) return { kind: "no-account" };
   const profile = await client
     .from("therapist_profiles")
-    .select("id, status_id, display_name, headline, zone, practice_start_year, location_id, photo_path")
+    .select("id, status_id, display_name, headline, about, zone, practice_start_year, location_id, photo_path")
     .eq("person_id", person.data.id)
     .maybeSingle();
   if (profile.error) fail("the profile / el perfil", profile.error.message);
@@ -126,7 +126,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
       client.from("profile_therapy_service_modes").select("therapy_id, service_mode_id").eq("profile_id", profile.data.id).limit(1000),
       client.from("profile_therapy_session_formats").select("therapy_id, session_format_id").eq("profile_id", profile.data.id).limit(1000),
       client.from("profile_contacts").select("contact_type_id, value, accepts_whatsapp").eq("profile_id", profile.data.id).limit(100),
-      client.from("profile_therapies").select("therapy_id, session_minutes").eq("profile_id", profile.data.id).order("therapy_id").limit(100),
+      client.from("profile_therapies").select("therapy_id, description, session_minutes").eq("profile_id", profile.data.id).order("therapy_id").limit(100),
       client.from("profile_therapy_rates").select("therapy_id, rate_audience_id, amount, currency_id").eq("profile_id", profile.data.id).limit(100),
     ]);
     for (const result of [languages, modes, formats, contacts, therapies, rates]) if (result.error) fail("the profile data / los datos del perfil", result.error.message);
@@ -136,6 +136,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
     defaults = {
       displayName: profile.data.display_name ?? "",
       headline: profile.data.headline ?? "",
+      about: profile.data.about ?? "",
       zone: profile.data.zone ?? "",
       practiceStartYear: profile.data.practice_start_year != null ? String(profile.data.practice_start_year) : "",
       cityId: profile.data.location_id,
@@ -151,6 +152,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
       therapies: padTherapies(
         (therapies.data ?? []).map((row) => ({
           therapyId: row.therapy_id,
+          description: row.description ?? "",
           minutes: row.session_minutes != null ? String(row.session_minutes) : "",
           rateOwn: String(rateOf(row.therapy_id, audiences.own)?.amount ?? ""),
           rateOther: String(rateOf(row.therapy_id, audiences.other)?.amount ?? ""),
