@@ -45,8 +45,15 @@ export const PRIVACY: LegalDocument = {
       ],
     },
     {
+      id: "escribis",
+      title: "4. Si nos escribís",
+      blocks: [
+        { type: "p", text: "Si escribís al contacto indicado al final, guardamos tu mensaje y tu dirección de mail para responderte, y los conservamos mientras haga falta para atender tu consulta. Los mails que llegan a esa dirección se reenvían a la casilla del responsable a través de un servicio de reenvío (ver el apartado de proveedores)." },
+      ],
+    },
+    {
       id: "publico",
-      title: "4. Qué se muestra públicamente",
+      title: "5. Qué se muestra públicamente",
       blocks: [
         { type: "p", text: "Una vez aprobado tu perfil se muestran: nombre de perfil, foto, país, región y ciudad (y la zona si la cargaste), terapias con su descripción breve, frase de presentación, el texto «Sobre mí» (solo en el perfil completo), modos y formatos, idiomas, tarifas \"desde\" y tu página web. Nunca mostramos tu dirección." },
         { type: "p", text: "Tu teléfono y tu mail no aparecen en el perfil: se muestran únicamente cuando un visitante aprieta el botón para ver el contacto." },
@@ -54,14 +61,14 @@ export const PRIVACY: LegalDocument = {
     },
     {
       id: "salud",
-      title: "5. Datos de salud",
+      title: "6. Datos de salud",
       blocks: [
         { type: "p", text: "El sitio no pide ni guarda datos de salud de pacientes. A los terapeutas les pedimos que no incluyan datos de pacientes en su perfil." },
       ],
     },
     {
       id: "finalidades",
-      title: "6. Para qué usamos los datos",
+      title: "7. Para qué usamos los datos",
       blocks: [
         { type: "ul", items: [
           "Prestar el servicio: mostrar tu perfil y conectar a los visitantes con vos.",
@@ -74,20 +81,34 @@ export const PRIVACY: LegalDocument = {
     },
     {
       id: "ofertas",
-      title: "7. Ofertas de otros servicios (opcional)",
+      title: "8. Ofertas de otros servicios (opcional)",
       blocks: [
         { type: "p", text: "En el alta podés aceptar, de forma opcional, que el responsable te envíe por mail ofertas de otros servicios propios, por ejemplo un sistema de turnos. La casilla viene desmarcada. Podés retirar el consentimiento cuando quieras desde tu panel, sin consecuencias para tu perfil." },
       ],
     },
     {
+      id: "base-legal",
+      title: "9. Con qué fundamento usamos los datos",
+      blocks: [
+        { type: "ul", items: [
+          "Cuenta, perfil y moderación: tu consentimiento al registrarte y aceptar estos textos, y la relación que iniciás al darte de alta como terapeuta.",
+          "Foto: tu consentimiento expreso, que podés retirar en cualquier momento.",
+          "Ofertas de otros servicios: tu consentimiento opcional.",
+          "Seguridad, protección contra abusos y datos de búsquedas sin identificar: el interés legítimo de mantener un directorio seguro y de saber qué falta en él, con los datos mínimos descritos arriba.",
+        ] },
+        { type: "p", text: "Un perfil nunca se aprueba ni se rechaza de forma automática: la decisión la toma una persona. No elaboramos perfiles de comportamiento de los visitantes." },
+      ],
+    },
+    {
       id: "proveedores",
-      title: "8. Con quién compartimos datos",
+      title: "10. Con quién compartimos datos",
       blocks: [
         { type: "p", text: "No vendemos datos. Usamos proveedores que los tratan por nuestra cuenta para que el sitio funcione:" },
         { type: "ul", items: [
           "Supabase: base de datos, almacenamiento de las fotos e ingreso con enlace por mail. La base está alojada en São Paulo, Brasil.",
           "Vercel: alojamiento del sitio.",
-          "Un proveedor de envío de correo para los enlaces de ingreso (se informará su nombre cuando esté definido).",
+          "Resend: envío de los mails del sitio, como los enlaces de ingreso. Está configurado en la región de São Paulo, Brasil.",
+          "ImprovMX: reenvío a la casilla del responsable de los mails que se escriben a la dirección de contacto del sitio.",
           "Cloudflare (servicio Turnstile): verificación anti-bots al pedir un contacto o enviar una denuncia; recibe la dirección de red del visitante.",
         ] },
         { type: "p", text: "Estos proveedores pueden tratar datos fuera de tu país. Para el caso de transferencias internacionales nos apoyamos en las condiciones contractuales de cada proveedor." },
@@ -95,7 +116,7 @@ export const PRIVACY: LegalDocument = {
     },
     {
       id: "plazos",
-      title: "9. Cuánto tiempo guardamos los datos",
+      title: "11. Cuánto tiempo guardamos los datos",
       blocks: [
         { type: "ul", items: [
           "Cuenta y perfil: mientras tu perfil exista. Si lo eliminás, se borran tu perfil, contactos, terapias, tarifas, foto y revisiones, y tu ficha queda anonimizada (sin nombre ni mail).",
@@ -104,41 +125,42 @@ export const PRIVACY: LegalDocument = {
           "Foto: mientras tu perfil la muestre. Si la quitás o eliminás tu perfil, deja de mostrarse y se retira tu consentimiento; el registro de cuándo lo diste y lo retiraste se conserva con el historial de aceptaciones.",
           `Búsquedas sin resultado y contactos vistos: ${RETENTION.unmetSearchesMonths} y ${RETENTION.contactRevealsMonths} meses, respectivamente.`,
           `Contadores contra abusos: ${RETENTION.rateLimitDays} días. Registro de auditoría: ${RETENTION.auditLogMonths} meses.`,
+          "Mensajes enviados al contacto del sitio: mientras haga falta para atender la consulta.",
         ] },
       ],
     },
     {
       id: "derechos",
-      title: "10. Tus derechos",
+      title: "12. Tus derechos",
       blocks: [
-        { type: "p", text: "Podés pedir acceso a tus datos, que los corrijamos o actualicemos, que los suprimamos, y retirar tu consentimiento (el de la foto, quitándola de tu perfil). Como terapeuta podés editar tu perfil y eliminarlo desde tu panel. Para cualquier otro pedido, escribinos al contacto indicado al final." },
+        { type: "p", text: "Podés pedir acceso a tus datos, que los corrijamos o actualicemos, que los suprimamos, oponerte a un tratamiento, pedir que lo limitemos, pedir una copia en un formato de uso común (portabilidad) y retirar tu consentimiento (el de la foto, quitándola de tu perfil). Como terapeuta podés editar tu perfil y eliminarlo desde tu panel. Para cualquier otro pedido, escribinos al contacto indicado al final; nos proponemos responder dentro de los 10 días corridos." },
         { type: "p", text: "Si no estás conforme con la respuesta, podés reclamar ante la autoridad de protección de datos de tu país. En Argentina, el acceso gratuito a tus datos puede ejercerse a intervalos no inferiores a seis meses salvo interés legítimo acreditado, y la Agencia de Acceso a la Información Pública, como órgano de control de la Ley 25.326, atiende las denuncias y reclamos por incumplimientos." },
       ],
     },
     {
       id: "cookies",
-      title: "11. Cookies",
+      title: "13. Cookies",
       blocks: [
         { type: "p", text: "Solo usamos la cookie estrictamente necesaria para mantener tu sesión de terapeuta; no se puede leer desde scripts del navegador. No usamos cookies de publicidad ni de seguimiento, y los visitantes no reciben ninguna cookie de sesión." },
       ],
     },
     {
       id: "seguridad",
-      title: "12. Seguridad",
+      title: "14. Seguridad",
       blocks: [
         { type: "p", text: "Aplicamos controles de acceso por roles en la base de datos, conexión cifrada, límites de uso y revisión de cambios. Ningún sistema es infalible: si ocurriera un incidente que afecte tus datos, te lo informaremos como corresponda." },
       ],
     },
     {
       id: "menores",
-      title: "13. Menores de edad",
+      title: "15. Menores de edad",
       blocks: [
         { type: "p", text: "El alta de terapeutas es solo para mayores de edad. El sitio no está dirigido a menores y no les pide datos." },
       ],
     },
     {
       id: "cambios",
-      title: "14. Cambios en esta política",
+      title: "16. Cambios en esta política",
       blocks: [
         { type: "p", text: "Cada versión tiene un código y una fecha. Si el cambio es sustancial, se lo informaremos a los terapeutas y se les pedirá aceptarlo de nuevo." },
       ],

@@ -112,24 +112,53 @@ export const TERMS: LegalDocument = {
       ],
     },
     {
+      id: "propiedad",
+      title: "12. Propiedad intelectual y marca",
+      blocks: [
+        { type: "p", text: "El nombre «Faro Holístico», su logo y el diseño del sitio identifican a este servicio y no pueden usarse para sugerir un vínculo o una aprobación del responsable sin su autorización. El código fuente del sitio se publica con licencia MIT: esa licencia cubre el código, no el nombre, el logo ni los contenidos que cargan los terapeutas." },
+      ],
+    },
+    {
+      id: "enlaces",
+      title: "13. Enlaces a otros sitios",
+      blocks: [
+        { type: "p", text: "Un perfil puede incluir un enlace a la página web del terapeuta. Esos sitios son ajenos a Faro Holístico: no controlamos su contenido ni sus políticas y no respondemos por ellos. Si un enlace lleva a algo que incumple estos términos, podés denunciar el perfil." },
+      ],
+    },
+    {
+      id: "disponibilidad",
+      title: "14. Disponibilidad del sitio",
+      blocks: [
+        { type: "p", text: "Procuramos mantener el sitio en funcionamiento, pero puede interrumpirse por mantenimiento, fallas de los proveedores o límites de los servicios gratuitos que usa. No se garantiza que esté disponible de forma continua." },
+      ],
+    },
+    {
       id: "responsabilidad",
-      title: "12. Responsabilidad",
+      title: "15. Responsabilidad",
       blocks: [
         { type: "p", text: "La relación entre un terapeuta y quien lo consulta es ajena al sitio. En la medida que la ley lo permita, el sitio no responde por la atención que brinde un terapeuta ni por la veracidad de lo que publique, y no garantiza que el servicio esté disponible sin interrupciones. Esto no limita los derechos que la ley reconozca a los consumidores." },
       ],
     },
     {
-      id: "cambios",
-      title: "13. Cambios en estos términos",
+      id: "notificaciones",
+      title: "16. Comunicaciones y reclamos",
       blocks: [
-        { type: "p", text: "Cada versión tiene un código y una fecha. Si el cambio es sustancial, se pedirá a los terapeutas que lo acepten de nuevo." },
+        { type: "p", text: "Las comunicaciones a los terapeutas se envían al mail de su cuenta: mantenelo al día. Las consultas, reclamos y denuncias al responsable se envían al contacto indicado al final de esta página. Si sos persona consumidora, también podés acudir a la autoridad de defensa del consumidor de tu país." },
+      ],
+    },
+    {
+      id: "cambios",
+      title: "17. Cambios en estos términos",
+      blocks: [
+        { type: "p", text: "Publicamos cada versión en esta página, con un código y una fecha. Si el cambio es sustancial, se pedirá a los terapeutas que lo acepten de nuevo." },
       ],
     },
     {
       id: "ley",
-      title: "14. Ley aplicable",
+      title: "18. Ley aplicable y jurisdicción",
       blocks: [
-        { type: "p", text: "Estos términos se rigen por las leyes de la República Argentina. Se respetan los derechos que la legislación de cada país reconozca a las personas consumidoras." },
+        { type: "p", text: "Estos términos se rigen por las leyes de la República Argentina. Salvo que la ley disponga otra cosa para las personas consumidoras, las controversias se someten a los tribunales ordinarios competentes de la República Argentina con jurisdicción en el domicilio del responsable. Se respetan los derechos que la legislación de cada país reconozca a las personas consumidoras." },
+        { type: "p", text: "Si alguna disposición de estos términos resultara inválida, las demás siguen vigentes." },
       ],
     },
   ],

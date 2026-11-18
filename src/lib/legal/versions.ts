@@ -7,16 +7,18 @@
 import type { LegalDocumentCode } from "./types";
 
 export const LEGAL_VERSIONS: Record<LegalDocumentCode, string> = {
-  terms: "2026-11-c",
-  privacy: "2026-11-d",
+  terms: "2026-11-d",
+  privacy: "2026-11-e",
   legal_declaration: "2026-11-a",
   offers_consent: "2026-11-a",
 };
 
-export const LEGAL_UPDATED_LABEL = "17 de noviembre de 2026";
+export const LEGAL_UPDATED_LABEL = "18 de noviembre de 2026";
 
 // TRUE while no lawyer has reviewed the texts: every page shows a visible notice. Set it to false ONLY after the review
 // (the tests then require the controller's address, so nobody launches with a placeholder).
 // TRUE mientras ningún abogado revisó los textos: todas las páginas muestran un aviso visible. Pasarlo a false SOLO tras la
 // revisión (las pruebas exigen entonces el domicilio del responsable, para no salir con un dato a completar).
-export const LEGAL_REVIEW_PENDING = true;
+// 2026-11-18: the controller set it to false on his own decision, before any lawyer review. A professional review is still pending.
+// 2026-11-18: el responsable lo pasó a false por decisión propia, antes de una revisión de abogado. La revisión profesional sigue pendiente.
+export const LEGAL_REVIEW_PENDING = false;
