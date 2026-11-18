@@ -32,14 +32,16 @@ describe("loginSchema", () => {
 });
 
 describe("confirmSchema", () => {
-  it("accepts the three link types", () => {
-    for (const type of ["email", "magiclink", "signup"]) {
+  it("accepts the four link types / acepta los cuatro tipos de enlace", () => {
+    for (const type of ["email", "magiclink", "signup", "recovery"]) {
       expect(confirmSchema.safeParse({ token_hash: "abcdef1234567890", type }).success).toBe(true);
     }
   });
 
   it("refuses other types, short or spaced tokens and missing values", () => {
-    expect(confirmSchema.safeParse({ token_hash: "abcdef1234567890", type: "recovery" }).success).toBe(false);
+    for (const type of ["invite", "email_change", "reauthentication", "", undefined]) {
+      expect(confirmSchema.safeParse({ token_hash: "abcdef1234567890", type }).success).toBe(false);
+    }
     expect(confirmSchema.safeParse({ token_hash: "short", type: "email" }).success).toBe(false);
     expect(confirmSchema.safeParse({ token_hash: "has space 1234567", type: "email" }).success).toBe(false);
     expect(confirmSchema.safeParse({ type: "email" }).success).toBe(false);

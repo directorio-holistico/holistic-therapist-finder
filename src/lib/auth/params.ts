@@ -33,10 +33,10 @@ export const loginSchema = z.object({
     .pipe(z.email()),
 });
 
-// The three types the email link can carry (new account, existing account, older name of the same link).
-// Los tres tipos que puede traer el enlace del mail (cuenta nueva, cuenta existente, nombre viejo del mismo enlace).
+// The four types the email link can carry (new account, existing account, older name of the same link, password recovery).
+// Los cuatro tipos que puede traer el enlace del mail (cuenta nueva, cuenta existente, nombre viejo del mismo enlace, recuperar contraseña).
 export const confirmSchema = z.object({
   token_hash: z.string().min(8).max(300).regex(/^\S+$/),
-  type: z.enum(["email", "magiclink", "signup"]),
+  type: z.enum(["email", "magiclink", "signup", "recovery"]),
   next: z.string().optional(),
 });
