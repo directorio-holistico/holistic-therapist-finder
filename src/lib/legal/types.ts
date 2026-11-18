@@ -16,3 +16,8 @@ export type LegalDocument = {
   summary: string;
   sections: LegalSection[];
 };
+
+// Informational pages: they have no acceptance and no row in legal_document_types, so they are NOT in LEGAL_DOCUMENT_CODES.
+// Páginas informativas: no se aceptan y no tienen fila en legal_document_types, por eso NO están en LEGAL_DOCUMENT_CODES.
+export type InfoDocumentCode = "legal_notice" | "cookies";
+export type InfoDocument = Omit<LegalDocument, "code"> & { code: InfoDocumentCode };

@@ -4,13 +4,20 @@
 // Versión de cada documento legal. El alta guarda ESTA cadena junto a la aceptación (register_therapist); todo cambio de texto
 // debe cambiar la versión acá, y un cambio sustancial pide a los terapeutas aceptar de nuevo.
 
-import type { LegalDocumentCode } from "./types";
+import type { InfoDocumentCode, LegalDocumentCode } from "./types";
 
 export const LEGAL_VERSIONS: Record<LegalDocumentCode, string> = {
   terms: "2026-11-d",
   privacy: "2026-11-e",
   legal_declaration: "2026-11-a",
   offers_consent: "2026-11-a",
+};
+
+// Version of each informational page (no acceptance is stored for them). Change it when the wording changes.
+// Versión de cada página informativa (no se guarda aceptación). Cambiarla cuando cambie el texto.
+export const INFO_VERSIONS: Record<InfoDocumentCode, string> = {
+  legal_notice: "2026-11-a",
+  cookies: "2026-11-a",
 };
 
 export const LEGAL_UPDATED_LABEL = "18 de noviembre de 2026";

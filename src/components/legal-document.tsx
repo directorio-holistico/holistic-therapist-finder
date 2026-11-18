@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CONTROLLER_ADDRESS, CONTROLLER_NAME, getContactEmail } from "@/lib/legal/facts";
-import { LEGAL_REVIEW_PENDING, LEGAL_UPDATED_LABEL, LEGAL_VERSIONS } from "@/lib/legal/versions";
-import type { LegalDocument } from "@/lib/legal/types";
+import { INFO_VERSIONS, LEGAL_REVIEW_PENDING, LEGAL_UPDATED_LABEL, LEGAL_VERSIONS } from "@/lib/legal/versions";
+import type { InfoDocument, LegalDocument } from "@/lib/legal/types";
 
 export function LegalReviewNotice() {
   if (!LEGAL_REVIEW_PENDING) return null;
@@ -27,7 +27,8 @@ export function LegalContact() {
   );
 }
 
-export function LegalDocumentView({ doc }: { doc: LegalDocument }) {
+export function LegalDocumentView({ doc }: { doc: LegalDocument | InfoDocument }) {
+  const version = doc.code === "legal_notice" || doc.code === "cookies" ? INFO_VERSIONS[doc.code] : LEGAL_VERSIONS[doc.code];
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 space-y-4 px-4 py-8">
       <nav aria-label="Migas de pan" className="text-sm">
@@ -35,7 +36,7 @@ export function LegalDocumentView({ doc }: { doc: LegalDocument }) {
       </nav>
       <h1 className="text-2xl font-bold">{doc.title}</h1>
       <p className="text-sm text-neutral-600">
-        Versión {LEGAL_VERSIONS[doc.code]} · actualizado el {LEGAL_UPDATED_LABEL}
+        Versión {version} · actualizado el {LEGAL_UPDATED_LABEL}
       </p>
       <LegalReviewNotice />
       {doc.sections.map((section) => (
@@ -52,7 +53,7 @@ export function LegalDocumentView({ doc }: { doc: LegalDocument }) {
           )}
         </section>
       ))}
-      {doc.code === "privacy" || doc.code === "terms" ? <LegalContact /> : null}
+      {doc.code === "privacy" || doc.code === "terms" || doc.code === "legal_notice" ? <LegalContact /> : null}
     </main>
   );
 }
