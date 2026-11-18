@@ -233,6 +233,7 @@ export type Database = {
           id: number
           is_active: boolean
           is_required: boolean
+          minimum_version: string | null
           sort_order: number
         }
         Insert: {
@@ -240,6 +241,7 @@ export type Database = {
           id?: never
           is_active?: boolean
           is_required: boolean
+          minimum_version?: string | null
           sort_order?: number
         }
         Update: {
@@ -247,6 +249,7 @@ export type Database = {
           id?: never
           is_active?: boolean
           is_required?: boolean
+          minimum_version?: string | null
           sort_order?: number
         }
         Relationships: []
@@ -1538,6 +1541,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_current_documents: {
+        Args: { p_acceptances: Json }
+        Returns: undefined
+      }
       add_business_days: {
         Args: { p_days: number; p_from: string }
         Returns: string
@@ -1547,6 +1554,7 @@ export type Database = {
         Returns: undefined
       }
       approve_revision: { Args: { p_revision_id: string }; Returns: undefined }
+      assert_current_acceptances: { Args: never; Returns: undefined }
       check_erasure_fingerprints: {
         Args: { p_fingerprints: Json }
         Returns: number
@@ -1600,6 +1608,7 @@ export type Database = {
         Returns: boolean
       }
       match_restricted_terms: { Args: { p_text: string }; Returns: string[] }
+      my_pending_documents: { Args: never; Returns: string[] }
       normalize_text: { Args: { t: string }; Returns: string }
       parse_fingerprints: {
         Args: { p_fingerprints: Json; p_require_nonempty: boolean }
