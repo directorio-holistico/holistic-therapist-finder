@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
+import { SearchableSelect } from "@/components/searchable-select";
 import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
 import { countText, LIMITS, type FormDefaults } from "@/lib/profile-form";
@@ -217,10 +218,9 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             <legend className={`${LABEL} px-1`}>Terapia {index + 1}{index === 0 ? "" : " (opcional)"}</legend>
             <div className="grid gap-1">
               <label htmlFor={`therapyId_${index}`} className={LABEL}>Terapia</label>
-              <select id={`therapyId_${index}`} name={`therapyId_${index}`} defaultValue={slot.therapyId ?? ""} aria-invalid={invalid(`therapyId_${index}`)} className={FIELD}>
-                <option value="">{index === 0 ? "Elegí una terapia" : "Ninguna"}</option>
-                {catalogs.therapies.map((therapy) => <option key={therapy.id} value={therapy.id}>{therapy.name}</option>)}
-              </select>
+              <SearchableSelect id={`therapyId_${index}`} name={`therapyId_${index}`} options={catalogs.therapies}
+                emptyLabel={index === 0 ? "Elegí una terapia" : "Ninguna"} listLabel="Terapias" defaultValue={String(slot.therapyId ?? "")}
+                variant="plain" invalid={invalid(`therapyId_${index}`)} onSelect={() => setDirty(true)} />
             </div>
             <CountedText id={`description_${index}`} name={`description_${index}`} label="Descripción breve de esta terapia (opcional)" rows={3} max={LIMITS.therapyDescription} multiline={false}
               defaultValue={slot.description} invalid={invalid(`description_${index}`)}

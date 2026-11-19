@@ -9,6 +9,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useTransition, type FormEvent } from "react";
+import { SearchableSelect } from "@/components/searchable-select";
 import type { CatalogOption } from "@/lib/catalogs";
 import { hrefFromFormValues, type SearchQuery } from "@/lib/search-query";
 
@@ -29,14 +30,14 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
   }, []);
 
-  function onChange(event: FormEvent<HTMLFormElement>) {
-    const form = event.currentTarget;
-    const changed = (event.target as HTMLSelectElement).name;
+  // Waits a short pause and searches with the current values of the form. / Espera una pausa corta y busca con los valores actuales del formulario.
+  function schedule(form: HTMLFormElement, changed: string) {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       const href = hrefFromFormValues(new FormData(form).entries(), changed);
@@ -44,16 +45,17 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
     }, PAUSE_MS);
   }
 
+  function onChange(event: FormEvent<HTMLFormElement>) {
+    schedule(event.currentTarget, (event.target as HTMLSelectElement).name);
+  }
+
   return (
-    <form action="/buscar" method="get" className="grid grid-cols-2 gap-x-3 gap-y-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm sm:grid-cols-3" onChange={onChange} aria-busy={pending}>
+    <form ref={formRef} action="/buscar" method="get" className="grid grid-cols-2 gap-x-3 gap-y-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm sm:grid-cols-3" onChange={onChange} aria-busy={pending}>
       <div className="col-span-2 sm:col-span-1">
         <label htmlFor="therapy" className={labelClass}>Terapia</label>
-        <select id="therapy" name="therapy" defaultValue={query.therapyId ?? ""} className={fieldClass}>
-          <option value="">Todas las terapias</option>
-          {therapies.map((option) => (
-            <option key={option.id} value={option.id}>{option.name}</option>
-          ))}
-        </select>
+        <SearchableSelect id="therapy" name="therapy" options={therapies} emptyLabel="Todas las terapias" listLabel="Terapias"
+          defaultValue={String(query.therapyId ?? "")} variant="site"
+          onSelect={() => { if (formRef.current) schedule(formRef.current, "therapy"); }} />
       </div>
 
       <div>
