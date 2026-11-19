@@ -8,8 +8,8 @@ export function HealthNotice({ className = "" }: { className?: string }) {
     <aside aria-label="Aviso sobre salud" className={`border-t border-linea pt-4 text-sm text-apagado ${className}`}>
       <p>Este sitio solo conecta personas con terapeutas: no da turnos ni cobra, y no garantiza resultados.</p>
       <p className="mt-1">
-        <strong className="font-semibold text-tinta">No sustituye tratamientos médicos ni psicológicos.</strong> Ningún terapeuta debe pedirte que
-        abandones un tratamiento; si alguno lo hace, denunciá su perfil.
+        <strong className="font-semibold text-tinta">No sustituye tratamientos médicos ni psicológicos.</strong> Bajo ningún concepto debés
+        abandonar un tratamiento, ni siquiera si un terapeuta te lo indica; si alguno te lo pide, denunciá su perfil.
       </p>
       <p className="mt-1">
         Desconfiá de quien prometa curas o sanaciones.{" "}

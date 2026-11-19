@@ -16,7 +16,7 @@ export const LEGAL_VERSIONS: Record<LegalDocumentCode, string> = {
 // Version of each informational page (no acceptance is stored for them). Change it when the wording changes.
 // Versión de cada página informativa (no se guarda aceptación). Cambiarla cuando cambie el texto.
 export const INFO_VERSIONS: Record<InfoDocumentCode, string> = {
-  legal_notice: "2026-11-c",
+  legal_notice: "2026-11-d",
   cookies: "2026-11-a",
 };
 

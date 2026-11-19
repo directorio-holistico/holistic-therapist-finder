@@ -27,7 +27,7 @@ export const NOTICE: InfoDocument = {
       title: "3. Aviso sobre salud",
       blocks: [
         { type: "p", text: "El contenido del sitio es informativo. Las terapias del directorio no son medicina ni tratamientos médicos: son complementarias y no reemplazan la atención médica ni psicológica. Ante una enfermedad o un malestar, consultá a un profesional de la salud habilitado. El sitio no garantiza resultados de ninguna terapia y ningún perfil puede prometer curas ni sanaciones." },
-        { type: "p", text: "Ningún terapeuta puede pedirte ni sugerirte que abandones o evites un tratamiento médico: si alguno lo hace, denunciá su perfil. El sitio respeta y valora el avance de la medicina y la ciencia." },
+        { type: "p", text: "Bajo ningún concepto ni por indicación de ningún terapeuta debés abandonar, suspender o evitar un tratamiento médico o psicológico: si alguno te lo pide, denunciá su perfil. El sitio respeta y valora el avance de la medicina y la ciencia." },
       ],
     },
     {
