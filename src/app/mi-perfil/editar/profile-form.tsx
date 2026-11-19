@@ -28,6 +28,7 @@ type Props = {
   lastRejection: string | null;
   livePhotoUrl: string | null;
   pendingPhotoUrl: string | null;
+  photoLost: boolean;
 };
 
 // A text box with a live character counter. It NEVER cuts what the person types or pastes (no maxLength): if the text is too long
@@ -75,7 +76,7 @@ function CheckGroup({ legend, name, options, selected, label }: {
   );
 }
 
-export function ProfileForm({ defaults, catalogs, countries, regions, cities, initialCountryId, initialRegionId, missingCity, lastRejection, livePhotoUrl, pendingPhotoUrl }: Props) {
+export function ProfileForm({ defaults, catalogs, countries, regions, cities, initialCountryId, initialRegionId, missingCity, lastRejection, livePhotoUrl, pendingPhotoUrl, photoLost }: Props) {
   const [state, action, pending] = useActionState(saveProfile, INITIAL);
   const [, startTransition] = useTransition();
   const [countryId, setCountryId] = useState<number | null>(initialCountryId);
@@ -148,7 +149,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         </div>
       </section>
 
-      <PhotoField initialNew={defaults.photoNew} initialRemove={defaults.photoRemove} initialPreviewUrl={pendingPhotoUrl} liveUrl={livePhotoUrl} onEdit={() => setDirty(true)} />
+      <PhotoField initialNew={defaults.photoNew} initialRemove={defaults.photoRemove} initialPreviewUrl={pendingPhotoUrl} liveUrl={livePhotoUrl} lost={photoLost} onEdit={() => setDirty(true)} />
 
       <section className="grid gap-4" aria-labelledby="sec-lugar">
         <h2 id="sec-lugar" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Dónde atendés</h2>

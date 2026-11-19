@@ -17,6 +17,7 @@ type Props = {
   initialRemove: boolean;
   initialPreviewUrl: string | null; // signed address of the pending photo / dirección firmada de la foto pendiente
   liveUrl: string | null; // photo public today / foto pública hoy
+  lost?: boolean; // the photo of the proposal is gone: tell the person / la foto de la propuesta ya no está: avisarle
   disabled?: boolean;
   onEdit?: () => void; // the person changed the photo choice: the form has unsent changes / la persona cambió la foto: el formulario tiene cambios sin enviar
 };
@@ -24,7 +25,7 @@ type Props = {
 type Picked = { url: string; image: HTMLImageElement };
 const STEP = 16;
 
-export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveUrl, disabled, onEdit }: Props) {
+export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveUrl, lost, disabled, onEdit }: Props) {
   const [newPath, setNewPath] = useState(initialNew);
   const [removeCurrent, setRemoveCurrent] = useState(initialRemove);
   const [previewUrl, setPreviewUrl] = useState(initialPreviewUrl);
@@ -128,6 +129,9 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
             {shown ? <img src={shown} alt="Tu foto de perfil" className="size-full object-cover" /> : null}
           </div>
           <div className="grid gap-1 text-sm text-zinc-700 dark:text-zinc-300">
+            {lost && !newPath && !removeCurrent && (
+              <p role="status" className="rounded-md border border-amber-400 bg-amber-50 p-3 text-amber-900">Tu foto anterior no se pudo conservar. Subila de nuevo, por favor.</p>
+            )}
             {newPath && <p role="status">Foto nueva lista, pero todavía no se envió. Apretá «Enviar a revisión» al final: la publicamos cuando la aprobemos.</p>}
             {removeCurrent && <p role="status">Marcaste quitar tu foto, pero todavía no se envió. Apretá «Enviar a revisión» al final: la quitamos cuando se apruebe.</p>}
             {!newPath && !removeCurrent && !liveUrl && <p>Todavía no tenés foto. Es opcional.</p>}

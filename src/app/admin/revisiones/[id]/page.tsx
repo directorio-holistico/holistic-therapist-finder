@@ -142,7 +142,7 @@ async function Detail({ params }: Props) {
       ) : (
         <dl className="mt-4 grid gap-3">
           <Row label="Foto" changed={mark("photo")}>
-            {view.photo.kind === "remove" ? "Pide quitar su foto actual." : view.photo.kind === "none" ? "Sin cambios en la foto." : photoUrl ? (
+            {view.photo.kind === "remove" ? "Pide quitar su foto actual." : view.photo.kind === "none" ? (changes?.kind === "first" ? "Sin foto cargada." : "Sin cambios en la foto.") : photoUrl ? (
               <span className="grid gap-1">
                 {/* eslint-disable-next-line @next/next/no-img-element -- short-lived signed address of a private file / dirección firmada de corta vida de un archivo privado */}
                 <img src={photoUrl} alt="Foto propuesta" className="size-40 rounded-full object-cover" />

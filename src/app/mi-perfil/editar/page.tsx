@@ -55,6 +55,8 @@ async function Editor() {
   const pendingUrl = data.defaults.photoNew && isPendingPhotoPath(data.defaults.photoNew, data.profileId) ? await pendingPhotoUrl(data.defaults.photoNew) : null;
   // a proposed photo whose file is gone (discarded by the therapist) is forgotten, so it is never sent again; a REJECTED proposal keeps its file / una foto propuesta cuyo archivo ya no está (descartada por el terapeuta) se olvida, para no volver a enviarla; una propuesta RECHAZADA conserva su archivo
   const defaults = data.defaults.photoNew && !pendingUrl ? { ...data.defaults, photoNew: "" } : data.defaults;
+  // the person is told when her photo could not be kept, instead of finding the space empty / se le avisa a la persona cuando su foto no se pudo conservar, en vez de encontrar el lugar vacío
+  const photoLost = Boolean(data.defaults.photoNew) && !pendingUrl;
   return (
     <ProfileForm
       defaults={defaults}
@@ -68,6 +70,7 @@ async function Editor() {
       lastRejection={data.lastRejection}
       livePhotoUrl={photoPublicUrl(getPublicEnv().supabaseUrl, data.livePhotoPath)}
       pendingPhotoUrl={pendingUrl}
+      photoLost={photoLost}
     />
   );
 }
