@@ -8,6 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
+import { HealthNotice } from "@/components/health-notice";
 import { ModeBadge } from "@/components/mode-icon";
 import { SiteHeader } from "@/components/site-header";
 import { SOCIAL_HOVER, SocialIcon } from "@/components/social-icon";
@@ -185,10 +186,7 @@ export default function ProfilePage({ params }: PageProps) {
         <Suspense fallback={<p className="text-apagado">Cargando el perfil…</p>}>
           <ProfileContent params={params} />
         </Suspense>
-        <p className="mt-10 border-t border-linea pt-4 text-sm text-apagado">
-          Este sitio solo conecta personas con terapeutas: no da turnos ni cobra, y no reemplaza la atención médica ni
-          psicológica. Desconfiá de quien prometa curas.
-        </p>
+        <HealthNotice className="mt-10" />
       </main>
     </>
   );

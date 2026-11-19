@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { HealthNotice } from "@/components/health-notice";
 import { HeroStar } from "@/components/hero-star";
 import { SacredGeometry } from "@/components/sacred-geometry";
 import { SiteHeader } from "@/components/site-header";
@@ -37,6 +38,7 @@ export default function Home() {
               Soy terapeuta: ingresar
             </Link>
           </div>
+          <HealthNotice className="mt-12 max-w-2xl" />
         </div>
       </main>
     </>
