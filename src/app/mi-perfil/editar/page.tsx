@@ -53,7 +53,7 @@ async function Editor() {
   // a pending photo is shown with a short-lived signed address; only if it belongs to this profile
   // la foto pendiente se muestra con una dirección firmada de corta vida; solo si es de este perfil
   const pendingUrl = data.defaults.photoNew && isPendingPhotoPath(data.defaults.photoNew, data.profileId) ? await pendingPhotoUrl(data.defaults.photoNew) : null;
-  // a proposed photo whose file is gone (rejected or discarded) is forgotten, so it is never sent again / una foto propuesta cuyo archivo ya no está (rechazada o descartada) se olvida, para no volver a enviarla
+  // a proposed photo whose file is gone (discarded by the therapist) is forgotten, so it is never sent again; a REJECTED proposal keeps its file / una foto propuesta cuyo archivo ya no está (descartada por el terapeuta) se olvida, para no volver a enviarla; una propuesta RECHAZADA conserva su archivo
   const defaults = data.defaults.photoNew && !pendingUrl ? { ...data.defaults, photoNew: "" } : data.defaults;
   return (
     <ProfileForm

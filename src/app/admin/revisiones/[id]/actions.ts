@@ -73,11 +73,11 @@ export async function rejectRevision(_previous: DecisionState, formData: FormDat
   const reason = reasonSchema.safeParse(formData.get("reason") ?? "");
   if (!reason.success) return fail(reason.error.issues[0]?.message ?? "Revisá el motivo.");
 
-  const revision = await supabase.from("profile_revisions").select("payload, profile_id").eq("id", id.data).maybeSingle();
   const result = await supabase.rpc("reject_revision", { p_revision_id: id.data, p_reason: reason.data });
   if (result.error) return explain(result.error, "reject_revision");
-  // Rejected: the pending photo of this proposal is deleted (the therapist uploads another one). / Rechazada: se borra la foto pendiente de esta propuesta.
-  const change = photoChangeOf(revision.data?.payload);
-  if (revision.data && change.kind === "set" && isPendingPhotoPath(change.path, revision.data.profile_id)) await removePendingPhoto(change.path);
+  // Rejected: the pending photo is KEPT, so the therapist corrects the same proposal and does not lose the picture. It is deleted
+  // later: when the therapist uploads another one or discards it, or when the proposal is approved.
+  // Rechazada: la foto pendiente se CONSERVA, así el terapeuta corrige la misma propuesta y no pierde la imagen. Se borra después:
+  // cuando sube otra o la descarta, o cuando se aprueba la propuesta.
   redirect("/admin/revisiones?resultado=rechazada");
 }

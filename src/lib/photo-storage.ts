@@ -50,8 +50,8 @@ export async function removeOtherPendingPhotos(profileId: string, keepPath: stri
 // Una dirección de corta vida para MIRAR una foto pendiente (vista previa del editor, revisión del administrador). null = el archivo no está.
 export async function pendingPhotoUrl(path: string): Promise<string | null> {
   const bucket = storage().from(PHOTO_PENDING_BUCKET);
-  // The file must really be there (a rejected or discarded proposal has its file deleted): signing a missing path can still succeed.
-  // El archivo tiene que estar de verdad (una propuesta rechazada o descartada tiene su archivo borrado): firmar una ruta inexistente a veces anda igual.
+  // The file must really be there (a discarded or replaced photo has its file deleted; a rejected proposal keeps it): signing a missing path can still succeed.
+  // El archivo tiene que estar de verdad (una foto descartada o reemplazada tiene su archivo borrado; una propuesta rechazada lo conserva): firmar una ruta inexistente a veces anda igual.
   const slash = path.lastIndexOf("/");
   const listed = await bucket.list(path.slice(0, slash), { limit: 100, search: path.slice(slash + 1) });
   if (listed.error || !(listed.data ?? []).some((file) => file.name === path.slice(slash + 1))) return null;
