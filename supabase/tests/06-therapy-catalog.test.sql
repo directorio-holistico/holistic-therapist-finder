@@ -6,8 +6,8 @@ begin;
 
 do $$
 begin
-  if (select count(*) from public.therapies) <> 33 then raise exception 'the catalog must have 33 therapies'; end if;
-  if (select count(*) from public.therapies where is_active) <> 21 then raise exception 'exactly 21 therapies must be active'; end if;
+  if (select count(*) from public.therapies) <> 35 then raise exception 'the catalog must have 35 therapies'; end if;
+  if (select count(*) from public.therapies where is_active) <> 26 then raise exception 'exactly 26 therapies must be active'; end if;
   -- every therapy has its Spanish name / toda terapia tiene su nombre en español
   if exists (select 1 from public.therapies t
              where not exists (select 1 from public.therapy_translations tt
@@ -27,22 +27,25 @@ begin
 end
 $$;
 
--- Visitors (anon) see the 21 active therapies with names, and none of the hidden ones.
--- Los visitantes (anon) ven las 21 terapias activas con nombre, y ninguna de las ocultas.
+-- Visitors (anon) see the 26 active therapies with names, and none of the hidden ones.
+-- Los visitantes (anon) ven las 26 terapias activas con nombre, y ninguna de las ocultas.
 set session authorization authenticator;
 set role anon;
 select set_config('request.jwt.claims', '', true);
 do $$
 begin
-  if (select count(*) from public.therapies) <> 21 then raise exception 'anon must see exactly the 21 active therapies'; end if;
-  if (select count(*) from public.therapy_translations) <> 21 then raise exception 'anon must see exactly 21 therapy names'; end if;
-  if exists (select 1 from public.therapy_translations where name in ('Homeopatía', 'Osteopatía', 'Quiropráctica', 'Suplementos Dietéticos', 'Toque Terapéutico', 'Psicoanálisis y psicoterapia psicoanalítica')) then
+  if (select count(*) from public.therapies) <> 26 then raise exception 'anon must see exactly the 26 active therapies'; end if;
+  if (select count(*) from public.therapy_translations) <> 26 then raise exception 'anon must see exactly 26 therapy names'; end if;
+  if exists (select 1 from public.therapy_translations where name in ('Osteopatía', 'Quiropráctica', 'Suplementos Dietéticos', 'Toque Terapéutico', 'Psicoanálisis y psicoterapia psicoanalítica')) then
     raise exception 'anon can see a hidden therapy';
   end if;
   if not exists (select 1 from public.therapy_translations where name = 'Reiki') then raise exception 'anon cannot see Reiki'; end if;
   if not exists (select 1 from public.therapy_translations where name like 'LNT%') then raise exception 'anon cannot see LNT'; end if;
   if not exists (select 1 from public.therapy_translations where name = 'Constelaciones') then raise exception 'anon cannot see Constelaciones'; end if;
   if (select count(*) from public.therapy_translations where name in ('Masaje tailandés', 'Masaje con calor y elementos', 'Ventosas y moxibustión', 'Shiatsu', 'Masajes Terapéuticos', 'Reflexología')) <> 6 then raise exception 'anon cannot see the massage therapies'; end if;
+  -- reactivated on 19/11/2026 (Acupuntura, Homeopatía, Fitoterapia) and added the same day (Terapia vibracional, Facilitador de procesos sociales)
+  -- reactivadas el 19/11/2026 (Acupuntura, Homeopatía, Fitoterapia) y agregadas ese día (Terapia vibracional, Facilitador de procesos sociales)
+  if (select count(*) from public.therapy_translations where name in ('Acupuntura (Medicina Tradicional China)', 'Homeopatía', 'Fitoterapia', 'Terapia vibracional', 'Facilitador de procesos sociales')) <> 5 then raise exception 'anon cannot see the reactivated or new therapies'; end if;
   if exists (select 1 from public.therapy_translations where name = 'Constelaciones familiares') then raise exception 'the old name Constelaciones familiares is still there'; end if;
 end
 $$;
