@@ -7,7 +7,8 @@
 
 import { redirect } from "next/navigation";
 import { requirePassword } from "@/lib/auth/password-gate";
-import { listFormCatalogs } from "@/lib/catalogs";
+import { listFormCatalogs, listLocations } from "@/lib/catalogs";
+import { findExistingCity } from "@/lib/city-match";
 import { ACCEPTANCE_REQUIRED_MESSAGE, isAcceptanceRequired } from "@/lib/legal/acceptance";
 import { isPendingPhotoPath } from "@/lib/photo-rules";
 import { buildPayload, firstIssue, readProfileForm } from "@/lib/profile-form";
@@ -42,7 +43,7 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
     const issue = firstIssue(parsed.error);
     return fail(issue.message, issue.fields);
   }
-  const values = parsed.data;
+  let values = parsed.data;
 
   // an administrator can read every profile: filter by the logged-in person / un administrador puede leer todos los perfiles: se filtra por la persona
   const person = await supabase.from("people").select("id").eq("auth_user_id", auth.user.id).maybeSingle();
@@ -65,6 +66,15 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
   if (open.data) {
     const revisionStatus = await supabase.from("revision_statuses").select("code").eq("id", open.data.status_id).maybeSingle();
     if (revisionStatus.data?.code !== "draft") return fail("Tu perfil ya está en revisión: no se puede cambiar hasta que lo revisemos.");
+  }
+
+  // 1b) A city typed by hand that ALREADY exists in the chosen region (same name, ignoring accents and capitals) is used as is:
+  // no request is made for the administrator. If the lookup fails we do not guess: the typed city goes as a request, as before.
+  // 1b) Una ciudad escrita a mano que YA existe en la región elegida (mismo nombre, sin importar tildes ni mayúsculas) se usa tal cual:
+  // no se hace un pedido al administrador. Si la consulta falla no adivinamos: la ciudad escrita sigue como pedido, como antes.
+  if (values.cityMissing && values.regionId !== null && values.cityName !== null) {
+    const existing = await listLocations(supabase, values.regionId).then((options) => findExistingCity(options, values.cityName ?? ""), () => null);
+    if (existing) values = { ...values, cityMissing: false, cityId: existing.id, cityName: null };
   }
 
   // 2) The city typed by hand (or its removal), BEFORE the draft, so a failure here leaves nothing half done.

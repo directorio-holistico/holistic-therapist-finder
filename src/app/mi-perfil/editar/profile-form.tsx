@@ -87,6 +87,10 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
   const [cityMissing, setCityMissing] = useState<boolean>(missingCity !== null);
   const regionOptions = regions.filter((region) => region.parentId === countryId);
   const cityOptions = cities.filter((city) => city.parentId === regionId);
+  // A region with no cities loaded: there is nothing to pick, so the person writes hers (no empty list, no error, no checkbox).
+  // Una región sin ciudades cargadas: no hay nada para elegir, así que la persona escribe la suya (sin lista vacía, sin error, sin tilde).
+  const noCities = regionId !== null && cityOptions.length === 0;
+  const typedCity = cityMissing || noCities;
   const invalid = (field: string) => state.status === "error" && state.fields.includes(field);
 
   if (state.status === "submitted") {
@@ -170,7 +174,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             {regionOptions.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
           </select>
         </div>
-        {!cityMissing && (
+        {!typedCity && (
           <div className="grid gap-1">
             <label htmlFor="cityId" className={LABEL}>Ciudad</label>
             <select key={regionId ?? "none"} id="cityId" name="cityId" defaultValue={defaults.cityId ?? ""} disabled={regionId === null} aria-invalid={invalid("cityId")} className={FIELD}>
@@ -179,16 +183,20 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             </select>
           </div>
         )}
-        <label className="flex items-start gap-3 text-zinc-800 dark:text-zinc-200">
-          <input type="checkbox" name="cityMissing" checked={cityMissing} onChange={(event) => setCityMissing(event.target.checked)} className="mt-1 h-5 w-5" />
-          <span>Mi ciudad no está en la lista</span>
-        </label>
-        {cityMissing && (
+        {noCities ? (
+          <input type="hidden" name="cityMissing" value="on" />
+        ) : (
+          <label className="flex items-start gap-3 text-zinc-800 dark:text-zinc-200">
+            <input type="checkbox" name="cityMissing" checked={cityMissing} onChange={(event) => setCityMissing(event.target.checked)} className="mt-1 h-5 w-5" />
+            <span>Mi ciudad no está en la lista</span>
+          </label>
+        )}
+        {typedCity && (
           <div className="grid gap-1">
             <label htmlFor="cityName" className={LABEL}>Escribí tu ciudad</label>
             <input id="cityName" name="cityName" type="text" maxLength={80} autoComplete={NO_AUTOFILL} defaultValue={missingCity?.cityName ?? ""}
               aria-describedby="cityName-help" aria-invalid={invalid("cityName")} className={FIELD} />
-            <p id="cityName-help" className={HELP}>La agregamos nosotros. Tu perfil se publica cuando la ciudad esté cargada; no frena tu alta.</p>
+            <p id="cityName-help" className={HELP}>{noCities ? "Todavía no cargamos ciudades de esta región. Escribí la tuya: la agregamos nosotros. " : "La agregamos nosotros. "}Tu perfil se publica cuando la ciudad esté cargada; no frena tu alta.</p>
           </div>
         )}
         <div className="grid gap-1">
