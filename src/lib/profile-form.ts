@@ -6,6 +6,7 @@
 // revisión (apply_revision_payload y los triggers de las tablas); acá solo dan mensajes claros y temprano.
 
 import { z } from "zod";
+import { titleCaseName } from "@/lib/name-case";
 
 export const LIMITS = {
   displayName: 80,
@@ -219,9 +220,11 @@ const socialField = (kind: SocialKind) =>
 export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: ReadonlyMap<number, number> = new Map()) {
   return z
     .object({
+      // the name is always saved with a capital only at the start of each name / el nombre se guarda siempre con mayúscula solo al comienzo de cada nombre
       displayName: z
         .string()
         .transform(oneLine)
+        .transform(titleCaseName)
         .pipe(z.string().min(2, "Escribí el nombre que se va a mostrar.").max(LIMITS.displayName, `Nombre: máximo ${LIMITS.displayName} caracteres.`)),
       headline: optionalText(LIMITS.headline, "Frase de presentación"),
       about: aboutField,
