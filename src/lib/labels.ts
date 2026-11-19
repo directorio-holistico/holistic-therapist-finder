@@ -24,6 +24,13 @@ export const SEARCH_GROUP_TITLES: Record<number, string> = {
   3: "Atienden a distancia desde otros países",
 };
 
+// "En tu zona" only makes sense when the person chose a region or a city; with just a country (or nothing) the first group is
+// simply "Resultados". / "En tu zona" solo tiene sentido si la persona eligió una región o una ciudad; con solo un país (o nada) el primer grupo es "Resultados".
+export function searchGroupTitle(group: number, zoneChosen: boolean): string {
+  if (group === 1 && !zoneChosen) return "Resultados";
+  return SEARCH_GROUP_TITLES[group] ?? "";
+}
+
 // Joins labels with " y ": only the first keeps its capital letter ("Presencial y a distancia").
 // Une etiquetas con " y ": solo la primera conserva la mayúscula ("Presencial y a distancia").
 export function joinWithY(labels: readonly string[]): string {

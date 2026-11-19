@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getLocationOptions, getTherapies } from "@/lib/catalog-cache";
-import { SEARCH_GROUP_TITLES } from "@/lib/labels";
+import { searchGroupTitle } from "@/lib/labels";
 import { recordUnmetSearch } from "@/lib/rate-limit-server";
 import { searchProfiles, splitByGroup } from "@/lib/search";
 import { PAGE_SIZE, buildSearchHref, locationIdOf, parseSearchQuery } from "@/lib/search-query";
@@ -132,7 +132,7 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
       </h2>
       {splitByGroup(cards).map((group) => (
         <div key={group.group} className="mt-6">
-          <h3 className="mb-3 text-base font-semibold text-tinta">{SEARCH_GROUP_TITLES[group.group] ?? ""}</h3>
+          <h3 className="mb-3 text-base font-semibold text-tinta">{searchGroupTitle(group.group, query.regionId !== null || query.cityId !== null)}</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             {group.cards.map((card) => (
               <ProfileCard key={card.profileId} card={card} />
