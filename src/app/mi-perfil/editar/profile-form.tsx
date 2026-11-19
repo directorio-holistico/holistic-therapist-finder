@@ -118,6 +118,9 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+    // After a rejection, sending locks the profile until it is reviewed again: ask first, so a half-corrected profile is not sent by mistake.
+    // Tras un rechazo, enviar bloquea el perfil hasta que se revise de nuevo: se pregunta antes, para no enviar a medias por error.
+    if (submitter?.getAttribute("value") === "submit" && lastRejection && !window.confirm("¿Ya corregiste todo lo que te pedimos? Después de enviar no podés cambiar nada hasta que lo revisemos.")) return;
     const data = new FormData(event.currentTarget, submitter);
     setDirty(false);
     startTransition(() => action(data));
@@ -313,7 +316,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
       <div className="sticky bottom-0 -mx-2 grid gap-2 border-t border-zinc-300 bg-[var(--fondo)] px-2 py-3 dark:border-zinc-700">
         {(dirty || state.status === "error") && (
           <p role="status" className="rounded-md border border-amber-500 bg-amber-50 p-2 text-sm text-amber-900">
-            Tenés cambios sin enviar. Para que los revisemos y se publiquen, apretá «Enviar a revisión». Si salís de esta pantalla ahora, se pierden.
+            Tenés cambios sin enviar. Seguí corrigiendo todo lo que quieras y, cuando termines, apretá «Enviar a revisión». Si salís de esta pantalla antes, se pierden.
           </p>
         )}
         <div className="grid gap-3 sm:grid-cols-2">

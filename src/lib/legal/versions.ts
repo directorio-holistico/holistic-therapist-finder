@@ -16,11 +16,11 @@ export const LEGAL_VERSIONS: Record<LegalDocumentCode, string> = {
 // Version of each informational page (no acceptance is stored for them). Change it when the wording changes.
 // Versión de cada página informativa (no se guarda aceptación). Cambiarla cuando cambie el texto.
 export const INFO_VERSIONS: Record<InfoDocumentCode, string> = {
-  legal_notice: "2026-11-b",
+  legal_notice: "2026-11-c",
   cookies: "2026-11-a",
 };
 
-export const LEGAL_UPDATED_LABEL = "18 de noviembre de 2026";
+export const LEGAL_UPDATED_LABEL = "19 de noviembre de 2026";
 
 // TRUE while no lawyer has reviewed the texts: every page shows a visible notice. Set it to false ONLY after the review
 // (the tests then require the controller's address, so nobody launches with a placeholder).

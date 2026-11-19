@@ -1,4 +1,4 @@
-// Search page. The static shell (title, legal notice) is prerendered; everything that depends on the URL or the database
+// Search page. The static shell (title, health notice) is prerendered; everything that depends on the URL or the database
 // is inside Suspense and runs per request (Next.js 16 with Cache Components).
 // Página de búsqueda. El armazón estático (título, aviso legal) se prerenderiza; lo que depende de la URL o de la base
 // va dentro de Suspense y corre por pedido (Next.js 16 con Cache Components).
@@ -11,6 +11,7 @@ import { groupHeading, searchGroupTitle, terapeutasCount } from "@/lib/labels";
 import { recordUnmetSearch } from "@/lib/rate-limit-server";
 import { searchProfiles, splitByGroup } from "@/lib/search";
 import { PAGE_SIZE, buildSearchHref, locationIdOf, parseSearchQuery } from "@/lib/search-query";
+import { HealthNotice } from "@/components/health-notice";
 import { SiteHeader } from "@/components/site-header";
 import { createAnonClient } from "@/lib/supabase/anon-client";
 import { ProfileCard } from "./profile-card";
@@ -32,10 +33,7 @@ export default function SearchPage({ searchParams }: { searchParams: RawParams }
       <Suspense fallback={<p className="mt-4 text-apagado">Cargando la búsqueda…</p>}>
         <SearchContent searchParams={searchParams} />
       </Suspense>
-      <p className="mt-10 border-t border-linea pt-4 text-sm text-apagado">
-        Este sitio solo conecta personas con terapeutas: no da turnos ni cobra, y no reemplaza la atención médica ni
-        psicológica. Desconfiá de quien prometa curas.
-      </p>
+      <HealthNotice className="mt-10" />
     </main>
     </>
   );
