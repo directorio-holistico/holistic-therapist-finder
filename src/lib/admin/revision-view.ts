@@ -126,6 +126,19 @@ export function describeRevision(payload: unknown, lookups: ViewLookups): Revisi
   };
 }
 
+// The phone as TEXT, for the administrator to write to the person (never a link: a number without country code could reach a stranger).
+// Control and invisible characters are removed and the length is capped like the form does; React shows it as plain text.
+// El teléfono como TEXTO, para que el administrador le escriba a la persona (nunca un enlace: un número sin código de país podría llegar a un extraño).
+// Se quitan los caracteres de control e invisibles y se limita el largo como el formulario; React lo muestra como texto plano.
+export function contactPhone(payload: unknown, contactTypeCodes: ReadonlyMap<number, string>): { text: string; whatsapp: boolean } | null {
+  const parsed = payloadSchema.safeParse(payload);
+  if (!parsed.success) return null;
+  const found = (parsed.data.contacts ?? []).find((contact) => contactTypeCodes.get(contact.contact_type_id) === "phone");
+  if (!found) return null;
+  const text = found.value.replace(/[\p{Cc}\p{Cf}]/gu, "").trim().slice(0, 40);
+  return text === "" ? null : { text, whatsapp: found.accepts_whatsapp === true };
+}
+
 // Only what the decision rules need (no names): is there a city, and which public links must the administrator check?
 // Solo lo que necesitan las reglas de la decisión (sin nombres): ¿hay ciudad? y ¿qué enlaces públicos debe revisar?
 export function decisionFacts(payload: unknown, contactTypeCodes: ReadonlyMap<number, string>, profileId?: string): { hasCity: boolean; linksToCheck: number; photoOk: boolean } | null {

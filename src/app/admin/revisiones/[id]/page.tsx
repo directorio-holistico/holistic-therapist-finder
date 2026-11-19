@@ -1,13 +1,13 @@
 // One revision: everything the administrator must check, then approve or reject. Nothing from the payload is trusted: see
-// src/lib/admin/revision-view.ts. The phone and the e-mail are NOT shown here.
+// src/lib/admin/revision-view.ts. The phone IS shown (as text, administrator only) so the administrator can write to the person; the e-mail is NOT.
 // Una revisión: todo lo que el administrador debe revisar, y aprobar o rechazar. Nada del payload es de confianza: ver
-// src/lib/admin/revision-view.ts. El teléfono y el mail NO se muestran acá.
+// src/lib/admin/revision-view.ts. El teléfono SÍ se muestra (como texto, solo al administrador) para poder escribirle a la persona; el mail NO.
 
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
 import { loadViewLookups, locationPath } from "@/lib/admin/lookups";
-import { changedFields, describeRevision, decisionFacts, FIELD_NAMES, type FieldKey, type LinkKind } from "@/lib/admin/revision-view";
+import { changedFields, contactPhone, describeRevision, decisionFacts, FIELD_NAMES, type FieldKey, type LinkKind } from "@/lib/admin/revision-view";
 import { requireAdmin } from "@/lib/admin/guard";
 import { pendingPhotoUrl } from "@/lib/photo-storage";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -76,6 +76,7 @@ async function Detail({ params }: Props) {
   const was = previousView(previous.data?.payload, lookups);
   const mark = (key: FieldKey) => diff?.has(key) ?? false;
   const facts = decisionFacts(row.payload, lookups.contactTypes, row.profile_id);
+  const phone = contactPhone(row.payload, lookups.contactTypes);
   // the proposed photo is shown only if its path is a pending file of THIS profile / la foto propuesta solo se muestra si es un archivo pendiente de ESTE perfil
   const photoUrl = view?.photo.kind === "set" && facts?.photoOk ? await pendingPhotoUrl(view.photo.path) : null;
   const previousPlace = diff?.has("location") && was?.locationId != null ? await locationPath(supabase, was.locationId) : null;
@@ -174,7 +175,7 @@ async function Detail({ params }: Props) {
           </Row>
           {row.suggested_therapy && <Row label="Terapia sugerida">{row.suggested_therapy}</Row>}
           <Row label="Contacto privado" changed={mark("phone") || mark("email")}>
-            {view.hasPhone ? `Teléfono cargado${view.phoneWhatsapp ? " (con WhatsApp)" : ""}` : "Sin teléfono"} · {view.hasEmail ? "mail cargado" : "sin mail"}
+            {phone ? `Teléfono: ${phone.text}${phone.whatsapp ? " (con WhatsApp)" : ""}` : "Sin teléfono"} · {view.hasEmail ? "mail cargado" : "sin mail"}
           </Row>
           <Row label="Enlaces públicos" changed={mark("links")}>
             {view.links.length === 0 ? "Ninguno" : (
