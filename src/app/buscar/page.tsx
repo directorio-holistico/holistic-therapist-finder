@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getLocationOptions, getTherapies } from "@/lib/catalog-cache";
-import { searchGroupTitle } from "@/lib/labels";
+import { groupHeading, searchGroupTitle, terapeutasCount } from "@/lib/labels";
 import { recordUnmetSearch } from "@/lib/rate-limit-server";
 import { searchProfiles, splitByGroup } from "@/lib/search";
 import { PAGE_SIZE, buildSearchHref, locationIdOf, parseSearchQuery } from "@/lib/search-query";
@@ -125,14 +125,22 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
   }
 
   const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const singlePage = lastPage === 1;
+  const zoneChosen = query.regionId !== null || query.cityId !== null;
   return (
     <section aria-labelledby="results-title" className="mt-8">
-      <h2 id="results-title" className="font-display text-2xl font-semibold text-tinta">
-        {total === 1 ? "1 terapeuta" : `${total} terapeutas`}
+      {/* One page: every group shows ITS OWN count and the total is not repeated (it was confusing: "2" above, "1" below).
+          Several pages: a group may continue on the next page, so the heading shows the grand total instead.
+          Una página: cada grupo muestra SU cantidad y no se repite el total (confundía: "2" arriba, "1" abajo).
+          Varias páginas: un grupo puede seguir en la siguiente, así que el título muestra el total general. */}
+      <h2 id="results-title" className={singlePage ? "sr-only" : "font-display text-2xl font-semibold text-tinta"}>
+        {singlePage ? "Resultados de la búsqueda" : terapeutasCount(total)}
       </h2>
       {splitByGroup(cards).map((group) => (
         <div key={group.group} className="mt-6">
-          <h3 className="mb-3 text-base font-semibold text-tinta">{searchGroupTitle(group.group, query.regionId !== null || query.cityId !== null)}</h3>
+          <h3 className="mb-3 text-base font-semibold text-tinta">
+            {singlePage ? groupHeading(searchGroupTitle(group.group, zoneChosen), group.cards.length) : searchGroupTitle(group.group, zoneChosen)}
+          </h3>
           <div className="grid gap-4 sm:grid-cols-2">
             {group.cards.map((card) => (
               <ProfileCard key={card.profileId} card={card} />

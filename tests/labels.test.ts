@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { searchGroupTitle } from "@/lib/labels";
+import { groupHeading, searchGroupTitle, terapeutasCount } from "@/lib/labels";
 
 describe("searchGroupTitle", () => {
   it("says \"En tu zona\" only when a region or a city was chosen / dice \"En tu zona\" solo si se eligió región o ciudad", () => {
@@ -12,5 +12,18 @@ describe("searchGroupTitle", () => {
   });
   it("an unknown group has no title / un grupo desconocido no tiene título", () => {
     expect(searchGroupTitle(9, true)).toBe("");
+  });
+});
+
+describe("counts in the group headings / cantidades en los títulos de grupo", () => {
+  it("uses singular and plural / singular y plural", () => {
+    expect(terapeutasCount(1)).toBe("1 terapeuta");
+    expect(terapeutasCount(2)).toBe("2 terapeutas");
+    expect(terapeutasCount(0)).toBe("0 terapeutas");
+  });
+  it("puts the count right after the title / pone la cantidad pegada al título", () => {
+    expect(groupHeading("En tu zona", 1)).toBe("En tu zona · 1 terapeuta");
+    expect(groupHeading("Atienden a distancia en tu país", 3)).toBe("Atienden a distancia en tu país · 3 terapeutas");
+    expect(groupHeading("", 2)).toBe("2 terapeutas");
   });
 });

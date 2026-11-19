@@ -26,6 +26,11 @@ export const SEARCH_GROUP_TITLES: Record<number, string> = {
 
 // "En tu zona" only makes sense when the person chose a region or a city; with just a country (or nothing) the first group is
 // simply "Resultados". / "En tu zona" solo tiene sentido si la persona eligió una región o una ciudad; con solo un país (o nada) el primer grupo es "Resultados".
+export const terapeutasCount = (count: number): string => (count === 1 ? "1 terapeuta" : `${count} terapeutas`);
+
+// A group heading with its own count: "En tu zona · 1 terapeuta". / Título de grupo con su propia cantidad.
+export const groupHeading = (title: string, count: number): string => (title === "" ? terapeutasCount(count) : `${title} · ${terapeutasCount(count)}`);
+
 export function searchGroupTitle(group: number, zoneChosen: boolean): string {
   if (group === 1 && !zoneChosen) return "Resultados";
   return SEARCH_GROUP_TITLES[group] ?? "";
