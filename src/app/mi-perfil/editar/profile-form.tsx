@@ -1,15 +1,23 @@
 "use client";
 
 import Link from "next/link";
+import { unstable_isUnrecognizedActionError } from "next/navigation";
 import { useActionState, useState, useTransition } from "react";
 import { SearchableSelect } from "@/components/searchable-select";
 import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
 import { countText, LIMITS, type FormDefaults } from "@/lib/profile-form";
+import { runGuarded, STALE_MESSAGE } from "@/lib/stale-action";
 import { saveProfile, type EditState } from "./actions";
 import { PhotoField } from "./photo-field";
 
 const INITIAL: EditState = { status: "idle", message: "", fields: [], flagged: [] };
+// Shown when this page was opened before a deploy and the server no longer knows its action (the form stays as the person left it).
+// Se muestra cuando esta página se abrió antes de un deploy y el servidor ya no conoce su acción (el formulario queda como lo dejó la persona).
+const STALE: EditState = { status: "error", message: STALE_MESSAGE, fields: [], flagged: [] };
+function saveGuarded(previous: EditState, data: FormData): Promise<EditState> {
+  return runGuarded(() => saveProfile(previous, data), unstable_isUnrecognizedActionError, STALE);
+}
 const FIELD = "w-full rounded-md border border-zinc-400 bg-white p-3 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100";
 const LABEL = "font-medium text-zinc-900 dark:text-zinc-100";
 // Chrome ignores autocomplete="off" on fields it takes for address fields; a value it does not recognize is never filled.
@@ -78,7 +86,7 @@ function CheckGroup({ legend, name, options, selected, label }: {
 }
 
 export function ProfileForm({ defaults, catalogs, countries, regions, cities, initialCountryId, initialRegionId, missingCity, lastRejection, livePhotoUrl, pendingPhotoUrl, photoLost }: Props) {
-  const [state, action, pending] = useActionState(saveProfile, INITIAL);
+  const [state, action, pending] = useActionState(saveGuarded, INITIAL);
   const [, startTransition] = useTransition();
   const [countryId, setCountryId] = useState<number | null>(initialCountryId);
   const [regionId, setRegionId] = useState<number | null>(initialRegionId);
@@ -333,6 +341,12 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
           className={state.status === "error" ? "text-red-700 dark:text-red-400" : "text-zinc-800 dark:text-zinc-200"}>
           {state.message}
         </p>
+        {state.message === STALE_MESSAGE && (
+          <button type="button" onClick={() => window.location.reload()}
+            className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+            Recargar la página
+          </button>
+        )}
       </div>
     </form>
   );
