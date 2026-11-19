@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildChildOptions } from "@/lib/catalogs";
 import {
-  buildPayload, defaultsFromPayload, EMPTY_DEFAULTS, instagramIsValid, normalizeInstagram, normalizeSocialLink, parseAmount, phoneIsValid, readProfileForm, socialLinkIsValid,
+  buildPayload, countText, defaultsFromPayload, EMPTY_DEFAULTS, instagramIsValid, normalizeInstagram, normalizeSocialLink, parseAmount, phoneIsValid, readProfileForm, socialLinkIsValid,
 } from "@/lib/profile-form";
 
 const YEAR = 2026;
@@ -285,6 +285,19 @@ describe("free texts: Sobre mí and therapy description", () => {
     const long = parse({ description_0: "a".repeat(201) });
     expect(long.success).toBe(false);
     if (!long.success) expect(long.error.issues[0]?.path[0]).toBe("description_0");
+  });
+
+  it("the on-screen counter measures like the server: the same text, the same length", () => {
+    const raw = "  Hola.   Soy Ana.\r\n\r\n\r\n\r\nTrabajo a distancia.  ";
+    const ok = parse({ about: raw });
+    expect(ok.success && countText(raw, true) === (ok.data.about ?? "").length).toBe(true);
+    const rawLine = "  Método   Schwiderski \n  60 min ";
+    const line = parse({ description_0: rawLine });
+    expect(line.success && countText(rawLine, false) === (line.data.therapies[0]?.description ?? "").length).toBe(true);
+    // a text over the limit is NOT cut by the parser: it is rejected, with the field marked / un texto largo no se corta: se rechaza
+    const long = parse({ about: "a".repeat(1600) });
+    expect(long.success).toBe(false);
+    expect(countText("a".repeat(1600), true)).toBe(1600);
   });
 
   it("rejects links, mails, @handles and phone numbers, but lets years and plain text through", () => {

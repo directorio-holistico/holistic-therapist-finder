@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
-import { LIMITS, type FormDefaults } from "@/lib/profile-form";
+import { countText, LIMITS, type FormDefaults } from "@/lib/profile-form";
 import { saveProfile, type EditState } from "./actions";
 import { PhotoField } from "./photo-field";
 
@@ -30,17 +30,31 @@ type Props = {
   pendingPhotoUrl: string | null;
 };
 
-// A text box with a live character counter (the counter is announced politely, not on every key). / Caja de texto con contador de caracteres.
-function CountedText({ id, name, label, rows, max, defaultValue, help, invalid }: {
-  id: string; name: string; label: string; rows: number; max: number; defaultValue: string; help: string; invalid: boolean;
+// A text box with a live character counter. It NEVER cuts what the person types or pastes (no maxLength): if the text is too long
+// the counter turns red and says by how much. The box grows with the text, so there is no small inner scroll area to get stuck in.
+// Caja de texto con contador. NUNCA corta lo que la persona escribe o pega (sin maxLength): si el texto es largo, el contador se
+// pone rojo y dice por cuánto. La caja crece con el texto, así no hay una zona de scroll chica donde trabarse.
+function CountedText({ id, name, label, rows, max, multiline, defaultValue, help, invalid }: {
+  id: string; name: string; label: string; rows: number; max: number; multiline: boolean; defaultValue: string; help: string; invalid: boolean;
 }) {
-  const [length, setLength] = useState(defaultValue.length);
+  const [length, setLength] = useState(countText(defaultValue, multiline));
+  const over = length - max;
+  const fit = (element: HTMLTextAreaElement | null) => {
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight + (element.offsetHeight - element.clientHeight)}px`;
+  };
   return (
     <div className="grid gap-1">
       <label htmlFor={id} className={LABEL}>{label}</label>
-      <textarea id={id} name={name} rows={rows} maxLength={max} defaultValue={defaultValue} aria-describedby={`${id}-help`} aria-invalid={invalid}
-        onChange={(event) => setLength(event.target.value.length)} className={FIELD} />
+      <textarea id={id} name={name} rows={rows} defaultValue={defaultValue} ref={fit} aria-describedby={`${id}-help`} aria-invalid={invalid || over > 0}
+        onChange={(event) => { setLength(countText(event.target.value, multiline)); fit(event.target); }} className={`${FIELD} resize-y`} />
       <p id={`${id}-help`} className={HELP}>{help} <span aria-live="off">({length}/{max})</span></p>
+      {over > 0 && (
+        <p role="status" className="text-sm font-medium text-red-700 dark:text-red-400">
+          Te pasaste por {over} {over === 1 ? "carácter" : "caracteres"}. Acortá el texto para poder enviarlo: no se corta solo.
+        </p>
+      )}
     </div>
   );
 }
@@ -124,7 +138,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             aria-describedby="headline-help" aria-invalid={invalid("headline")} className={FIELD} />
           <p id="headline-help" className={HELP}>Hasta 280 caracteres. No prometas curas ni hables de enfermedades.</p>
         </div>
-        <CountedText id="about" name="about" label="Sobre mí (opcional)" rows={8} max={LIMITS.about} defaultValue={defaults.about}
+        <CountedText id="about" name="about" label="Sobre mí (opcional)" rows={8} max={LIMITS.about} multiline defaultValue={defaults.about}
           invalid={invalid("about")}
           help="Contá tu formación y tu manera de trabajar, en tus palabras. Se ve solo en tu perfil completo. Sin enlaces, mails, @usuarios ni teléfonos: para eso están los campos de contacto. No prometas curas ni hables de enfermedades." />
         <div className="grid gap-1">
@@ -207,7 +221,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
                 {catalogs.therapies.map((therapy) => <option key={therapy.id} value={therapy.id}>{therapy.name}</option>)}
               </select>
             </div>
-            <CountedText id={`description_${index}`} name={`description_${index}`} label="Descripción breve de esta terapia (opcional)" rows={3} max={LIMITS.therapyDescription}
+            <CountedText id={`description_${index}`} name={`description_${index}`} label="Descripción breve de esta terapia (opcional)" rows={3} max={LIMITS.therapyDescription} multiline={false}
               defaultValue={slot.description} invalid={invalid(`description_${index}`)}
               help="Qué técnicas usás o cómo es tu sesión. Se ve en tu perfil completo. Sin enlaces ni teléfonos." />
             <CheckGroup legend="Modo de atención de esta terapia" name={`serviceModes_${index}`} options={catalogs.serviceModes} selected={slot.serviceModes} label={labelServiceMode} />

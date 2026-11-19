@@ -110,6 +110,10 @@ export function tidyParagraphs(value: string): string {
     .trim();
 }
 
+// Length of a text AS THE SERVER COUNTS IT (after tidying), so the counter on screen never disagrees with the validation.
+// Largo de un texto TAL COMO LO CUENTA EL SERVIDOR (después de ordenarlo), para que el contador de pantalla nunca contradiga la validación.
+export const countText = (value: string, multiline: boolean): number => (multiline ? tidyParagraphs(value) : oneLine(value)).length;
+
 // Contact data inside a free text (owner decision: no links, e-mails, @handles or long phone numbers; they have their own contact
 // fields and a phone or a link here would skip the "Ver contacto" protection). The database applies the same rule
 // (contains_contact_data); this copy only gives the message early. It is meant to be at least as strict as the database one.
