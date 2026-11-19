@@ -4,6 +4,7 @@
 // La base tiene la última palabra (register_therapist); esto solo da mensajes claros antes de llamarla.
 
 import { z } from "zod";
+import { titleCaseName } from "@/lib/name-case";
 import { LEGAL_VERSIONS } from "@/lib/legal/versions";
 
 export const FULL_NAME_MAX = 120;
@@ -12,6 +13,7 @@ export const registrationSchema = z.object({
   fullName: z
     .string()
     .transform((value) => value.trim().replace(/\s+/g, " "))
+    .transform(titleCaseName)
     .pipe(z.string().min(1, "Escribí tu nombre completo.").max(FULL_NAME_MAX, `Máximo ${FULL_NAME_MAX} caracteres.`)),
   terms: z.literal(true, { error: "Tenés que aceptar los términos." }),
   privacy: z.literal(true, { error: "Tenés que aceptar la política de privacidad." }),
