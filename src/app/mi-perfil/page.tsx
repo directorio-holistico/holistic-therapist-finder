@@ -87,6 +87,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
   // Quien administra nunca se bloquea, pero igual puede aceptar.
   const pendingDocuments = person && profile ? await loadPendingDocuments(supabase) : [];
   const acceptanceFailed = (await searchParams).aceptacion === "error";
+  const savedDraft = (await searchParams).guardado === "1";
   const revisionCode = person && profile ? await latestRevisionCode(supabase, profile.id) : null;
   const hasDraft = revisionCode === "draft";
 
@@ -123,6 +124,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
               Cambios: <span className={`${BADGE} border-amber-500 bg-amber-50 text-amber-900`}>En revisión</span> Te avisamos cuando estén revisados.
             </p>
           )}
+          {savedDraft && hasDraft && <p role="status" className="mt-3 text-sm font-medium text-green-800 dark:text-green-400">Guardamos tu borrador.</p>}
           {hasDraft && (
             <p role="note" className="mt-3 rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
               Tenés cambios guardados como borrador que todavía no se enviaron a revisión. Mientras no los envíes, nadie los ve.

@@ -327,13 +327,17 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             Tenés cambios sin enviar. Seguí corrigiendo todo lo que quieras y, cuando termines, apretá «Enviar a revisión». Si salís de esta pantalla antes, se pierden.
           </p>
         )}
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           <button type="submit" name="intent" value="save" disabled={pending}
             className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 disabled:opacity-60 dark:text-zinc-100">
-            {pending ? "Guardando…" : "Guardar borrador"}
+            {pending ? "Guardando…" : "Guardar y seguir"}
+          </button>
+          <button type="submit" name="intent" value="exit" disabled={pending}
+            className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 disabled:opacity-60 dark:text-zinc-100">
+            {pending ? "Guardando…" : "Guardar y salir"}
           </button>
           <button type="submit" name="intent" value="submit" disabled={pending}
-            className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900">
+            className="col-span-2 rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900">
             {pending ? "Enviando…" : "Enviar a revisión"}
           </button>
         </div>

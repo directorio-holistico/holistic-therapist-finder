@@ -25,7 +25,10 @@ export type EditState = {
 const fail = (message: string, fields: string[] = []): EditState => ({ status: "error", message, fields, flagged: [] });
 
 export async function saveProfile(_previous: EditState, formData: FormData): Promise<EditState> {
-  const intent = formData.get("intent") === "submit" ? "submit" : "save";
+  // save = save and keep editing / exit = save and go back to "My profile" / submit = save and send to review
+  // save = guardar y seguir editando / exit = guardar y volver a "Mi perfil" / submit = guardar y enviar a revisión
+  const wanted = formData.get("intent");
+  const intent = wanted === "submit" ? "submit" : wanted === "exit" ? "exit" : "save";
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/ingresar");
@@ -121,6 +124,9 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
     revisionId = created.data.id;
   }
 
+  // "exit" takes the person back to "My profile", where the state and the next step are written (Continue and send / Discard).
+  // "exit" lleva a la persona de vuelta a "Mi perfil", donde están escritos el estado y el próximo paso (Continuar y enviar / Descartar).
+  if (intent === "exit") redirect("/mi-perfil?guardado=1");
   if (intent === "save") return { status: "saved", message: "Guardamos tu borrador. Todavía no se envió a revisión.", fields: [], flagged: [] };
 
   // 4) Send to review. The restricted terms only FLAG the revision (the administrator sees them); they never block it.
