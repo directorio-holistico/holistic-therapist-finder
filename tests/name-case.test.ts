@@ -14,6 +14,12 @@ describe("titleCaseName", () => {
     expect(titleCaseName("ana-laura d'angelo")).toBe("Ana-Laura D'Angelo");
     expect(titleCaseName("ARIEL j.p. vega")).toBe("Ariel J.P. Vega");
   });
+  it("puts a capital after an opening parenthesis / mayúscula después de un paréntesis de apertura", () => {
+    expect(titleCaseName("seva keval (matias duran)")).toBe("Seva Keval (Matias Duran)");
+    expect(titleCaseName("SEVA KEVAL (MATÍAS DURAN)")).toBe("Seva Keval (Matías Duran)");
+    expect(titleCaseName("Seva Keval (matías Duran)")).toBe("Seva Keval (Matías Duran)");
+    expect(titleCaseName(titleCaseName("seva keval (matias duran)"))).toBe("Seva Keval (Matias Duran)");
+  });
   it("keeps the linking words in lower case, except at the start / las palabras de enlace en minúscula, salvo al comienzo", () => {
     expect(titleCaseName("MARIA DE LOS ANGELES PEREZ Y GOMEZ")).toBe("Maria de los Angeles Perez y Gomez");
     expect(titleCaseName("DE LA CRUZ")).toBe("De la Cruz");
