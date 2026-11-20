@@ -23,6 +23,23 @@ const STATUS_LABELS: Record<string, string> = {
   erased: "Eliminado",
 };
 
+type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
+
+// A draft that was saved but never sent is seen by nobody: the person is told here, where they land. Reading it must never break
+// this page, so any failure means "no notice".
+// Un borrador guardado y nunca enviado no lo ve nadie: se le avisa acá, donde aterriza. Leerlo nunca debe romper esta página,
+// así que cualquier falla significa "sin aviso".
+async function hasUnsentDraft(supabase: Supabase, profileId: string): Promise<boolean> {
+  try {
+    const { data: draft } = await supabase.from("revision_statuses").select("id").eq("code", "draft").maybeSingle();
+    if (!draft) return false;
+    const { data: latest } = await supabase.from("profile_revisions").select("status_id").eq("profile_id", profileId).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    return latest?.status_id === draft.id;
+  } catch {
+    return false;
+  }
+}
+
 async function Account({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   // The session check reads the clock (token expiry): it must run on a real request, never in a prerender pass.
   // La verificación de sesión lee el reloj (vencimiento del token): debe correr en un pedido real, nunca en un prerender.
@@ -58,6 +75,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
   // Quien administra nunca se bloquea, pero igual puede aceptar.
   const pendingDocuments = person && profile ? await loadPendingDocuments(supabase) : [];
   const acceptanceFailed = (await searchParams).aceptacion === "error";
+  const hasDraft = person && profile ? await hasUnsentDraft(supabase, profile.id) : false;
 
   return (
     <>
@@ -87,7 +105,12 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
             Estado: <strong>{STATUS_LABELS[status?.code ?? ""] ?? "—"}</strong>
             {profile.approved_at ? ` · aprobado el ${formatDate(profile.approved_at)}` : ""}
           </p>
-          <Link href="/mi-perfil/editar" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">Editar mi perfil</Link>
+          {hasDraft && (
+            <p role="note" className="mt-3 rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
+              Tenés cambios guardados como borrador que todavía no se enviaron a revisión. Mientras no los envíes, nadie los ve.
+            </p>
+          )}
+          <Link href="/mi-perfil/editar" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">{hasDraft ? "Continuar y enviar" : "Editar mi perfil"}</Link>
         </section>
       )}
       {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className="underline" href="/admin">Ir a administración</Link></p>}
