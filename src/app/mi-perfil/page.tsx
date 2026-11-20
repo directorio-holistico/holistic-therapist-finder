@@ -12,6 +12,7 @@ import { loadPendingDocuments } from "@/lib/legal/pending";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 import { AcceptanceBanner } from "./acceptance-banner";
 import { signOut } from "./actions";
+import { DiscardDraftButton } from "./discard-draft-button";
 
 export const metadata: Metadata = { title: "Mi perfil", robots: { index: false } };
 
@@ -127,7 +128,10 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
               Tenés cambios guardados como borrador que todavía no se enviaron a revisión. Mientras no los envíes, nadie los ve.
             </p>
           )}
-          <Link href="/mi-perfil/editar" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">{hasDraft ? "Continuar y enviar" : "Editar mi perfil"}</Link>
+          <div className="mt-3 flex flex-wrap items-start gap-3">
+            <Link href="/mi-perfil/editar" className="inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">{hasDraft ? "Continuar y enviar" : "Editar mi perfil"}</Link>
+            {hasDraft && <DiscardDraftButton />}
+          </div>
         </section>
       )}
       {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className="underline" href="/admin">Ir a administración</Link></p>}
