@@ -18,6 +18,20 @@
   --campo: #8C8576;
   --boton: #26232F;
   --boton-texto: #FBF5EA;
+  /* State colours (text / background / border) for notices and badges. The meaning is always also written in words.
+     Colores de estado (texto / fondo / borde) para avisos e insignias. El significado siempre se escribe también con palabras. */
+  --ok-texto: #1E5A32;
+  --ok-fondo: #E7F3EA;
+  --ok-borde: #2F7D4A;
+  --aviso-texto: #6B4300;
+  --aviso-fondo: #FBEFD0;
+  --aviso-borde: #A8700A;
+  --peligro-texto: #8A1C1C;
+  --peligro-fondo: #FBE7E4;
+  --peligro-borde: #B3362F;
+  --neutro-texto: #4A4552;
+  --neutro-fondo: #F1EADB;
+  --neutro-borde: #8C8576;
 }
 
 [data-theme="oscuro"] {
@@ -32,6 +46,18 @@
   --campo: #6B6FA8;
   --boton: #E9B949;
   --boton-texto: #0F1233;
+  --ok-texto: #A6E3B9;
+  --ok-fondo: #12382A;
+  --ok-borde: #3E8F5D;
+  --aviso-texto: #F2D58A;
+  --aviso-fondo: #3A2C0A;
+  --aviso-borde: #B58A1E;
+  --peligro-texto: #F8B7B0;
+  --peligro-fondo: #4A1B26;
+  --peligro-borde: #C65A57;
+  --neutro-texto: #C9C6DA;
+  --neutro-fondo: #23275A;
+  --neutro-borde: #7479B5;
 }
 
 @theme inline {
@@ -45,8 +71,27 @@
   --color-campo: var(--campo);
   --color-boton: var(--boton);
   --color-boton-texto: var(--boton-texto);
+  --color-ok-texto: var(--ok-texto);
+  --color-ok-fondo: var(--ok-fondo);
+  --color-ok-borde: var(--ok-borde);
+  --color-aviso-texto: var(--aviso-texto);
+  --color-aviso-fondo: var(--aviso-fondo);
+  --color-aviso-borde: var(--aviso-borde);
+  --color-peligro-texto: var(--peligro-texto);
+  --color-peligro-fondo: var(--peligro-fondo);
+  --color-peligro-borde: var(--peligro-borde);
+  --color-neutro-texto: var(--neutro-texto);
+  --color-neutro-fondo: var(--neutro-fondo);
+  --color-neutro-borde: var(--neutro-borde);
   --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Headings break their lines in a balanced way (no lonely last word). / Los títulos reparten bien las líneas (sin palabra suelta al final). */
+h1,
+h2,
+h3 {
+  text-wrap: balance;
 }
 
 body {

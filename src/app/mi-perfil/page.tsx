@@ -24,15 +24,23 @@ const STATUS_LABELS: Record<string, string> = {
   erased: "Eliminado",
 };
 
-// Colour never carries the meaning alone: the label is always written. Green = live, amber = waiting, red = a problem, grey = off.
+// Colour never carries the meaning alone: the label is always written. Green = live, amber = waiting, red = a problem, grey = off (tokens in globals.css).
 // El color nunca lleva solo el significado: la etiqueta siempre está escrita. Verde = en vivo, ámbar = en espera, rojo = problema, gris = apagado.
-const BADGE = "inline-block rounded-full border px-2 py-0.5 font-semibold";
+const BADGE = "inline-block rounded-full border px-3 py-0.5 text-sm font-semibold";
+// Shared looks: card, primary button (like the header's round buttons), secondary button, text link.
+// Looks compartidos: tarjeta, botón principal (como los botones redondos del encabezado), botón secundario, enlace de texto.
+const CARD = "mt-6 rounded-xl border border-linea bg-superficie p-5";
+const TITLE = "font-display text-xl font-semibold text-tinta";
+const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento";
+const PRIMARY = `inline-flex min-h-11 items-center rounded-full bg-boton px-5 font-medium text-boton-texto ${FOCUS}`;
+const SECONDARY = `inline-flex min-h-11 items-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-fondo ${FOCUS}`;
+const TEXT_LINK = `text-acento underline underline-offset-4 ${FOCUS}`;
 const STATUS_STYLES: Record<string, string> = {
-  unpublished: "border-amber-500 bg-amber-50 text-amber-900",
-  published: "border-green-600 bg-green-50 text-green-900",
-  paused: "border-zinc-400 bg-zinc-100 text-zinc-800",
-  suspended: "border-red-600 bg-red-50 text-red-900",
-  erased: "border-zinc-400 bg-zinc-100 text-zinc-800",
+  unpublished: "border-aviso-borde bg-aviso-fondo text-aviso-texto",
+  published: "border-ok-borde bg-ok-fondo text-ok-texto",
+  paused: "border-neutro-borde bg-neutro-fondo text-neutro-texto",
+  suspended: "border-peligro-borde bg-peligro-fondo text-peligro-texto",
+  erased: "border-neutro-borde bg-neutro-fondo text-neutro-texto",
 };
 
 type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
@@ -93,53 +101,53 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
 
   return (
     <>
-      <p className="mt-2 text-zinc-700 dark:text-zinc-300">Ingresaste como <strong>{auth.user.email}</strong>.</p>
+      <p className="mt-2 text-apagado">Ingresaste como <strong className="font-semibold text-tinta">{auth.user.email}</strong>.</p>
       {pendingDocuments === null ? (
-        <p role="alert" className="mt-4 text-sm font-medium text-red-700 dark:text-red-400">No pudimos comprobar si hay documentos nuevos por aceptar. Recargá la página en unos minutos.</p>
+        <p role="alert" className="mt-4 text-sm font-medium text-peligro-texto">No pudimos comprobar si hay documentos nuevos por aceptar. Recargá la página en unos minutos.</p>
       ) : pendingDocuments.length > 0 ? (
         <AcceptanceBanner pending={pendingDocuments} blocking={isAdmin !== true} failed={acceptanceFailed} />
       ) : null}
       {adminOnly ? (
-        <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Cuenta de administración</h2>
-          <p className="mt-1 text-zinc-700 dark:text-zinc-300">Esta cuenta administra el sitio. No tiene perfil de terapeuta.</p>
-          <Link href="/admin" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">Ir a administración</Link>
+        <section className={CARD}>
+          <h2 className={TITLE}>Cuenta de administración</h2>
+          <p className="mt-1 text-apagado">Esta cuenta administra el sitio. No tiene perfil de terapeuta.</p>
+          <Link href="/admin" className={`mt-4 ${PRIMARY}`}>Ir a administración</Link>
         </section>
       ) : !person || !profile ? (
-        <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tu alta todavía no está completa</h2>
-          <p className="mt-1 text-zinc-700 dark:text-zinc-300">Tu mail ya está verificado. Falta crear tu perfil de terapeuta.</p>
-          <Link href="/mi-perfil/alta" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">Crear mi perfil</Link>
+        <section className={CARD}>
+          <h2 className={TITLE}>Tu alta todavía no está completa</h2>
+          <p className="mt-1 text-apagado">Tu mail ya está verificado. Falta crear tu perfil de terapeuta.</p>
+          <Link href="/mi-perfil/alta" className={`mt-4 ${PRIMARY}`}>Crear mi perfil</Link>
         </section>
       ) : (
-        <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{profile.display_name ?? person.full_name}</h2>
-          {profile.headline && <p className="mt-1 text-zinc-800 dark:text-zinc-200">{profile.headline}</p>}
-          <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+        <section className={CARD}>
+          <h2 className={TITLE}>{profile.display_name ?? person.full_name}</h2>
+          {profile.headline && <p className="mt-2 text-tinta">{profile.headline}</p>}
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-apagado">
             Estado: <span className={`${BADGE} ${STATUS_STYLES[status?.code ?? ""] ?? STATUS_STYLES.erased}`}>{STATUS_LABELS[status?.code ?? ""] ?? "—"}</span>
             {profile.approved_at ? ` · aprobado el ${formatDate(profile.approved_at)}` : ""}
           </p>
           {revisionCode === "pending_review" && (
-            <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
-              Cambios: <span className={`${BADGE} border-amber-500 bg-amber-50 text-amber-900`}>En revisión</span> Te avisamos cuando estén revisados.
+            <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-apagado">
+              Cambios: <span className={`${BADGE} border-aviso-borde bg-aviso-fondo text-aviso-texto`}>En revisión</span> Te avisamos cuando estén revisados.
             </p>
           )}
-          {savedDraft && hasDraft && <p role="status" className="mt-3 text-sm font-medium text-green-800 dark:text-green-400">Guardamos tu borrador.</p>}
+          {savedDraft && hasDraft && <p role="status" className="mt-3 text-sm font-medium text-ok-texto">Guardamos tu borrador.</p>}
           {hasDraft && (
-            <p role="note" className="mt-3 rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
+            <p role="note" className="mt-3 rounded-lg border border-aviso-borde bg-aviso-fondo p-3 text-sm text-aviso-texto">
               Tenés cambios guardados como borrador que todavía no se enviaron a revisión. Mientras no los envíes, nadie los ve.
             </p>
           )}
-          <div className="mt-3 flex flex-wrap items-start gap-3">
-            <Link href="/mi-perfil/editar" className="inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">{hasDraft ? "Continuar y enviar" : "Editar mi perfil"}</Link>
+          <div className="mt-4 flex flex-wrap items-start gap-3">
+            <Link href="/mi-perfil/editar" className={PRIMARY}>{hasDraft ? "Continuar y enviar" : "Editar mi perfil"}</Link>
             {hasDraft && <DiscardDraftButton />}
           </div>
         </section>
       )}
-      {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className="underline" href="/admin">Ir a administración</Link></p>}
-      <p className="mt-6 text-sm"><Link className="underline" href="/mi-perfil/contrasena">Cambiar mi contraseña</Link></p>
+      {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className={TEXT_LINK} href="/admin">Ir a administración</Link></p>}
+      <p className="mt-6 text-sm"><Link className={TEXT_LINK} href="/mi-perfil/contrasena">Cambiar mi contraseña</Link></p>
       <form action={signOut} className="mt-4">
-        <button type="submit" className="rounded-md border border-zinc-400 px-4 py-2 text-zinc-900 dark:text-zinc-100">Salir</button>
+        <button type="submit" className={SECONDARY}>Salir</button>
       </form>
     </>
   );
@@ -148,8 +156,8 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
 export default function MyProfilePage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   return (
     <main className="mx-auto max-w-xl px-4 py-10">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Mi perfil</h1>
-      <Suspense fallback={<p className="mt-2 text-zinc-600">Cargando…</p>}>
+      <h1 className="font-display text-3xl font-semibold text-tinta">Mi perfil</h1>
+      <Suspense fallback={<p className="mt-2 text-apagado">Cargando…</p>}>
         <Account searchParams={searchParams} />
       </Suspense>
     </main>

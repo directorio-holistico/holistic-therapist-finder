@@ -17,10 +17,10 @@ export function DiscardDraftButton() {
         if (!window.confirm("¿Descartar los cambios guardados como borrador? No se puede deshacer. Tu perfil publicado no se modifica.")) event.preventDefault();
       }}
     >
-      <button type="submit" disabled={pending} className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 disabled:opacity-60 dark:text-zinc-100">
+      <button type="submit" disabled={pending} className="inline-flex min-h-11 items-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-fondo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60">
         {pending ? "Descartando…" : "Descartar borrador"}
       </button>
-      {state.status === "error" && <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-400">{state.message}</p>}
+      {state.status === "error" && <p role="alert" className="mt-2 text-sm font-medium text-peligro-texto">{state.message}</p>}
     </form>
   );
 }

@@ -78,6 +78,31 @@ describe("brand colours", () => {
     }
   }
 
+  // State colours: the text must be readable on its own tinted box AND on the page and card backgrounds; the border is a part of the interface (3:1).
+  // Colores de estado: el texto debe leerse sobre su caja teñida Y sobre el fondo y la tarjeta; el borde es parte de la interfaz (3:1).
+  for (const [name, selector] of [
+    ["claro", ":root"],
+    ["oscuro", '[data-theme="oscuro"]'],
+  ] as const) {
+    const vars = block(selector);
+    for (const state of ["ok", "aviso", "peligro", "neutro"]) {
+      for (const bg of [`${state}-fondo`, "fondo", "superficie"]) {
+        it(`${name}: ${state}-texto on ${bg} reaches 4.5:1`, () => {
+          const fgColor = vars[`${state}-texto`];
+          const bgColor = vars[bg];
+          if (!fgColor || !bgColor) throw new Error(`missing --${state}-texto or --${bg}`);
+          expect(contrast(fgColor, bgColor)).toBeGreaterThanOrEqual(4.5);
+        });
+      }
+      it(`${name}: ${state}-borde on fondo reaches 3:1`, () => {
+        const fgColor = vars[`${state}-borde`];
+        const bgColor = vars["fondo"];
+        if (!fgColor || !bgColor) throw new Error(`missing --${state}-borde or --fondo`);
+        expect(contrast(fgColor, bgColor)).toBeGreaterThanOrEqual(3);
+      });
+    }
+  }
+
   it("keeps the 12 star colours as valid hex values", () => {
     expect(STAR_DOT_COLORS).toHaveLength(12);
     for (const c of STAR_DOT_COLORS) expect(c).toMatch(/^#[0-9A-F]{6}$/);
