@@ -47,6 +47,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Link className="underline" href="/legal/privacidad">Privacidad</Link>
               <Link className="underline" href="/legal">Legales</Link>
             </nav>
+            <p className="text-apagado">
+              Ciudades de México: datos de{" "}
+              <a className="underline" href="https://www.geonames.org" target="_blank" rel="noopener noreferrer">GeoNames</a>{" "}
+              (<a className="underline" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>)
+            </p>
             <ThemeToggle />
           </div>
         </footer>
