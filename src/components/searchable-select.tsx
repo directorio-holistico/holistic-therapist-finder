@@ -19,12 +19,14 @@ const STYLES = {
     active: "bg-boton text-boton-texto",
     chevron: "text-apagado",
   },
+  // The editor's variant now has the same brand look as the search (tokens, rounded-xl, 44 px tall).
+  // La variante del editor ahora tiene la misma identidad que el buscador (tokens, rounded-xl, 44 px de alto).
   plain: {
-    field: "w-full rounded-md border border-zinc-400 bg-white p-3 pr-9 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100",
-    native: "w-full rounded-md border border-zinc-400 bg-white p-3 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100",
-    list: "rounded-md border border-zinc-400 bg-white text-zinc-900 shadow-md dark:bg-zinc-900 dark:text-zinc-100",
-    active: "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900",
-    chevron: "text-zinc-600 dark:text-zinc-400",
+    field: "min-h-11 w-full rounded-xl border border-campo bg-superficie p-3 pr-9 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento",
+    native: "min-h-11 w-full rounded-xl border border-campo bg-superficie p-3 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento",
+    list: "rounded-xl border border-campo bg-superficie text-tinta shadow-md",
+    active: "bg-boton text-boton-texto",
+    chevron: "text-apagado",
   },
 } as const;
 

@@ -11,7 +11,6 @@ import { formatDate } from "@/lib/format";
 import { loadPendingDocuments } from "@/lib/legal/pending";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 import { AcceptanceBanner } from "./acceptance-banner";
-import { signOut } from "./actions";
 import { DiscardDraftButton } from "./discard-draft-button";
 
 export const metadata: Metadata = { title: "Mi perfil", robots: { index: false } };
@@ -33,7 +32,6 @@ const CARD = "mt-6 rounded-xl border border-linea bg-superficie p-5";
 const TITLE = "font-display text-xl font-semibold text-tinta";
 const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento";
 const PRIMARY = `inline-flex min-h-11 items-center rounded-full bg-boton px-5 font-medium text-boton-texto ${FOCUS}`;
-const SECONDARY = `inline-flex min-h-11 items-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-fondo ${FOCUS}`;
 const TEXT_LINK = `text-acento underline underline-offset-4 ${FOCUS}`;
 const STATUS_STYLES: Record<string, string> = {
   unpublished: "border-aviso-borde bg-aviso-fondo text-aviso-texto",
@@ -146,9 +144,6 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
       )}
       {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className={TEXT_LINK} href="/admin">Ir a administración</Link></p>}
       <p className="mt-6 text-sm"><Link className={TEXT_LINK} href="/mi-perfil/contrasena">Cambiar mi contraseña</Link></p>
-      <form action={signOut} className="mt-4">
-        <button type="submit" className={SECONDARY}>Salir</button>
-      </form>
     </>
   );
 }

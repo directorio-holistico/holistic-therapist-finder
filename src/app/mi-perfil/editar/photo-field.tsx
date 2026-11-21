@@ -116,21 +116,21 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
   const window = picked ? drawRect(picked.image.naturalWidth, picked.image.naturalHeight, crop, CROP_VIEW, CROP_VIEW) : null;
 
   return (
-    <section className="grid gap-4" aria-labelledby="sec-foto">
-      <h2 id="sec-foto" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tu foto</h2>
+    <section className="grid gap-4 border-t border-linea pt-6" aria-labelledby="sec-foto">
+      <h2 id="sec-foto" className="font-display text-xl font-semibold text-tinta">Tu foto</h2>
       {/* these fields travel with the form: the path of the new pending photo and the wish to remove the current one */}
       <input type="hidden" name="photoNew" value={newPath} />
       {removeCurrent && <input type="hidden" name="photoRemove" value="on" />}
 
       {!picked && (
         <div className="flex items-center gap-4">
-          <div className="size-24 shrink-0 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+          <div className="size-24 shrink-0 overflow-hidden rounded-full bg-neutro-fondo">
             {/* eslint-disable-next-line @next/next/no-img-element -- address of a private or public Storage file / dirección de un archivo de Storage */}
             {shown ? <img src={shown} alt="Tu foto de perfil" className="size-full object-cover" /> : null}
           </div>
-          <div className="grid gap-1 text-sm text-zinc-700 dark:text-zinc-300">
+          <div className="grid gap-1 text-sm text-apagado">
             {lost && !newPath && !removeCurrent && (
-              <p role="status" className="rounded-md border border-amber-400 bg-amber-50 p-3 text-amber-900">Tu foto anterior no se pudo conservar. Subila de nuevo, por favor.</p>
+              <p role="status" className="rounded-lg border border-aviso-borde bg-aviso-fondo p-3 text-aviso-texto">Tu foto anterior no se pudo conservar. Subila de nuevo, por favor.</p>
             )}
             {newPath && <p role="status">Foto nueva lista, pero todavía no se envió. Apretá «Enviar a revisión» al final: la publicamos cuando la aprobemos.</p>}
             {removeCurrent && <p role="status">Marcaste quitar tu foto, pero todavía no se envió. Apretá «Enviar a revisión» al final: la quitamos cuando se apruebe.</p>}
@@ -141,50 +141,50 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
 
       {picked && window && (
         <div className="grid gap-3">
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">Arrastrá la foto (o usá las flechas) y ajustá el zoom hasta que quede bien dentro del círculo.</p>
+          <p className="text-sm text-apagado">Arrastrá la foto (o usá las flechas) y ajustá el zoom hasta que quede bien dentro del círculo.</p>
           <div
             role="group" tabIndex={0} aria-label="Ventana de recorte: usá las flechas para mover la foto"
             onPointerDown={onPointerDown} onPointerMove={onPointerMove}
             onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }} onKeyDown={onKeyDown}
-            className="relative mx-auto touch-none overflow-hidden rounded-full bg-zinc-300 outline-offset-4 focus-visible:outline-2"
+            className="relative mx-auto touch-none overflow-hidden rounded-full bg-neutro-fondo outline-offset-4 focus-visible:outline-2 focus-visible:outline-acento"
             style={{ width: CROP_VIEW, height: CROP_VIEW, maxWidth: "100%" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- local preview of the chosen file / vista previa local del archivo elegido */}
             <img src={picked.url} alt="" draggable={false} className="pointer-events-none absolute max-w-none select-none"
               style={{ left: window.dx, top: window.dy, width: window.dw, height: window.dh }} />
           </div>
-          <label className="grid gap-1 text-sm text-zinc-800 dark:text-zinc-200">
+          <label className="grid gap-1 text-sm text-tinta">
             Zoom
             <input type="range" min={ZOOM_MIN} max={ZOOM_MAX} step={0.05} value={crop.zoom}
               onChange={(event) => move({ ...crop, zoom: clamp(Number(event.target.value), ZOOM_MIN, ZOOM_MAX) })} />
           </label>
-          <label className="flex items-start gap-3 text-zinc-800 dark:text-zinc-200">
-            <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} className="mt-1 h-5 w-5" />
+          <label className="flex items-start gap-3 text-tinta">
+            <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} className="mt-1 h-5 w-5 accent-acento" />
             <span>{PHOTO_CONSENT_TEXT}</span>
           </label>
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={send} disabled={busy || disabled} className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900">
+            <button type="button" onClick={send} disabled={busy || disabled} className="inline-flex min-h-11 items-center justify-center rounded-full bg-boton px-5 font-medium text-boton-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60">
               {busy ? "Subiendo…" : "Usar esta foto"}
             </button>
-            <button type="button" onClick={() => { setPicked(null); setMessage(""); }} disabled={busy} className="rounded-md border border-zinc-400 px-4 py-3">Cancelar</button>
+            <button type="button" onClick={() => { setPicked(null); setMessage(""); }} disabled={busy} className="inline-flex min-h-11 items-center justify-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60">Cancelar</button>
           </div>
         </div>
       )}
 
       {!picked && (
         <div className="flex flex-wrap gap-3">
-          <label className="cursor-pointer rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+          <label className="cursor-pointer inline-flex min-h-11 items-center justify-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-acento">
             {shown ? "Cambiar foto" : "Elegir foto"}
             <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" disabled={busy || disabled}
               onChange={(event) => { choose(event.target.files?.[0]); event.target.value = ""; }} />
           </label>
-          {newPath && <button type="button" onClick={dropNew} disabled={busy} className="rounded-md border border-zinc-400 px-4 py-3">Descartar foto nueva</button>}
-          {!newPath && liveUrl && !removeCurrent && <button type="button" onClick={() => { setRemoveCurrent(true); onEdit?.(); }} className="rounded-md border border-zinc-400 px-4 py-3">Quitar foto</button>}
-          {removeCurrent && <button type="button" onClick={() => { setRemoveCurrent(false); onEdit?.(); }} className="rounded-md border border-zinc-400 px-4 py-3">Mantener mi foto</button>}
+          {newPath && <button type="button" onClick={dropNew} disabled={busy} className="inline-flex min-h-11 items-center justify-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60">Descartar foto nueva</button>}
+          {!newPath && liveUrl && !removeCurrent && <button type="button" onClick={() => { setRemoveCurrent(true); onEdit?.(); }} className="inline-flex min-h-11 items-center justify-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60">Quitar foto</button>}
+          {removeCurrent && <button type="button" onClick={() => { setRemoveCurrent(false); onEdit?.(); }} className="inline-flex min-h-11 items-center justify-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60">Mantener mi foto</button>}
         </div>
       )}
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">Usá una foto tuya, de frente. No se aceptan logos ni fotos de otras personas. La revisamos antes de publicarla.</p>
-      {message && <p role="alert" className="text-sm text-red-700">{message}</p>}
+      <p className="text-sm text-apagado">Usá una foto tuya, de frente. No se aceptan logos ni fotos de otras personas. La revisamos antes de publicarla.</p>
+      {message && <p role="alert" className="text-sm font-medium text-peligro-texto">{message}</p>}
     </section>
   );
 }

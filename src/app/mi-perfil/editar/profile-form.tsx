@@ -18,12 +18,17 @@ const STALE: EditState = { status: "error", message: STALE_MESSAGE, fields: [], 
 function saveGuarded(previous: EditState, data: FormData): Promise<EditState> {
   return runGuarded(() => saveProfile(previous, data), unstable_isUnrecognizedActionError, STALE);
 }
-const FIELD = "w-full rounded-md border border-zinc-400 bg-white p-3 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100";
-const LABEL = "font-medium text-zinc-900 dark:text-zinc-100";
+const FIELD = "min-h-11 w-full rounded-xl border border-campo bg-superficie p-3 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento";
+const LABEL = "font-medium text-tinta";
 // Chrome ignores autocomplete="off" on fields it takes for address fields; a value it does not recognize is never filled.
 // Chrome ignora autocomplete="off" en campos que cree de dirección; un valor que no reconoce nunca se rellena.
 const NO_AUTOFILL = "nope";
-const HELP = "text-sm text-zinc-600 dark:text-zinc-400";
+const HELP = "text-sm text-apagado";
+// Looks shared by the sections and buttons of this form (same shapes as the site header and the search). / Looks compartidos por las secciones y botones de este formulario (mismas formas que el encabezado y el buscador).
+const SECTION = "grid gap-4 border-t border-linea pt-6";
+const SECTION_TITLE = "font-display text-xl font-semibold text-tinta";
+const PRIMARY = "inline-flex min-h-11 items-center justify-center rounded-full bg-boton px-5 font-medium text-boton-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60";
+const SECONDARY = "inline-flex min-h-11 items-center justify-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60";
 
 type Props = {
   defaults: FormDefaults;
@@ -61,7 +66,7 @@ function CountedText({ id, name, label, rows, max, multiline, defaultValue, help
         onChange={(event) => { setLength(countText(event.target.value, multiline)); fit(event.target); }} className={`${FIELD} resize-y`} />
       <p id={`${id}-help`} className={HELP}>{help} <span aria-live="off">({length}/{max})</span></p>
       {over > 0 && (
-        <p role="status" className="text-sm font-medium text-red-700 dark:text-red-400">
+        <p role="status" className="text-sm font-medium text-peligro-texto">
           Te pasaste por {over} {over === 1 ? "carácter" : "caracteres"}. Acortá el texto para poder enviarlo: no se corta solo.
         </p>
       )}
@@ -76,8 +81,8 @@ function CheckGroup({ legend, name, options, selected, label }: {
     <fieldset className="grid gap-2">
       <legend className={LABEL}>{legend}</legend>
       {options.map((option) => (
-        <label key={option.id} className="flex items-center gap-3 text-zinc-800 dark:text-zinc-200">
-          <input type="checkbox" name={name} value={option.id} defaultChecked={selected.includes(option.id)} className="h-5 w-5" />
+        <label key={option.id} className="flex items-center gap-3 text-tinta">
+          <input type="checkbox" name={name} value={option.id} defaultChecked={selected.includes(option.id)} className="h-5 w-5 accent-acento" />
           {label(option.code)}
         </label>
       ))}
@@ -103,17 +108,17 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
 
   if (state.status === "submitted") {
     return (
-      <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700" role="status">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{state.message}</h2>
-        <p className="mt-1 text-zinc-700 dark:text-zinc-300">Te avisamos cuando esté revisado. Mientras tanto no podés cambiarlo.</p>
+      <section className="mt-6 rounded-xl border border-linea bg-superficie p-5" role="status">
+        <h2 className={SECTION_TITLE}>{state.message}</h2>
+        <p className="mt-1 text-apagado">Te avisamos cuando esté revisado. Mientras tanto no podés cambiarlo.</p>
         {state.flagged.length > 0 && (
-          <p className="mt-2 text-zinc-700 dark:text-zinc-300">
+          <p className="mt-2 text-apagado">
             Ojo: encontramos palabras que suelen rechazarse ({state.flagged.join(", ")}). No promete cura ni trata enfermedades: si querés, corregilas y volvé a enviar cuando te respondamos.
           </p>
         )}
         <p className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-          <Link href="/mi-perfil" className="underline">Volver a mi perfil</Link>
-          <Link href="/" className="underline">Ir al inicio</Link>
+          <Link href="/mi-perfil" className="text-acento underline underline-offset-4">Volver a mi perfil</Link>
+          <Link href="/" className="text-acento underline underline-offset-4">Ir al inicio</Link>
         </p>
       </section>
     );
@@ -137,13 +142,13 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
   return (
     <form onSubmit={handleSubmit} onChange={() => setDirty(true)} className="mt-6 grid gap-6" noValidate>
       {lastRejection && (
-        <p role="note" className="rounded-md border border-amber-400 bg-amber-50 p-3 text-sm text-amber-900">
+        <p role="note" className="rounded-lg border border-aviso-borde bg-aviso-fondo p-3 text-sm text-aviso-texto">
           Tu última revisión fue rechazada: {lastRejection}
         </p>
       )}
 
       <section className="grid gap-4" aria-labelledby="sec-datos">
-        <h2 id="sec-datos" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tus datos</h2>
+        <h2 id="sec-datos" className={SECTION_TITLE}>Tus datos</h2>
         <div className="grid gap-1">
           <label htmlFor="displayName" className={LABEL}>Nombre que se muestra</label>
           <input id="displayName" name="displayName" type="text" required maxLength={80} defaultValue={defaults.displayName}
@@ -167,8 +172,8 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
 
       <PhotoField initialNew={defaults.photoNew} initialRemove={defaults.photoRemove} initialPreviewUrl={pendingPhotoUrl} liveUrl={livePhotoUrl} lost={photoLost} onEdit={() => setDirty(true)} />
 
-      <section className="grid gap-4" aria-labelledby="sec-lugar">
-        <h2 id="sec-lugar" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Dónde atendés</h2>
+      <section className={SECTION} aria-labelledby="sec-lugar">
+        <h2 id="sec-lugar" className={SECTION_TITLE}>Dónde atendés</h2>
         <div className="grid gap-1">
           <label htmlFor="countryId" className={LABEL}>País</label>
           <select id="countryId" value={countryId ?? ""} className={FIELD}
@@ -197,8 +202,8 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         {noCities ? (
           <input type="hidden" name="cityMissing" value="on" />
         ) : (
-          <label className="flex items-start gap-3 text-zinc-800 dark:text-zinc-200">
-            <input type="checkbox" name="cityMissing" checked={cityMissing} onChange={(event) => setCityMissing(event.target.checked)} className="mt-1 h-5 w-5" />
+          <label className="flex items-start gap-3 text-tinta">
+            <input type="checkbox" name="cityMissing" checked={cityMissing} onChange={(event) => setCityMissing(event.target.checked)} className="mt-1 h-5 w-5 accent-acento" />
             <span>Mi ciudad no está en la lista</span>
           </label>
         )}
@@ -216,8 +221,8 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         </div>
       </section>
 
-      <section className="grid gap-4" aria-labelledby="sec-terapias">
-        <h2 id="sec-terapias" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Tus terapias y tarifas</h2>
+      <section className={SECTION} aria-labelledby="sec-terapias">
+        <h2 id="sec-terapias" className={SECTION_TITLE}>Tus terapias y tarifas</h2>
         <p className={HELP}>
           Elegí hasta {defaults.therapies.length} terapias. Para cada una marcá cómo la das: al menos una modalidad (presencial o a distancia) y un formato (individual o grupal). La duración y las tarifas son opcionales. Escribí solo números, por ejemplo 15000. &quot;Locales&quot; son quienes viven en el mismo país donde atendés. No prometas curas.
         </p>
@@ -233,8 +238,8 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
           ))}
         </div>
         {defaults.therapies.map((slot, index) => (
-          <fieldset key={index} className="grid gap-3 rounded-md border border-zinc-300 p-3 dark:border-zinc-700">
-            <legend className={`${LABEL} px-1`}>Terapia {index + 1}{index === 0 ? "" : " (opcional)"}</legend>
+          <fieldset key={index} className="grid gap-3 rounded-xl border border-linea bg-superficie p-4">
+            <legend className={`${LABEL} px-2`}>Terapia {index + 1}{index === 0 ? "" : " (opcional)"}</legend>
             <div className="grid gap-1">
               <label htmlFor={`therapyId_${index}`} className={LABEL}>Terapia</label>
               <SearchableSelect id={`therapyId_${index}`} name={`therapyId_${index}`} options={catalogs.therapies}
@@ -267,21 +272,21 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         ))}
       </section>
 
-      <section className="grid gap-4" aria-labelledby="sec-atencion">
-        <h2 id="sec-atencion" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Idiomas</h2>
+      <section className={SECTION} aria-labelledby="sec-atencion">
+        <h2 id="sec-atencion" className={SECTION_TITLE}>Idiomas</h2>
         <CheckGroup legend="Idiomas de atención" name="languages" options={catalogs.languages} selected={defaults.languages} label={labelLanguage} />
       </section>
 
-      <section className="grid gap-4" aria-labelledby="sec-contacto">
-        <h2 id="sec-contacto" className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Cómo te contactan</h2>
+      <section className={SECTION} aria-labelledby="sec-contacto">
+        <h2 id="sec-contacto" className={SECTION_TITLE}>Cómo te contactan</h2>
         <p className={HELP}>Tu teléfono y tu mail solo se muestran cuando alguien aprieta &quot;Ver contacto&quot;. La web y tus redes son públicas.</p>
         <div className="grid gap-1">
           <label htmlFor="phone" className={LABEL}>Teléfono</label>
           <input id="phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" required maxLength={40}
             defaultValue={defaults.phone} aria-invalid={invalid("phone")} className={FIELD} />
         </div>
-        <label className="flex items-center gap-3 text-zinc-800 dark:text-zinc-200">
-          <input type="checkbox" name="phoneWhatsapp" defaultChecked={defaults.phoneWhatsapp} className="h-5 w-5" />
+        <label className="flex items-center gap-3 text-tinta">
+          <input type="checkbox" name="phoneWhatsapp" defaultChecked={defaults.phoneWhatsapp} className="h-5 w-5 accent-acento" />
           Atiendo WhatsApp en este número
         </label>
         <div className="grid gap-1">
@@ -321,33 +326,33 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
       </section>
 
       {/* always reachable: the buttons stay at the bottom of the screen while there is something unsent / siempre a mano: los botones quedan al pie mientras haya algo sin enviar */}
-      <div className="sticky bottom-0 -mx-2 grid gap-2 border-t border-zinc-300 bg-[var(--fondo)] px-2 py-3 dark:border-zinc-700">
+      <div className="sticky bottom-0 -mx-2 grid gap-2 border-t border-linea bg-fondo px-2 py-3">
         {(dirty || state.status === "error") && (
-          <p role="status" className="rounded-md border border-amber-500 bg-amber-50 p-2 text-sm text-amber-900">
+          <p role="status" className="rounded-lg border border-aviso-borde bg-aviso-fondo p-2 text-sm text-aviso-texto">
             Tenés cambios sin enviar. Seguí corrigiendo todo lo que quieras y, cuando termines, apretá «Enviar a revisión». Si salís de esta pantalla antes, se pierden.
           </p>
         )}
         <div className="grid grid-cols-2 gap-3">
           <button type="submit" name="intent" value="save" disabled={pending}
-            className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 disabled:opacity-60 dark:text-zinc-100">
+            className={SECONDARY}>
             {pending ? "Guardando…" : "Guardar y seguir"}
           </button>
           <button type="submit" name="intent" value="exit" disabled={pending}
-            className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 disabled:opacity-60 dark:text-zinc-100">
-            {pending ? "Guardando…" : "Guardar y salir"}
+            className={SECONDARY}>
+            {pending ? "Guardando…" : "Guardar y volver"}
           </button>
           <button type="submit" name="intent" value="submit" disabled={pending}
-            className="col-span-2 rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900">
+            className={`col-span-2 ${PRIMARY}`}>
             {pending ? "Enviando…" : "Enviar a revisión"}
           </button>
         </div>
         <p role={state.status === "error" ? "alert" : "status"} aria-live="polite"
-          className={state.status === "error" ? "text-red-700 dark:text-red-400" : "text-zinc-800 dark:text-zinc-200"}>
+          className={state.status === "error" ? "text-peligro-texto" : "text-tinta"}>
           {state.message}
         </p>
         {state.message === STALE_MESSAGE && (
           <button type="button" onClick={() => window.location.reload()}
-            className="rounded-md border border-zinc-400 px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
+            className={SECONDARY}>
             Recargar la página
           </button>
         )}

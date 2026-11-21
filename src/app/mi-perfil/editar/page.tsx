@@ -29,12 +29,12 @@ async function Editor() {
 
   if (data.kind === "no-account") redirect("/mi-perfil/alta");
   if (data.kind === "blocked") {
-    return <p className="mt-4 text-zinc-700 dark:text-zinc-300">Tu perfil no admite cambios en este momento.</p>;
+    return <p className="mt-4 text-apagado">Tu perfil no admite cambios en este momento.</p>;
   }
   if (data.kind === "in-review") {
     return (
-      <p className="mt-4 text-zinc-700 dark:text-zinc-300">
-        Tu perfil está en revisión. No se puede cambiar hasta que lo revisemos. <Link className="underline" href="/mi-perfil">Volver</Link>
+      <p className="mt-4 text-apagado">
+        Tu perfil está en revisión. No se puede cambiar hasta que lo revisemos. <Link className="text-acento underline underline-offset-4" href="/mi-perfil">Volver</Link>
       </p>
     );
   }
@@ -44,7 +44,7 @@ async function Editor() {
   // El perfil publicado sigue publicado. Si la comprobación falla no adivinamos: mostramos un error en vez del formulario.
   const pendingDocuments = await loadPendingDocuments(supabase);
   if (pendingDocuments === null) {
-    return <p role="alert" className="mt-4 text-red-700 dark:text-red-400">No pudimos comprobar tu estado. Probá de nuevo en unos minutos.</p>;
+    return <p role="alert" className="mt-4 font-medium text-peligro-texto">No pudimos comprobar tu estado. Probá de nuevo en unos minutos.</p>;
   }
   if (pendingDocuments.length > 0) {
     const { data: isAdmin } = await supabase.rpc("is_admin");
@@ -78,11 +78,11 @@ async function Editor() {
 export default function EditProfilePage() {
   return (
     <main className="mx-auto max-w-xl px-4 py-10">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Editar mi perfil</h1>
-      <p className="mt-2 text-zinc-700 dark:text-zinc-300">
+      <h1 className="font-display text-3xl font-semibold text-tinta">Editar mi perfil</h1>
+      <p className="mt-2 text-apagado">
         Tus cambios se publican después de una revisión. También podés subir tu foto: la revisamos antes de publicarla.
       </p>
-      <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <Editor />
       </Suspense>
     </main>
