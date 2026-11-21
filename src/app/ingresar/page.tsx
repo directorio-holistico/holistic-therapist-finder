@@ -38,9 +38,14 @@ async function Content({ searchParams }: PageProps) {
   return (
     <>
       {linkProblem && (
-        <p role="alert" className="mt-4 rounded-md border border-red-700 p-3 text-red-800 dark:text-red-300">
-          El enlace no es válido o ya venció. Pedí uno nuevo acá abajo.
-        </p>
+        <div role="alert" className="mt-4 rounded-md border border-red-700 p-3 text-red-800 dark:text-red-300">
+          <p>El enlace no es válido, ya venció o ya se usó (cada enlace sirve una sola vez).</p>
+          <p className="mt-2">
+            Si ya confirmaste tu mail, ingresá con tu mail y tu contraseña. Si todavía no elegiste una contraseña o no la recordás, tocá{" "}
+            <Link className={LINK} href="/ingresar?modo=olvide">Olvidé mi contraseña</Link> y te mandamos un enlace para elegirla. Si es tu
+            primera vez, tocá <Link className={LINK} href="/ingresar?modo=nuevo">Es mi primera vez</Link>.
+          </p>
+        </div>
       )}
       {mode === "clave" && (
         <>
