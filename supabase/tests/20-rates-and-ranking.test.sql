@@ -15,7 +15,7 @@ insert into public.person_roles (person_id, role_id) select '10000000-0000-0000-
 create function pg_temp.city(p_name text) returns integer language sql as $$
   select l.id from public.locations l join public.location_translations t on t.location_id = l.id
    join public.languages g on g.id = t.language_id and g.code = 'es'
-   join public.location_levels ll on ll.id = l.level_id and ll.code = 'city' where t.name = p_name $$;
+   join public.location_levels ll on ll.id = l.level_id and ll.code = 'city' where t.name = p_name order by l.id limit 1 $$;
 
 -- Profiles: a1 (T1+T2) a2 (T1) published | a3 unpublished | a4 person without profile | c1..c7 ranking fixtures
 -- Perfiles: a1 (T1+T2) a2 (T1) publicados | a3 sin publicar | a4 persona sin perfil | c1..c7 para el orden
@@ -121,11 +121,11 @@ begin
   begin perform public.set_profile_pinned('20000000-0000-0000-0000-0000000007c2'::uuid, true); exception when insufficient_privilege then ok := true; end;
   if not ok then raise exception 'anon must not call set_profile_pinned'; end if;
 
-  -- RANKING inside the group: pin, current rates, photo, oldest approval / ORDEN dentro del grupo
+  -- RANKING inside the group: pin, photo, current rates, oldest approval / ORDEN dentro del grupo: fijado, foto, tarifas al dia, aprobacion mas antigua
   select string_agg(r.display_name, ',' order by r.ordinality) into names
     from public.search_profiles(current_setting('test.t1')::int, current_setting('test.cordoba')::int, null, 50, 0) with ordinality r
     where r.display_name not in ('Alfa', 'Beta');
-  if names is distinct from 'Pin,FreshPhoto,FreshNoPhoto,Fresh4m,StalePhoto,NoPricePhoto,NoPriceNoPhoto' then
+  if names is distinct from 'Pin,FreshPhoto,StalePhoto,NoPricePhoto,FreshNoPhoto,Fresh4m,NoPriceNoPhoto' then
     raise exception 'unexpected order: %', names;
   end if;
 end $$;
@@ -143,7 +143,7 @@ begin
   select string_agg(r.display_name, ',' order by r.ordinality) into names
     from public.search_profiles(current_setting('test.t1')::int, current_setting('test.cordoba')::int, null, 50, 0) with ordinality r
     where r.display_name not in ('Alfa', 'Beta');
-  if names is distinct from 'Pin,FreshPhoto,FreshNoPhoto,StalePhoto,NoPricePhoto,Fresh4m,NoPriceNoPhoto' then
+  if names is distinct from 'Pin,FreshPhoto,StalePhoto,NoPricePhoto,FreshNoPhoto,Fresh4m,NoPriceNoPhoto' then
     raise exception 'unexpected order with 3 months: %', names;
   end if;
 end $$;

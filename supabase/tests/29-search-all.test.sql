@@ -13,7 +13,7 @@ insert into public.people (id, auth_user_id, full_name, email)
 create function pg_temp.city(p_name text) returns integer language sql as $$
   select l.id from public.locations l join public.location_translations t on t.location_id = l.id
    join public.languages g on g.id = t.language_id and g.code = 'es'
-   join public.location_levels ll on ll.id = l.level_id and ll.code = 'city' where t.name = p_name $$;
+   join public.location_levels ll on ll.id = l.level_id and ll.code = 'city' where t.name = p_name order by l.id limit 1 $$;
 
 -- A: Córdoba (AR), therapy 1 in person | B: Rosario (AR), therapy 1 remote | C: Barcelona (ES), therapy 2 remote
 insert into public.therapist_profiles (id, person_id, status_id, approved_at, location_id, display_name)

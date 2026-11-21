@@ -16,7 +16,7 @@ insert into public.person_roles (person_id, role_id) select '10000000-0000-0000-
 create function pg_temp.city(p_name text) returns integer language sql as $$
   select l.id from public.locations l join public.location_translations t on t.location_id = l.id
    join public.languages g on g.id = t.language_id and g.code = 'es'
-   join public.location_levels ll on ll.id = l.level_id and ll.code = 'city' where t.name = p_name $$;
+   join public.location_levels ll on ll.id = l.level_id and ll.code = 'city' where t.name = p_name order by l.id limit 1 $$;
 
 -- A: published, Córdoba. B: not published. / A: publicado, Córdoba. B: sin publicar.
 insert into public.therapist_profiles (id, person_id, status_id, approved_at, location_id, display_name)
