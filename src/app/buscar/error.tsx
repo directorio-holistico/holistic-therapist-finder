@@ -6,12 +6,12 @@
 export default function SearchError({ retry }: { error: unknown; retry: () => void }) {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-10">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">No pudimos cargar la búsqueda</h1>
-      <p className="mt-2 text-zinc-700 dark:text-zinc-300">Probá de nuevo en unos minutos.</p>
+      <h1 className="font-display text-3xl font-semibold text-tinta">No pudimos cargar la búsqueda</h1>
+      <p className="mt-2 text-apagado">Probá de nuevo en unos minutos.</p>
       <button
         type="button"
         onClick={() => retry()}
-        className="mt-4 rounded-md border border-zinc-500 px-4 py-2 text-zinc-900 dark:text-zinc-100"
+        className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-tinta px-5 text-tinta hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
       >
         Reintentar
       </button>

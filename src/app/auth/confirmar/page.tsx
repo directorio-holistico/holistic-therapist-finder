@@ -18,8 +18,8 @@ async function ConfirmForm({ searchParams }: PageProps) {
   const parsed = confirmSchema.safeParse({ token_hash: first(raw.token_hash), type: first(raw.type), next: first(raw.next) });
   if (!parsed.success) {
     return (
-      <p role="alert" className="mt-4 text-red-800 dark:text-red-300">
-        El enlace está incompleto. <a className="underline" href="/ingresar">Pedí uno nuevo</a>.
+      <p role="alert" className="mt-4 rounded-xl border border-peligro-borde bg-peligro-fondo p-4 text-peligro-texto">
+        El enlace está incompleto. <a className="font-medium underline underline-offset-4" href="/ingresar">Pedí uno nuevo</a>.
       </p>
     );
   }
@@ -29,8 +29,8 @@ async function ConfirmForm({ searchParams }: PageProps) {
 export default function ConfirmPage(props: PageProps) {
   return (
     <main className="mx-auto max-w-xl px-4 py-10">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Confirmá tu ingreso</h1>
-      <p className="mt-2 text-zinc-700 dark:text-zinc-300">Apretá el botón para entrar. Si no lo pediste vos, cerrá esta página.</p>
+      <h1 className="font-display text-3xl font-semibold text-tinta">Confirmá tu ingreso</h1>
+      <p className="mt-2 text-apagado">Apretá el botón para entrar. Si no lo pediste vos, cerrá esta página.</p>
       <Suspense fallback={null}>
         <ConfirmForm {...props} />
       </Suspense>
