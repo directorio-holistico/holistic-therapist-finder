@@ -5,7 +5,7 @@ import { STAR_DOT_COLORS } from "@/lib/brand";
 // Estrella de Camino Doce Doce con su anillo de 12 puntos de color. Decorativa: el nombre está escrito al lado.
 export function HeroStar() {
   return (
-    <div aria-hidden="true" className="relative mx-auto size-56 sm:size-72">
+    <div aria-hidden="true" className="relative mx-auto size-40 sm:size-72">
       <div className="estrella-gira absolute inset-0">
         <Image
           src="/brand/estrella-claro.webp"
