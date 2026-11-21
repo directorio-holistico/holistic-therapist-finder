@@ -41,12 +41,12 @@ export function ConfirmSubmit({ tokenHash, type, next }: Props) {
       <button
         type="submit"
         disabled={sent}
-        className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+        className="inline-flex min-h-11 items-center justify-center rounded-full bg-boton px-5 font-medium text-boton-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60"
       >
         {sent ? "Entrando…" : "Entrar a mi cuenta"}
       </button>
       {sent && (
-        <p role="status" className="mt-3 text-zinc-700 dark:text-zinc-300">
+        <p role="status" className="mt-3 text-apagado">
           Entrando, un momento. No toques el botón de nuevo ni recargues la página.
         </p>
       )}

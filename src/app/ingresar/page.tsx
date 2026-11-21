@@ -19,7 +19,8 @@ async function Content({ searchParams }: PageProps) {
   const { error, modo } = await searchParams;
   const mode = modo === "nuevo" || modo === "olvide" ? modo : "clave";
   const linkProblem = error === "enlace";
-  const LINK = "underline";
+  const LINK = "text-acento underline underline-offset-4";
+  const ALERT_LINK = "font-medium underline underline-offset-4";
   // Someone who is already logged in does not need the login form: send them where a login would (administrators to the panel,
   // everybody else to their profile). Only the default mode, and not when the link failed (that message must be seen).
   // The session is read on a real request (it checks the token's expiry), and /ingresar goes through proxy.ts, which renews it.
@@ -38,20 +39,20 @@ async function Content({ searchParams }: PageProps) {
   return (
     <>
       {linkProblem && (
-        <div role="alert" className="mt-4 rounded-md border border-red-700 p-3 text-red-800 dark:text-red-300">
+        <div role="alert" className="mt-4 rounded-xl border border-peligro-borde bg-peligro-fondo p-4 text-peligro-texto">
           <p>El enlace no es válido, ya venció o ya se usó (cada enlace sirve una sola vez).</p>
           <p className="mt-2">
             Si ya confirmaste tu mail, ingresá con tu mail y tu contraseña. Si todavía no elegiste una contraseña o no la recordás, tocá{" "}
-            <Link className={LINK} href="/ingresar?modo=olvide">Olvidé mi contraseña</Link> y te mandamos un enlace para elegirla. Si es tu
-            primera vez, tocá <Link className={LINK} href="/ingresar?modo=nuevo">Es mi primera vez</Link>.
+            <Link className={ALERT_LINK} href="/ingresar?modo=olvide">Olvidé mi contraseña</Link> y te mandamos un enlace para elegirla. Si es tu
+            primera vez, tocá <Link className={ALERT_LINK} href="/ingresar?modo=nuevo">Es mi primera vez</Link>.
           </p>
         </div>
       )}
       {mode === "clave" && (
         <>
-          <p className="mt-2 text-zinc-700 dark:text-zinc-300">Ingresá con tu mail y tu contraseña.</p>
+          <p className="mt-2 text-apagado">Ingresá con tu mail y tu contraseña.</p>
           <PasswordLoginForm />
-          <p className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">
+          <p className="mt-6 text-sm text-apagado">
             <Link className={LINK} href="/ingresar?modo=olvide">Olvidé mi contraseña</Link>
             {" · "}
             <Link className={LINK} href="/ingresar?modo=nuevo">Es mi primera vez</Link>
@@ -60,16 +61,16 @@ async function Content({ searchParams }: PageProps) {
       )}
       {mode === "nuevo" && (
         <>
-          <p className="mt-2 text-zinc-700 dark:text-zinc-300">Para sumarte al directorio: la cuenta se crea al enviarte el enlace.</p>
+          <p className="mt-2 text-apagado">Para sumarte al directorio: la cuenta se crea al enviarte el enlace.</p>
           <FirstTimeForm />
-          <p className="mt-6 text-sm text-zinc-700 dark:text-zinc-300">¿Ya tenés cuenta? <Link className={LINK} href="/ingresar">Ingresá con tu contraseña</Link></p>
+          <p className="mt-6 text-sm text-apagado">¿Ya tenés cuenta? <Link className={LINK} href="/ingresar">Ingresá con tu contraseña</Link></p>
         </>
       )}
       {mode === "olvide" && (
         <>
-          <p className="mt-2 text-zinc-700 dark:text-zinc-300">Si tenés una cuenta, te enviamos un enlace para elegir una contraseña nueva.</p>
+          <p className="mt-2 text-apagado">Si tenés una cuenta, te enviamos un enlace para elegir una contraseña nueva.</p>
           <ForgotPasswordForm />
-          <p className="mt-6 text-sm text-zinc-700 dark:text-zinc-300"><Link className={LINK} href="/ingresar">Volver a ingresar</Link></p>
+          <p className="mt-6 text-sm text-apagado"><Link className={LINK} href="/ingresar">Volver a ingresar</Link></p>
         </>
       )}
     </>
@@ -79,7 +80,7 @@ async function Content({ searchParams }: PageProps) {
 export default function LoginPage(props: PageProps) {
   return (
     <main className="mx-auto max-w-xl px-4 py-10">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Ingresar como terapeuta</h1>
+      <h1 className="font-display text-3xl font-semibold text-tinta">Ingresar como terapeuta</h1>
       <Suspense fallback={null}>
         <Content {...props} />
       </Suspense>

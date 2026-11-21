@@ -4,12 +4,12 @@ import { useActionState } from "react";
 import { sendLoginLink, sendPasswordReset, signInWithPassword, type LoginState } from "./actions";
 
 const INITIAL: LoginState = { status: "idle", message: "" };
-const FIELD = "rounded-md border border-zinc-400 bg-white p-3 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100";
-const BUTTON = "rounded-md bg-zinc-900 px-4 py-3 font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900";
+const FIELD = "min-h-11 w-full rounded-xl border border-campo bg-superficie p-3 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento";
+const BUTTON = "inline-flex min-h-11 items-center justify-center rounded-full bg-boton px-5 font-medium text-boton-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60";
 
 function Message({ state }: { state: LoginState }) {
   return (
-    <p role="status" aria-live="polite" className={state.status === "error" ? "text-red-700 dark:text-red-400" : "text-zinc-800 dark:text-zinc-200"}>
+    <p role="status" aria-live="polite" className={state.status === "error" ? "text-peligro-texto" : "text-tinta"}>
       {state.message}
     </p>
   );
@@ -18,7 +18,7 @@ function Message({ state }: { state: LoginState }) {
 function EmailField({ state, help }: { state: LoginState; help?: string }) {
   return (
     <>
-      <label htmlFor="email" className="font-medium text-zinc-900 dark:text-zinc-100">Tu mail</label>
+      <label htmlFor="email" className="font-medium text-tinta">Tu mail</label>
       <input
         id="email"
         name="email"
@@ -31,7 +31,7 @@ function EmailField({ state, help }: { state: LoginState; help?: string }) {
         aria-invalid={state.status === "error"}
         className={FIELD}
       />
-      {help && <p id="email-help" className="text-sm text-zinc-600 dark:text-zinc-400">{help}</p>}
+      {help && <p id="email-help" className="text-sm text-apagado">{help}</p>}
     </>
   );
 }
@@ -42,7 +42,7 @@ export function PasswordLoginForm() {
   return (
     <form action={action} className="mt-6 grid gap-3" noValidate>
       <EmailField state={state} />
-      <label htmlFor="password" className="font-medium text-zinc-900 dark:text-zinc-100">Tu contraseña</label>
+      <label htmlFor="password" className="font-medium text-tinta">Tu contraseña</label>
       <input id="password" name="password" type="password" autoComplete="current-password" required maxLength={200} className={FIELD} />
       <button type="submit" disabled={pending} className={BUTTON}>{pending ? "Ingresando…" : "Ingresar"}</button>
       <Message state={state} />
