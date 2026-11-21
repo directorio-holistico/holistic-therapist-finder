@@ -33,12 +33,12 @@ async function Gate() {
 export default function RegisterPage() {
   return (
     <main className="mx-auto max-w-xl px-4 py-10">
-      <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Crear mi perfil de terapeuta</h1>
-      <p className="mt-2 text-zinc-700 dark:text-zinc-300">
+      <h1 className="font-display text-3xl font-semibold text-tinta">Crear mi perfil de terapeuta</h1>
+      <p className="mt-2 text-apagado">
         Es gratis. Tu perfil se publica recién después de que lo revisemos.
       </p>
       <div className="mt-4"><LegalReviewNotice /></div>
-      <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <Gate />
       </Suspense>
     </main>
