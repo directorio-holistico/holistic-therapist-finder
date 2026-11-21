@@ -6,6 +6,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { confirmSchema, safeNextPath } from "@/lib/auth/params";
+import { ConfirmSubmit } from "./confirm-submit";
 
 export const metadata: Metadata = { title: "Confirmar ingreso", robots: { index: false } };
 
@@ -22,16 +23,7 @@ async function ConfirmForm({ searchParams }: PageProps) {
       </p>
     );
   }
-  return (
-    <form action="/auth/verificar" method="post" className="mt-6">
-      <input type="hidden" name="token_hash" value={parsed.data.token_hash} />
-      <input type="hidden" name="type" value={parsed.data.type} />
-      <input type="hidden" name="next" value={safeNextPath(parsed.data.next)} />
-      <button type="submit" className="rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
-        Entrar a mi cuenta
-      </button>
-    </form>
-  );
+  return <ConfirmSubmit tokenHash={parsed.data.token_hash} type={parsed.data.type} next={safeNextPath(parsed.data.next)} />;
 }
 
 export default function ConfirmPage(props: PageProps) {
