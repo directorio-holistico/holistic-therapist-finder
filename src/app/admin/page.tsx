@@ -11,12 +11,12 @@ async function Summary() {
   const count = await supabase.from("profile_revisions").select("id", { count: "exact", head: true }).eq("status_id", pending.data.id);
   if (count.error) throw new Error(`Could not count the revisions / No se pudieron contar las revisiones: ${count.error.message}`);
   return (
-    <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Revisiones de perfiles</h2>
-      <p className="mt-1 text-zinc-700 dark:text-zinc-300">
+    <section className="mt-6 rounded-xl border border-linea bg-superficie p-5">
+      <h2 className="font-display text-xl font-semibold text-tinta">Revisiones de perfiles</h2>
+      <p className="mt-1 text-apagado">
         {count.count === 0 ? "No hay revisiones esperando." : `Esperando una decisión: ${count.count}.`}
       </p>
-      <Link href="/admin/revisiones" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
+      <Link href="/admin/revisiones" className="mt-4 inline-flex min-h-11 items-center rounded-full bg-boton px-5 font-medium text-boton-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento">
         Ver revisiones
       </Link>
     </section>
@@ -30,12 +30,12 @@ async function ReportsSummary() {
   const count = await supabase.from("reports").select("id", { count: "exact", head: true }).eq("status_id", open.data.id);
   if (count.error) throw new Error(`Could not count the reports / No se pudieron contar las denuncias: ${count.error.message}`);
   return (
-    <section className="mt-6 rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-      <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Denuncias de perfiles</h2>
-      <p className="mt-1 text-zinc-700 dark:text-zinc-300">
+    <section className="mt-6 rounded-xl border border-linea bg-superficie p-5">
+      <h2 className="font-display text-xl font-semibold text-tinta">Denuncias de perfiles</h2>
+      <p className="mt-1 text-apagado">
         {count.count === 0 ? "No hay denuncias abiertas." : `Abiertas: ${count.count}.`}
       </p>
-      <Link href="/admin/denuncias" className="mt-3 inline-block rounded-md bg-zinc-900 px-4 py-3 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">
+      <Link href="/admin/denuncias" className="mt-4 inline-flex min-h-11 items-center rounded-full bg-boton px-5 font-medium text-boton-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento">
         Ver denuncias
       </Link>
     </section>
@@ -45,11 +45,11 @@ async function ReportsSummary() {
 export default function AdminHome() {
   return (
     <main>
-      <h1 className="mt-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Administración</h1>
-      <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
+      <h1 className="mt-6 font-display text-3xl font-semibold text-tinta">Administración</h1>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <Summary />
       </Suspense>
-      <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <ReportsSummary />
       </Suspense>
     </main>

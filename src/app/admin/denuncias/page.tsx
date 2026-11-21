@@ -50,31 +50,31 @@ async function List({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <>
-      {notice && <p role="status" className="mt-4 rounded-md border border-green-600 bg-green-50 p-3 text-green-900">{notice}</p>}
+      {notice && <p role="status" className="mt-4 rounded-lg border border-ok-borde bg-ok-fondo p-3 text-ok-texto">{notice}</p>}
       <nav aria-label="Filtro de denuncias" className="mt-4 flex gap-4">
         {(["abiertas", "cerradas"] as const).map((option) => (
           <Link key={option} href={hrefFor(option, 1)} aria-current={filter === option ? "page" : undefined}
-            className={filter === option ? "font-semibold underline text-zinc-900 dark:text-zinc-100" : "underline text-zinc-700 dark:text-zinc-300"}>
+            className={filter === option ? "inline-flex min-h-11 items-center font-semibold underline underline-offset-4 text-tinta" : "inline-flex min-h-11 items-center underline underline-offset-4 text-acento"}>
             {option === "abiertas" ? "Abiertas" : "Cerradas"}
           </Link>
         ))}
       </nav>
 
       {rows.data.length === 0 ? (
-        <p className="mt-4 text-zinc-700 dark:text-zinc-300">
+        <p className="mt-4 text-apagado">
           {filter === "abiertas" ? "No hay denuncias abiertas." : "No hay denuncias cerradas."}
         </p>
       ) : (
         <ul className="mt-4 grid gap-3">
           {rows.data.map((row) => (
-            <li key={row.id} className="rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-              <Link href={`/admin/denuncias/${row.id}`} className="text-lg font-semibold underline text-zinc-900 dark:text-zinc-100">
+            <li key={row.id} className="rounded-xl border border-linea bg-superficie p-5">
+              <Link href={`/admin/denuncias/${row.id}`} className="font-display text-xl font-semibold text-tinta underline underline-offset-4">
                 {reasonLabel(reasonCode.get(row.reason_id) ?? "?")}
               </Link>
-              <p className="mt-1 text-zinc-800 dark:text-zinc-200">
+              <p className="mt-1 text-tinta">
                 {row.profile_id === null ? "Perfil eliminado" : (nameOf.get(row.profile_id) ?? "Perfil sin nombre")}
               </p>
-              <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+              <p className="mt-1 text-sm text-apagado">
                 Recibida el {formatDate(row.created_at) ?? "—"} · {reportStatusLabel(statusCode.get(row.status_id) ?? "?")}
                 {row.resolved_at ? ` el ${formatDate(row.resolved_at) ?? "—"}` : ""}
               </p>
@@ -85,9 +85,9 @@ async function List({ searchParams }: { searchParams: SearchParams }) {
 
       {(page > 1 || hasNextPage(page, total)) && (
         <nav aria-label="Páginas" className="mt-4 flex items-center gap-4">
-          {page > 1 && <Link href={hrefFor(filter, page - 1)} className="underline">← Anteriores</Link>}
-          <span className="text-sm text-zinc-700 dark:text-zinc-300">Página {page}</span>
-          {hasNextPage(page, total) && <Link href={hrefFor(filter, page + 1)} className="underline">Siguientes →</Link>}
+          {page > 1 && <Link href={hrefFor(filter, page - 1)} className="text-acento underline underline-offset-4">← Anteriores</Link>}
+          <span className="text-sm text-apagado">Página {page}</span>
+          {hasNextPage(page, total) && <Link href={hrefFor(filter, page + 1)} className="text-acento underline underline-offset-4">Siguientes →</Link>}
         </nav>
       )}
     </>
@@ -101,8 +101,8 @@ const REPORT_PROFILE_LIMIT = 100;
 export default function ReportsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main>
-      <h1 className="mt-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Denuncias</h1>
-      <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
+      <h1 className="mt-6 font-display text-3xl font-semibold text-tinta">Denuncias</h1>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <List searchParams={searchParams} />
       </Suspense>
     </main>

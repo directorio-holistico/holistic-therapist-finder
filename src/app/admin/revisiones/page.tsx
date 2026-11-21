@@ -30,20 +30,20 @@ async function List({ searchParams }: { searchParams: Promise<{ resultado?: stri
 
   return (
     <>
-      {notice && <p role="status" className="mt-4 rounded-md border border-green-600 bg-green-50 p-3 text-green-900">{notice}</p>}
+      {notice && <p role="status" className="mt-4 rounded-lg border border-ok-borde bg-ok-fondo p-3 text-ok-texto">{notice}</p>}
       {rows.data.length === 0 ? (
-        <p className="mt-4 text-zinc-700 dark:text-zinc-300">No hay revisiones esperando.</p>
+        <p className="mt-4 text-apagado">No hay revisiones esperando.</p>
       ) : (
         <ul className="mt-4 grid gap-3">
           {rows.data.map((row) => (
-            <li key={row.id} className="rounded-lg border border-zinc-300 p-4 dark:border-zinc-700">
-              <Link href={`/admin/revisiones/${row.id}`} className="text-lg font-semibold underline text-zinc-900 dark:text-zinc-100">{nameOf(row.payload)}</Link>
-              <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+            <li key={row.id} className="rounded-xl border border-linea bg-superficie p-5">
+              <Link href={`/admin/revisiones/${row.id}`} className="font-display text-xl font-semibold text-tinta underline underline-offset-4">{nameOf(row.payload)}</Link>
+              <p className="mt-1 text-sm text-apagado">
                 Enviada el {formatDate(row.submitted_at) ?? "—"} · responder antes del {formatDate(row.due_at) ?? "—"}
                 {row.is_priority ? " · prioritaria" : ""}
               </p>
               {row.flagged_terms.length > 0 && (
-                <p className="mt-1 text-sm text-amber-900">Palabras marcadas: {row.flagged_terms.length}</p>
+                <p className="mt-1 text-sm text-aviso-texto">Palabras marcadas: {row.flagged_terms.length}</p>
               )}
             </li>
           ))}
@@ -56,8 +56,8 @@ async function List({ searchParams }: { searchParams: Promise<{ resultado?: stri
 export default function RevisionsPage({ searchParams }: { searchParams: Promise<{ resultado?: string | string[] }> }) {
   return (
     <main>
-      <h1 className="mt-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Revisiones pendientes</h1>
-      <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
+      <h1 className="mt-6 font-display text-3xl font-semibold text-tinta">Revisiones pendientes</h1>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <List searchParams={searchParams} />
       </Suspense>
     </main>

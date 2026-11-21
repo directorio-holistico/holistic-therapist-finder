@@ -21,8 +21,8 @@ type Props = {
 
 const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="grid gap-0.5 sm:grid-cols-[12rem_1fr]">
-    <dt className="font-medium text-zinc-900 dark:text-zinc-100">{label}</dt>
-    <dd className="text-zinc-800 dark:text-zinc-200">{children}</dd>
+    <dt className="font-medium text-tinta">{label}</dt>
+    <dd className="text-tinta">{children}</dd>
   </div>
 );
 
@@ -71,8 +71,8 @@ async function Detail({ params, searchParams }: Props) {
 
   return (
     <>
-      <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">Denuncia n.º {row.id}</p>
-      {notice && <p role="status" className="mt-4 rounded-md border border-green-600 bg-green-50 p-3 text-green-900">{notice}</p>}
+      <p className="mt-2 text-sm text-apagado">Denuncia n.º {row.id}</p>
+      {notice && <p role="status" className="mt-4 rounded-lg border border-ok-borde bg-ok-fondo p-3 text-ok-texto">{notice}</p>}
 
       <dl className="mt-4 grid gap-3">
         <Row label="Motivo">{reasonLabel(reason.data?.code ?? "?")}</Row>
@@ -85,7 +85,7 @@ async function Detail({ params, searchParams }: Props) {
               {" · "}
               <span>{profileCode ? profileStatusLabel(profileCode) : "estado desconocido"}</span>
               {" · "}
-              <Link href={`/terapeuta/${profile.data.id}`} className="underline">Ver perfil público</Link>
+              <Link href={`/terapeuta/${profile.data.id}`} className="text-acento underline underline-offset-4">Ver perfil público</Link>
               {profileCode === "suspended" && profile.data.status_reason && (
                 <span className="block text-sm">Motivo de la suspensión: {profile.data.status_reason}</span>
               )}
@@ -98,7 +98,7 @@ async function Detail({ params, searchParams }: Props) {
           {row.details ? <span className="block whitespace-pre-wrap break-words">{row.details}</span> : "Sin detalle"}
         </Row>
         <Row label="Mail de quien denunció">
-          {row.reporter_email ? (mailLink ? <a href={mailLink} className="underline break-all">{row.reporter_email}</a> : <span className="break-all">{row.reporter_email}</span>) : "No dejó mail"}
+          {row.reporter_email ? (mailLink ? <a href={mailLink} className="text-acento underline underline-offset-4 break-all">{row.reporter_email}</a> : <span className="break-all">{row.reporter_email}</span>) : "No dejó mail"}
         </Row>
         {otherOpen.count !== null && otherOpen.count > 0 && (
           <Row label="Otras abiertas">Hay {otherOpen.count} denuncia{otherOpen.count === 1 ? "" : "s"} abierta{otherOpen.count === 1 ? "" : "s"} más sobre este perfil.</Row>
@@ -125,9 +125,9 @@ async function Detail({ params, searchParams }: Props) {
 export default function ReportPage(props: Props) {
   return (
     <main>
-      <h1 className="mt-6 text-2xl font-semibold text-zinc-900 dark:text-zinc-100">Denuncia</h1>
-      <p className="mt-2"><Link href="/admin/denuncias" className="underline">← Volver a las denuncias</Link></p>
-      <Suspense fallback={<p className="mt-4 text-zinc-600">Cargando…</p>}>
+      <h1 className="mt-6 font-display text-3xl font-semibold text-tinta">Denuncia</h1>
+      <p className="mt-2"><Link href="/admin/denuncias" className="text-acento underline underline-offset-4">← Volver a las denuncias</Link></p>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <Detail {...props} />
       </Suspense>
     </main>
