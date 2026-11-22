@@ -14,7 +14,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SOCIAL_HOVER, SocialIcon } from "@/components/social-icon";
 import { getTurnstileSiteKey } from "@/lib/env";
 import { formatDate, formatMoney } from "@/lib/format";
-import { joinWithY, labelLanguage, labelRateAudience, labelSessionFormat } from "@/lib/labels";
+import { joinWithY, labelLanguage, labelRateAudienceFor, labelSessionFormat } from "@/lib/labels";
 import { loadPublicProfile, type ProfileDetail, type ProfileLinkKind, type TherapyDetail } from "@/lib/profile-detail";
 import { createAnonClient } from "@/lib/supabase/anon-client";
 import { ContactReveal } from "./contact-reveal";
@@ -32,7 +32,7 @@ const LINK_LABELS: Record<ProfileLinkKind, string> = {
   youtube: "YouTube",
 };
 
-function TherapyBlock({ therapy }: { therapy: TherapyDetail }) {
+function TherapyBlock({ therapy, countryName }: { therapy: TherapyDetail; countryName: string | null }) {
   return (
     <li className="flex flex-col rounded-2xl border border-linea bg-superficie p-5 shadow-sm">
       {/* Title and mode icons on one row: the icons are explained once, above the list of therapies (see ModeLegend below).
@@ -62,7 +62,7 @@ function TherapyBlock({ therapy }: { therapy: TherapyDetail }) {
           <ul className="list-none border-t border-linea p-0 pt-3 text-sm text-tinta">
             {therapy.rates.map((rate) => (
               <li key={rate.audience} className="flex items-baseline justify-between gap-4 py-0.5">
-                <span className="text-apagado">{labelRateAudience(rate.audience)}</span>
+                <span className="text-apagado">{labelRateAudienceFor(rate.audience, countryName)}</span>
                 <span className="text-base font-semibold">{formatMoney(rate.amount, rate.currency)}</span>
               </li>
             ))}
@@ -137,7 +137,7 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
           <ModeLegend profile={profile} />
           <ul className="mt-3 grid list-none gap-4 p-0 sm:grid-cols-2">
             {profile.therapies.map((therapy) => (
-              <TherapyBlock key={therapy.therapyId} therapy={therapy} />
+              <TherapyBlock key={therapy.therapyId} therapy={therapy} countryName={profile.countryName} />
             ))}
           </ul>
           <RatesFreshness profile={profile} />

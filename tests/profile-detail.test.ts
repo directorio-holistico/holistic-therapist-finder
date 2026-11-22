@@ -36,6 +36,9 @@ describe("toProfileDetail", () => {
     const detail = toProfileDetail(row);
     expect(detail?.displayName).toBe("Lucía Ferrante");
     expect(detail?.place).toBe("Cinco Saltos, Río Negro, Argentina");
+    expect(detail?.countryName).toBe("Argentina");
+    expect(toProfileDetail({ ...row, country_name: null })?.countryName).toBeNull();
+    expect(toProfileDetail({ ...row, country_name: "  " })?.countryName).toBeNull();
     expect(detail?.therapies.map((t) => t.name)).toEqual(["LNT® - La Nueva Terapia", "Reiki"]);
     expect(detail?.therapies[0]?.serviceModes).toEqual(["in_person"]);
     expect(detail?.therapies[1]?.serviceModes).toEqual(["remote"]);

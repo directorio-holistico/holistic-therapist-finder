@@ -32,6 +32,7 @@ export type ProfileDetail = {
   headline: string | null;
   about: string | null;
   place: string;
+  countryName: string | null;
   countryIso: string | null;
   photoPath: string | null;
   isPinned: boolean;
@@ -162,6 +163,7 @@ export function toProfileDetail(row: DetailRow): ProfileDetail | null {
     headline: row.headline ?? null,
     about: row.about?.trim() ? row.about : null,
     place,
+    countryName: row.country_name?.trim() ? row.country_name.trim() : null,
     countryIso: row.country_iso ?? null,
     photoPath: row.photo_path ?? null,
     isPinned: row.is_pinned === true,

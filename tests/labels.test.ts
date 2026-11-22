@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { groupHeading, searchGroupTitle, terapeutasCount } from "@/lib/labels";
+import { groupHeading, labelRateAudience, labelRateAudienceFor, searchGroupTitle, terapeutasCount } from "@/lib/labels";
+
+describe("labelRateAudienceFor (public profile) / etiqueta de tarifa (perfil público)", () => {
+  it("names the therapist's country / nombra el país del terapeuta", () => {
+    expect(labelRateAudienceFor("own_country", "Argentina")).toBe("Residentes en Argentina");
+    expect(labelRateAudienceFor("own_country", "  México ")).toBe("Residentes en México");
+  });
+  it("falls back to a short text without a country / sin país usa un texto corto", () => {
+    expect(labelRateAudienceFor("own_country", null)).toBe("Residentes en el país");
+    expect(labelRateAudienceFor("own_country", "  ")).toBe("Residentes en el país");
+  });
+  it("leaves the other audiences and the long editor label as they are / deja igual las otras y la etiqueta larga del editor", () => {
+    expect(labelRateAudienceFor("other_countries", "Argentina")).toBe("Desde otros países");
+    expect(labelRateAudienceFor("algo_nuevo", "Argentina")).toBe("algo_nuevo");
+    expect(labelRateAudience("own_country")).toBe("Residentes en el país del terapeuta");
+  });
+});
 
 describe("searchGroupTitle", () => {
   it("says \"En tu zona\" only when a region or a city was chosen / dice \"En tu zona\" solo si se eligió región o ciudad", () => {

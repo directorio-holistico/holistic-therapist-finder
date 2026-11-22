@@ -16,7 +16,16 @@ const LANGUAGES: Record<string, string> = {
 export const labelServiceMode = (code: string): string => SERVICE_MODES[code] ?? code;
 export const labelSessionFormat = (code: string): string => SESSION_FORMATS[code] ?? code;
 export const labelRateAudience = (code: string): string => RATE_AUDIENCES[code] ?? code;
-export const labelLanguage = (code: string): string => LANGUAGES[code] ?? code;
+// The public profile names the therapist's country ("Residentes en Argentina"): shorter and clearer than "en el país del
+// terapeuta". Without a country name it falls back to a short generic text. The editor and the admin keep the long label above.
+// El perfil público nombra el país del terapeuta ("Residentes en Argentina"): más corto y claro que "en el país del terapeuta".
+// Sin nombre de país usa un texto genérico corto. El editor y el admin conservan la etiqueta larga de arriba.
+export function labelRateAudienceFor(code: string, countryName: string | null): string {
+  if (code !== "own_country") return labelRateAudience(code);
+  const name = countryName?.trim();
+  return name ? `Residentes en ${name}` : "Residentes en el país";
+}
+export const labelLanguage =(code: string): string => LANGUAGES[code] ?? code;
 
 export const SEARCH_GROUP_TITLES: Record<number, string> = {
   1: "En tu zona",
