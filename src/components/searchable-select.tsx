@@ -14,7 +14,7 @@ import { filterOptions, isFiltering } from "@/lib/option-filter";
 const STYLES = {
   site: {
     field: "min-h-11 w-full rounded-xl border border-campo bg-superficie py-2 pl-3 pr-9 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento",
-    native: "min-h-11 w-full rounded-xl border border-campo bg-superficie px-3 py-2 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento",
+    native: "min-h-11 w-full appearance-none rounded-xl border border-campo bg-superficie py-2 pl-3 pr-9 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento",
     list: "rounded-xl border border-campo bg-superficie text-tinta shadow-md",
     active: "bg-boton text-boton-texto",
     chevron: "text-apagado",
@@ -23,7 +23,7 @@ const STYLES = {
   // La variante del editor ahora tiene la misma identidad que el buscador (tokens, rounded-xl, 44 px de alto).
   plain: {
     field: "min-h-11 w-full rounded-xl border border-campo bg-superficie p-3 pr-9 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento",
-    native: "min-h-11 w-full rounded-xl border border-campo bg-superficie p-3 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento",
+    native: "min-h-11 w-full appearance-none rounded-xl border border-campo bg-superficie p-3 pr-9 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento",
     list: "rounded-xl border border-campo bg-superficie text-tinta shadow-md",
     active: "bg-boton text-boton-texto",
     chevron: "text-apagado",
@@ -56,12 +56,15 @@ export function SearchableSelect(props: Props) {
 
 function NativeSelect({ id, name, options, emptyLabel, defaultValue, variant, invalid }: Props) {
   return (
-    <select id={id} name={name} defaultValue={defaultValue} aria-invalid={invalid} className={STYLES[variant].native}>
-      <option value="">{emptyLabel}</option>
-      {options.map((option) => (
-        <option key={option.id} value={option.id}>{option.name}</option>
-      ))}
-    </select>
+    <div className="relative">
+      <select id={id} name={name} defaultValue={defaultValue} aria-invalid={invalid} className={STYLES[variant].native}>
+        <option value="">{emptyLabel}</option>
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>{option.name}</option>
+        ))}
+      </select>
+      <span aria-hidden="true" className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm ${STYLES[variant].chevron}`}>▾</span>
+    </div>
   );
 }
 

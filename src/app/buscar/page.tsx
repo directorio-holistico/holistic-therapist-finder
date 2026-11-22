@@ -12,6 +12,7 @@ import { recordUnmetSearch } from "@/lib/rate-limit-server";
 import { searchProfiles, splitByGroup } from "@/lib/search";
 import { PAGE_SIZE, buildSearchHref, locationIdOf, parseSearchQuery } from "@/lib/search-query";
 import { HealthNotice } from "@/components/health-notice";
+import { ModeLegend } from "@/components/mode-icon";
 import { SiteHeader } from "@/components/site-header";
 import { createAnonClient } from "@/lib/supabase/anon-client";
 import { ProfileCard } from "./profile-card";
@@ -134,6 +135,7 @@ async function Results({ query, therapyId, locationId, therapyName }: ResultsPro
       <h2 id="results-title" className={singlePage ? "sr-only" : "font-display text-2xl font-semibold text-tinta"}>
         {singlePage ? "Resultados de la búsqueda" : terapeutasCount(total)}
       </h2>
+      <ModeLegend />
       {splitByGroup(cards).map((group) => (
         <div key={group.group} className="mt-6">
           <h3 className="mb-3 text-base font-semibold text-tinta">

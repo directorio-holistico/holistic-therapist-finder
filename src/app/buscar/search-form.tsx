@@ -14,7 +14,12 @@ import type { CatalogOption } from "@/lib/catalogs";
 import { hrefFromFormValues, type SearchQuery } from "@/lib/search-query";
 
 const fieldClass =
-  "min-h-11 w-full rounded-xl border border-campo bg-superficie px-3 py-2 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento";
+  "min-h-11 w-full appearance-none rounded-xl border border-campo bg-superficie py-2 pl-3 pr-9 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento";
+
+// Same arrow as the searchable "Terapia" field, so the three filters look alike. / La misma flecha del campo "Terapia", así los tres filtros se ven iguales.
+function Chevron() {
+  return <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-apagado">▾</span>;
+}
 const labelClass = "mb-1 block text-sm font-semibold text-tinta";
 const PAUSE_MS = 400;
 
@@ -50,8 +55,8 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
   }
 
   return (
-    <form ref={formRef} action="/buscar" method="get" className="grid grid-cols-2 gap-x-3 gap-y-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm sm:grid-cols-3" onChange={onChange} aria-busy={pending}>
-      <div className="col-span-2 sm:col-span-1">
+    <form ref={formRef} action="/buscar" method="get" className="grid grid-cols-1 gap-x-3 gap-y-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm sm:grid-cols-3" onChange={onChange} aria-busy={pending}>
+      <div>
         <label htmlFor="therapy" className={labelClass}>Terapia</label>
         <SearchableSelect id="therapy" name="therapy" options={therapies} emptyLabel="Todas las terapias" listLabel="Terapias"
           defaultValue={String(query.therapyId ?? "")} variant="site"
@@ -60,45 +65,57 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
 
       <div>
         <label htmlFor="country" className={labelClass}>País</label>
-        <select id="country" name="country" defaultValue={query.countryId ?? ""} className={fieldClass}>
-          <option value="">Todos los países</option>
-          {countries.map((option) => (
-            <option key={option.id} value={option.id}>{option.name}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select id="country" name="country" defaultValue={query.countryId ?? ""} className={fieldClass}>
+            <option value="">Todos los países</option>
+            {countries.map((option) => (
+              <option key={option.id} value={option.id}>{option.name}</option>
+            ))}
+          </select>
+          <Chevron />
+        </div>
       </div>
 
       {regions.length > 0 && (
         <div key={`region-${query.countryId}`}>
           <label htmlFor="region" className={labelClass}>Región (opcional)</label>
-          <select id="region" name="region" defaultValue={query.regionId ?? ""} className={fieldClass}>
-            <option value="">Todo el país</option>
-            {regions.map((option) => (
-              <option key={option.id} value={option.id}>{option.name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select id="region" name="region" defaultValue={query.regionId ?? ""} className={fieldClass}>
+              <option value="">Todo el país</option>
+              {regions.map((option) => (
+                <option key={option.id} value={option.id}>{option.name}</option>
+              ))}
+            </select>
+            <Chevron />
+          </div>
         </div>
       )}
 
       {cities.length > 0 && (
         <div key={`city-${query.regionId}`}>
           <label htmlFor="city" className={labelClass}>Ciudad (opcional)</label>
-          <select id="city" name="city" defaultValue={query.cityId ?? ""} className={fieldClass}>
-            <option value="">Toda la región</option>
-            {cities.map((option) => (
-              <option key={option.id} value={option.id}>{option.name}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select id="city" name="city" defaultValue={query.cityId ?? ""} className={fieldClass}>
+              <option value="">Toda la región</option>
+              {cities.map((option) => (
+                <option key={option.id} value={option.id}>{option.name}</option>
+              ))}
+            </select>
+            <Chevron />
+          </div>
         </div>
       )}
 
       <div>
         <label htmlFor="mode" className={labelClass}>Modo de atención</label>
-        <select id="mode" name="mode" defaultValue={query.serviceMode ?? ""} className={fieldClass}>
-          <option value="">Presencial/Distancia</option>
-          <option value="in_person">Presencial</option>
-          <option value="remote">A distancia</option>
-        </select>
+        <div className="relative">
+          <select id="mode" name="mode" defaultValue={query.serviceMode ?? ""} className={fieldClass}>
+            <option value="">Presencial y a distancia</option>
+            <option value="in_person">Presencial</option>
+            <option value="remote">A distancia</option>
+          </select>
+          <Chevron />
+        </div>
       </div>
 
       <button

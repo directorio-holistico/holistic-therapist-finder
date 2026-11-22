@@ -36,10 +36,21 @@ function Icon({ mode, className, size = 16 }: { mode: string; className?: string
   );
 }
 
+// The one round icon used everywhere (cards, profile, legend), so it looks the same in all of them.
+// El único ícono redondo que se usa en todos lados (tarjetas, perfil, leyenda), así se ve igual en todos.
+function RoundIcon({ mode }: { mode: string }) {
+  return (
+    <span aria-hidden="true" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-fondo text-tinta ring-1 ring-linea">
+      <Icon mode={mode} size={18} />
+    </span>
+  );
+}
+
+// Icon plus text (profile, legend). / Ícono más texto (perfil, leyenda).
 export function ModeBadge({ mode }: { mode: string }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-linea px-2.5 py-0.5 text-sm text-tinta">
-      <Icon mode={mode} />
+    <span className="inline-flex items-center gap-2 text-sm text-tinta">
+      <RoundIcon mode={mode} />
       {labelServiceMode(mode)}
     </span>
   );
@@ -49,12 +60,20 @@ export function ModeBadge({ mode }: { mode: string }) {
 export function ModeIcon({ mode }: { mode: string }) {
   const label = labelServiceMode(mode);
   return (
-    <span
-      title={label}
-      className="inline-flex size-9 items-center justify-center rounded-full bg-fondo text-tinta ring-1 ring-linea"
-    >
-      <Icon mode={mode} size={18} />
+    <span title={label} className="inline-flex">
+      <RoundIcon mode={mode} />
       <span className="sr-only">{label}</span>
     </span>
+  );
+}
+
+// One line above the results that explains the icons of the cards. / Una línea sobre los resultados que explica los íconos de las tarjetas.
+export function ModeLegend() {
+  return (
+    <p className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-apagado">
+      <span>Modo de atención:</span>
+      <ModeBadge mode="in_person" />
+      <ModeBadge mode="remote" />
+    </p>
   );
 }
