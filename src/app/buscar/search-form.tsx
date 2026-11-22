@@ -43,10 +43,23 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
     if (timer.current) clearTimeout(timer.current);
   }, []);
 
+  // The checkboxes are not controlled, so when the address changes from outside (the "Buscar" link of the header, back and forward,
+  // a shared link) they are set from it here. It is skipped while a search of this form is about to start, so it never undoes a click.
+  // Las casillas no son controladas, así que cuando la dirección cambia desde afuera (el enlace "Buscar" del encabezado, atrás y
+  // adelante, un enlace compartido) se ajustan acá según ella. Se omite mientras está por empezar una búsqueda de este formulario,
+  // para no deshacer un clic.
+  useEffect(() => {
+    if (timer.current) return;
+    formRef.current?.querySelectorAll<HTMLInputElement>('input[name="mode"]').forEach((input) => {
+      input.checked = query.serviceMode === null || query.serviceMode === input.value;
+    });
+  }, [query.serviceMode]);
+
   // Waits a short pause and searches with the current values of the form. / Espera una pausa corta y busca con los valores actuales del formulario.
   function schedule(form: HTMLFormElement, changed: string) {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
+      timer.current = null;
       const href = hrefFromFormValues(new FormData(form).entries(), changed);
       startTransition(() => router.push(href, { scroll: false }));
     }, PAUSE_MS);
@@ -64,7 +77,7 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
   }
 
   return (
-    <form ref={formRef} action="/buscar" method="get" className="grid grid-cols-1 gap-x-3 gap-y-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm sm:grid-cols-[repeat(auto-fit,minmax(14rem,1fr))]" onChange={onChange} aria-busy={pending}>
+    <form ref={formRef} action="/buscar" method="get" autoComplete="off" className="grid grid-cols-1 gap-x-3 gap-y-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm sm:grid-cols-[repeat(auto-fit,minmax(14rem,1fr))]" onChange={onChange} aria-busy={pending}>
       <div>
         <label htmlFor="therapy" className={labelClass}>Terapia</label>
         <SearchableSelect id="therapy" name="therapy" options={therapies} emptyLabel="Todas las terapias" listLabel="Terapias"
