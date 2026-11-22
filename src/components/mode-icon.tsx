@@ -66,14 +66,3 @@ export function ModeIcon({ mode }: { mode: string }) {
     </span>
   );
 }
-
-// One line above the results that explains the icons of the cards. / Una línea sobre los resultados que explica los íconos de las tarjetas.
-export function ModeLegend() {
-  return (
-    <p className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-apagado">
-      <span>Modo de atención:</span>
-      <ModeBadge mode="in_person" />
-      <ModeBadge mode="remote" />
-    </p>
-  );
-}

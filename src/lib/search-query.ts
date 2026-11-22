@@ -35,15 +35,28 @@ function optionalId(value: string | string[] | undefined): number | null {
   return parsed.success ? parsed.data : null;
 }
 
+// The form has one checkbox per mode, both checked by default. Both checked (or none, or only invalid values) means "no filter";
+// exactly one valid mode means that mode.
+// El formulario tiene una casilla por modo, las dos tildadas por defecto. Las dos (o ninguna, o solo valores inválidos) significan
+// "sin filtro"; exactamente un modo válido significa ese modo.
+function modeOf(value: string | string[] | undefined): ServiceModeCode | null {
+  const values = Array.isArray(value) ? value.slice(0, 10) : [value];
+  const found = new Set<ServiceModeCode>();
+  for (const item of values) {
+    const parsed = modeSchema.safeParse(item?.trim());
+    if (parsed.success) found.add(parsed.data);
+  }
+  return found.size === 1 ? ([...found][0] ?? null) : null;
+}
+
 export function parseSearchQuery(raw: RawParams): SearchQuery {
-  const mode = modeSchema.safeParse(first(raw.mode)?.trim());
   const page = pageSchema.safeParse(first(raw.page)?.trim());
   return {
     therapyId: optionalId(raw.therapy),
     countryId: optionalId(raw.country),
     regionId: optionalId(raw.region),
     cityId: optionalId(raw.city),
-    serviceMode: mode.success ? mode.data : null,
+    serviceMode: modeOf(raw.mode),
     page: page.success ? page.data : 1,
   };
 }
@@ -72,9 +85,18 @@ export function buildSearchHref(query: SearchQuery, page: number): string {
 export function hrefFromFormValues(entries: Iterable<[string, unknown]>, changedField: string): string {
   const allowed = new Set(["therapy", "country", "region", "city", "mode"]);
   const params = new URLSearchParams();
+  // Two checkboxes send "mode" twice: both (or none) means no filter, one means that mode. / Dos casillas envían "mode" dos veces: las dos (o ninguna) = sin filtro, una = ese modo.
+  const modes = new Set<ServiceModeCode>();
   for (const [name, value] of entries) {
-    if (allowed.has(name) && typeof value === "string" && value.trim() !== "") params.set(name, value.trim());
+    if (name === "mode") {
+      const parsed = modeSchema.safeParse(typeof value === "string" ? value.trim() : undefined);
+      if (parsed.success) modes.add(parsed.data);
+    } else if (allowed.has(name) && typeof value === "string" && value.trim() !== "") {
+      params.set(name, value.trim());
+    }
   }
+  const onlyMode = modes.size === 1 ? [...modes][0] : undefined;
+  if (onlyMode) params.set("mode", onlyMode);
   if (changedField === "country") {
     params.delete("region");
     params.delete("city");

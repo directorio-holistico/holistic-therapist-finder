@@ -8,7 +8,8 @@
 // opciones con el teclado no dispare una búsqueda por cada una). El botón queda para el resto.
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useTransition, type FormEvent } from "react";
+import { useEffect, useRef, useTransition, type FormEvent, type MouseEvent } from "react";
+import { ModeBadge } from "@/components/mode-icon";
 import { SearchableSelect } from "@/components/searchable-select";
 import type { CatalogOption } from "@/lib/catalogs";
 import { hrefFromFormValues, type SearchQuery } from "@/lib/search-query";
@@ -22,6 +23,7 @@ function Chevron() {
 }
 const labelClass = "mb-1 block text-sm font-semibold text-tinta";
 const PAUSE_MS = 400;
+const MODES = ["in_person", "remote"] as const;
 
 type Props = {
   therapies: CatalogOption[];
@@ -52,6 +54,13 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
 
   function onChange(event: FormEvent<HTMLFormElement>) {
     schedule(event.currentTarget, (event.target as HTMLSelectElement).name);
+  }
+
+  // Unchecking the last checked box is refused (the click is cancelled, so no change and no search happens). / Destildar la última casilla tildada se rechaza (se cancela el clic, no hay cambio ni búsqueda).
+  function keepOneChecked(event: MouseEvent<HTMLInputElement>) {
+    const form = event.currentTarget.form;
+    if (!form) return;
+    if (form.querySelectorAll('input[name="mode"]:checked').length === 0) event.preventDefault();
   }
 
   return (
@@ -106,17 +115,26 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
         </div>
       )}
 
-      <div>
-        <label htmlFor="mode" className={labelClass}>Modo de atención</label>
-        <div className="relative">
-          <select id="mode" name="mode" defaultValue={query.serviceMode ?? ""} className={fieldClass}>
-            <option value="">Presencial y a distancia</option>
-            <option value="in_person">Presencial</option>
-            <option value="remote">A distancia</option>
-          </select>
-          <Chevron />
+      {/* Two checkboxes, both checked by default (no filter). One must always stay checked. / Dos casillas, las dos tildadas por defecto (sin filtro). Siempre debe quedar una tildada. */}
+      <fieldset className="col-span-full" aria-describedby="mode-hint">
+        <legend className={labelClass}>Modo de atención</legend>
+        <div className="flex flex-wrap gap-x-6 gap-y-1">
+          {MODES.map((mode) => (
+            <label key={mode} className="inline-flex min-h-11 cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                name="mode"
+                value={mode}
+                defaultChecked={query.serviceMode === null || query.serviceMode === mode}
+                onClick={keepOneChecked}
+                className="size-5 shrink-0 cursor-pointer accent-boton focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+              />
+              <ModeBadge mode={mode} />
+            </label>
+          ))}
         </div>
-      </div>
+        <p id="mode-hint" className="sr-only">Tiene que quedar al menos una opción marcada.</p>
+      </fieldset>
 
       <button
         type="submit"

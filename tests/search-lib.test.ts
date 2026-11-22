@@ -27,6 +27,16 @@ describe("parseSearchQuery", () => {
     expect(parseSearchQuery({ therapy: ["2", "9"] }).therapyId).toBe(2);
   });
 
+  it("reads the two mode checkboxes: both, none or invalid mean no filter; one means that mode", () => {
+    expect(parseSearchQuery({ mode: ["in_person", "remote"] }).serviceMode).toBeNull();
+    expect(parseSearchQuery({ mode: ["remote", "in_person", "remote"] }).serviceMode).toBeNull();
+    expect(parseSearchQuery({ mode: ["remote", "hack"] }).serviceMode).toBe("remote");
+    expect(parseSearchQuery({ mode: ["remote", "remote"] }).serviceMode).toBe("remote");
+    expect(parseSearchQuery({ mode: ["x", "y"] }).serviceMode).toBeNull();
+    expect(parseSearchQuery({ mode: [] }).serviceMode).toBeNull();
+    expect(parseSearchQuery({ mode: "in_person" }).serviceMode).toBe("in_person");
+  });
+
   it("uses the most specific place: city, else region, else country", () => {
     expect(locationIdOf(parseSearchQuery({ country: "1", region: "7", city: "9" }))).toBe(9);
     expect(locationIdOf(parseSearchQuery({ country: "1", region: "7" }))).toBe(7);
@@ -195,6 +205,14 @@ describe("hrefFromFormValues (the form updates the search by itself)", () => {
   it("clears the levels below the one that changed", () => {
     expect(hrefFromFormValues(values, "country")).toBe("/buscar?therapy=5&country=1&mode=remote");
     expect(hrefFromFormValues(values, "region")).toBe("/buscar?therapy=5&country=1&region=7&mode=remote");
+  });
+
+  it("turns the two mode checkboxes into one mode, or none when both or neither are checked", () => {
+    expect(hrefFromFormValues([["mode", "in_person"], ["mode", "remote"]], "mode")).toBe("/buscar");
+    expect(hrefFromFormValues([], "mode")).toBe("/buscar");
+    expect(hrefFromFormValues([["mode", "remote"]], "mode")).toBe("/buscar?mode=remote");
+    expect(hrefFromFormValues([["therapy", "5"], ["mode", "in_person"]], "mode")).toBe("/buscar?therapy=5&mode=in_person");
+    expect(hrefFromFormValues([["mode", "hack"]], "mode")).toBe("/buscar");
   });
 
   it("ignores unknown fields and non-text values", () => {
