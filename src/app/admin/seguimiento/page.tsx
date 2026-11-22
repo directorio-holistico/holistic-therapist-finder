@@ -16,50 +16,60 @@ const PROFILE_STATUS: Record<string, string> = {
 
 function Card({ item }: { item: FollowUpItem }) {
   const verb = item.kind === "rejected" ? "Rechazada" : "Borrador creado";
+  // Closed by default so many therapists fit on the screen; open it to see the detail. / Cerrado por defecto para ver varios a la vez.
   return (
-    <li className="rounded-xl border border-linea bg-superficie p-5">
-      <h3 className="font-display text-xl font-semibold text-tinta">{item.name}</h3>
-      <p className="mt-1 text-sm text-apagado">
-        {verb} el {formatDate(item.date) ?? "—"} · {elapsedLabel(item.days)}
-      </p>
-      {item.profileStatus && <p className="mt-1 text-sm text-apagado">{PROFILE_STATUS[item.profileStatus] ?? item.profileStatus}</p>}
-      {item.reason && (
-        <p className="mt-2 whitespace-pre-line text-tinta">
-          <span className="font-medium">Motivo: </span>
-          {item.reason}
-        </p>
-      )}
-      <div className="mt-3 grid gap-1 text-sm text-tinta">
-        {item.phone ? (
-          <p>
-            <span className="font-medium">Teléfono: </span>
-            {item.phone.text}
-            {item.phone.whatsapp ? " (WhatsApp)" : ""}
-            {item.phone.whatsappLink && (
-              <>
-                {" · "}
-                <a
-                  href={item.phone.whatsappLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Abrir WhatsApp con ${item.name}`}
-                  className="text-acento underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
-                >
-                  Abrir WhatsApp
-                </a>
-              </>
+    <li className="rounded-xl border border-linea bg-superficie">
+      <details>
+        <summary className="flex min-h-11 cursor-pointer items-center px-5 py-3 text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento">
+          <span>
+            <span className="font-display text-lg font-semibold">{item.name}</span>
+            <span className="text-apagado">
+              {" - "}
+              {verb} el {formatDate(item.date) ?? "—"} · {elapsedLabel(item.days)}
+            </span>
+          </span>
+        </summary>
+        <div className="border-t border-linea px-5 pb-5 pt-3">
+          {item.profileStatus && <p className="text-sm text-apagado">{PROFILE_STATUS[item.profileStatus] ?? item.profileStatus}</p>}
+          {item.reason && (
+            <p className="mt-2 whitespace-pre-line text-tinta">
+              <span className="font-medium">Motivo: </span>
+              {item.reason}
+            </p>
+          )}
+          <div className="mt-3 grid gap-1 text-sm text-tinta">
+            {item.phone ? (
+              <p>
+                <span className="font-medium">Teléfono: </span>
+                {item.phone.text}
+                {item.phone.whatsapp ? " (WhatsApp)" : ""}
+                {item.phone.whatsappLink && (
+                  <>
+                    {" · "}
+                    <a
+                      href={item.phone.whatsappLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Abrir WhatsApp con ${item.name}`}
+                      className="text-acento underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                    >
+                      Abrir WhatsApp
+                    </a>
+                  </>
+                )}
+              </p>
+            ) : (
+              <p className="text-apagado">No cargó teléfono.</p>
             )}
-          </p>
-        ) : (
-          <p className="text-apagado">No cargó teléfono.</p>
-        )}
-        {item.email && (
-          <p>
-            <span className="font-medium">Mail de la cuenta: </span>
-            {item.email}
-          </p>
-        )}
-      </div>
+            {item.email && (
+              <p>
+                <span className="font-medium">Mail de la cuenta: </span>
+                {item.email}
+              </p>
+            )}
+          </div>
+        </div>
+      </details>
     </li>
   );
 }
@@ -73,7 +83,7 @@ function Section({ title, empty, items }: { title: string; empty: string; items:
       {items.length === 0 ? (
         <p className="mt-2 text-apagado">{empty}</p>
       ) : (
-        <ul className="mt-3 grid gap-3">
+        <ul className="mt-3 grid gap-2">
           {items.map((item) => (
             <Card key={item.revisionId} item={item} />
           ))}
@@ -105,7 +115,7 @@ export default function FollowUpPage() {
     <main>
       <h1 className="mt-6 font-display text-3xl font-semibold text-tinta">Seguimiento de terapeutas</h1>
       <p className="mt-2 text-apagado">
-        Rechazados: la última revisión del perfil fue rechazada y no hay otra posterior. Borradores: la última revisión nunca se envió. Se ordenan del más antiguo al más nuevo.
+        Rechazados: la última revisión del perfil fue rechazada y no hay otra posterior. Borradores: la última revisión nunca se envió. Se ordenan del más antiguo al más nuevo. Tocá un nombre para ver el detalle.
       </p>
       <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <Lists />
