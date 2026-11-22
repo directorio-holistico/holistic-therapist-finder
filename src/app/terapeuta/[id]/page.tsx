@@ -34,7 +34,7 @@ const LINK_LABELS: Record<ProfileLinkKind, string> = {
 
 function TherapyBlock({ therapy }: { therapy: TherapyDetail }) {
   return (
-    <li className="rounded-2xl border border-linea bg-superficie p-5 shadow-sm">
+    <li className="flex flex-col rounded-2xl border border-linea bg-superficie p-5 shadow-sm">
       <h3 className="font-display text-xl font-semibold text-tinta">{therapy.name}</h3>
       {therapy.description && <p className="mt-2 text-sm text-tinta">{therapy.description}</p>}
       {therapy.serviceModes.length > 0 && (
@@ -52,18 +52,21 @@ function TherapyBlock({ therapy }: { therapy: TherapyDetail }) {
           .filter(Boolean)
           .join(" · ")}
       </p>
-      {therapy.rates.length > 0 ? (
-        <ul className="mt-3 list-none border-t border-linea p-0 pt-3 text-sm text-tinta">
-          {therapy.rates.map((rate) => (
-            <li key={rate.audience} className="flex items-baseline justify-between gap-4 py-0.5">
-              <span className="text-apagado">{labelRateAudience(rate.audience)}</span>
-              <span className="text-base font-semibold">{formatMoney(rate.amount, rate.currency)}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-3 border-t border-linea pt-3 text-sm text-apagado">Precio: consultar con el terapeuta.</p>
-      )}
+      {/* The prices sit at the bottom of the card, so they line up across cards of different height. / Los precios van al pie de la tarjeta, así quedan alineados aunque las tarjetas tengan distinta altura. */}
+      <div className="mt-auto pt-3">
+        {therapy.rates.length > 0 ? (
+          <ul className="list-none border-t border-linea p-0 pt-3 text-sm text-tinta">
+            {therapy.rates.map((rate) => (
+              <li key={rate.audience} className="flex items-baseline justify-between gap-4 py-0.5">
+                <span className="text-apagado">{labelRateAudience(rate.audience)}</span>
+                <span className="text-base font-semibold">{formatMoney(rate.amount, rate.currency)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="border-t border-linea pt-3 text-sm text-apagado">Precio: consultar con el terapeuta.</p>
+        )}
+      </div>
     </li>
   );
 }
@@ -72,7 +75,7 @@ function RatesFreshness({ profile }: { profile: ProfileDetail }) {
   if (!profile.therapies.some((therapy) => therapy.rates.length > 0)) return null;
   const date = formatDate(profile.ratesConfirmedAt);
   return (
-    <p className="mt-3 text-xs text-apagado">
+    <p className="mt-3 text-sm text-apagado">
       {profile.ratesCurrent && date
         ? `Precios al día · confirmados el ${date}`
         : date
@@ -107,14 +110,7 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
         </div>
       </header>
 
-      {profile.about && (
-        <section aria-labelledby="sobre-mi-title" className="mt-8">
-          <h2 id="sobre-mi-title" className={h2}>Sobre mí</h2>
-          {/* plain text, line breaks kept; never HTML / texto plano, con saltos de línea; nunca HTML */}
-          <p className="mt-3 whitespace-pre-line rounded-2xl border border-linea bg-superficie p-5 text-tinta shadow-sm">{profile.about}</p>
-        </section>
-      )}
-
+      {/* Therapies first (what, how, how much); the longer personal text comes after. / Primero las terapias (qué, cómo, cuánto); el texto personal, más largo, va después. */}
       {profile.therapies.length > 0 && (
         <section aria-labelledby="therapies-title" className="mt-8">
           <h2 id="therapies-title" className={h2}>Terapias</h2>
@@ -124,6 +120,14 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
             ))}
           </ul>
           <RatesFreshness profile={profile} />
+        </section>
+      )}
+
+      {profile.about && (
+        <section aria-labelledby="sobre-mi-title" className="mt-8">
+          <h2 id="sobre-mi-title" className={h2}>Sobre mí</h2>
+          {/* plain text, line breaks kept; never HTML / texto plano, con saltos de línea; nunca HTML */}
+          <p className="mt-3 whitespace-pre-line rounded-2xl border border-linea bg-superficie p-5 text-tinta shadow-sm">{profile.about}</p>
         </section>
       )}
 
