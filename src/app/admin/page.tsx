@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/admin/guard";
+import { loadFollowUpStubs } from "@/lib/admin/followup";
 
 async function Summary() {
   const { supabase } = await requireAdmin();
@@ -42,6 +43,24 @@ async function ReportsSummary() {
   );
 }
 
+async function FollowUpSummary() {
+  const { supabase } = await requireAdmin();
+  const { rejected, drafts } = await loadFollowUpStubs(supabase);
+  return (
+    <section className="mt-6 rounded-xl border border-linea bg-superficie p-5">
+      <h2 className="font-display text-xl font-semibold text-tinta">Seguimiento de terapeutas</h2>
+      <p className="mt-1 text-apagado">
+        {rejected.length === 0 && drafts.length === 0
+          ? "Nadie está esperando una respuesta."
+          : `Rechazos sin respuesta: ${rejected.length}. Borradores sin enviar: ${drafts.length}.`}
+      </p>
+      <Link href="/admin/seguimiento" className="mt-4 inline-flex min-h-11 items-center rounded-full bg-boton px-5 font-medium text-boton-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento">
+        Ver seguimiento
+      </Link>
+    </section>
+  );
+}
+
 export default function AdminHome() {
   return (
     <main>
@@ -51,6 +70,9 @@ export default function AdminHome() {
       </Suspense>
       <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <ReportsSummary />
+      </Suspense>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
+        <FollowUpSummary />
       </Suspense>
     </main>
   );
