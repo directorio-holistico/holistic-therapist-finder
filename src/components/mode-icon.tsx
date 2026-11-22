@@ -38,19 +38,19 @@ function Icon({ mode, className, size = 16 }: { mode: string; className?: string
 
 // The one round icon used everywhere (cards, profile, legend), so it looks the same in all of them.
 // El único ícono redondo que se usa en todos lados (tarjetas, perfil, leyenda), así se ve igual en todos.
-function RoundIcon({ mode }: { mode: string }) {
+function RoundIcon({ mode, compact = false }: { mode: string; compact?: boolean }) {
   return (
-    <span aria-hidden="true" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-fondo text-tinta ring-1 ring-linea">
-      <Icon mode={mode} size={18} />
+    <span aria-hidden="true" className={`inline-flex shrink-0 items-center justify-center rounded-full bg-fondo text-tinta ring-1 ring-linea ${compact ? "size-7" : "size-9"}`}>
+      <Icon mode={mode} size={compact ? 16 : 18} />
     </span>
   );
 }
 
-// Icon plus text (profile, legend). / Ícono más texto (perfil, leyenda).
-export function ModeBadge({ mode }: { mode: string }) {
+// Icon plus text (profile, search form). "compact" is the smaller circle for the search form. / Ícono más texto (perfil, buscador). "compact" es el círculo más chico del buscador.
+export function ModeBadge({ mode, compact = false }: { mode: string; compact?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-2 text-sm text-tinta">
-      <RoundIcon mode={mode} />
+    <span className={`inline-flex items-center text-sm text-tinta ${compact ? "gap-1.5" : "gap-2"}`}>
+      <RoundIcon mode={mode} compact={compact} />
       {labelServiceMode(mode)}
     </span>
   );

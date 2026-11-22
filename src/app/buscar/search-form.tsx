@@ -64,7 +64,7 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
   }
 
   return (
-    <form ref={formRef} action="/buscar" method="get" className="grid grid-cols-1 gap-x-3 gap-y-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm sm:grid-cols-3" onChange={onChange} aria-busy={pending}>
+    <form ref={formRef} action="/buscar" method="get" className="grid grid-cols-1 gap-x-3 gap-y-4 rounded-2xl border border-linea bg-superficie p-5 shadow-sm sm:grid-cols-[repeat(auto-fit,minmax(14rem,1fr))]" onChange={onChange} aria-busy={pending}>
       <div>
         <label htmlFor="therapy" className={labelClass}>Terapia</label>
         <SearchableSelect id="therapy" name="therapy" options={therapies} emptyLabel="Todas las terapias" listLabel="Terapias"
@@ -116,32 +116,35 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
       )}
 
       {/* Two checkboxes, both checked by default (no filter). One must always stay checked. / Dos casillas, las dos tildadas por defecto (sin filtro). Siempre debe quedar una tildada. */}
-      <fieldset className="col-span-full" aria-describedby="mode-hint">
-        <legend className={labelClass}>Modo de atención</legend>
-        <div className="flex flex-wrap gap-x-6 gap-y-1">
-          {MODES.map((mode) => (
-            <label key={mode} className="inline-flex min-h-11 cursor-pointer items-center gap-3">
-              <input
-                type="checkbox"
-                name="mode"
-                value={mode}
-                defaultChecked={query.serviceMode === null || query.serviceMode === mode}
-                onClick={keepOneChecked}
-                className="size-5 shrink-0 cursor-pointer accent-boton focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
-              />
-              <ModeBadge mode={mode} />
-            </label>
-          ))}
-        </div>
-        <p id="mode-hint" className="sr-only">Tiene que quedar al menos una opción marcada.</p>
-      </fieldset>
+      {/* Bottom row: the modes on the left and the button on the right (one row on a computer, stacked only if it does not fit). / Fila de abajo: los modos a la izquierda y el botón a la derecha (una fila en la compu, apilados solo si no entra). */}
+      <div className="col-span-full flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <fieldset aria-describedby="mode-hint">
+          <legend className={labelClass}>Modo de atención</legend>
+          <div className="flex flex-nowrap gap-x-4">
+            {MODES.map((mode) => (
+              <label key={mode} className="inline-flex min-h-11 cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="mode"
+                  value={mode}
+                  defaultChecked={query.serviceMode === null || query.serviceMode === mode}
+                  onClick={keepOneChecked}
+                  className="size-5 shrink-0 cursor-pointer accent-boton focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                />
+                <ModeBadge mode={mode} compact />
+              </label>
+            ))}
+          </div>
+          <p id="mode-hint" className="sr-only">Tiene que quedar al menos una opción marcada.</p>
+        </fieldset>
 
-      <button
-        type="submit"
-        className="col-span-full min-h-10 justify-self-center rounded-full bg-boton px-10 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
-      >
-        Buscar
-      </button>
+        <button
+          type="submit"
+          className="min-h-11 rounded-full bg-boton px-10 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento max-sm:w-full"
+        >
+          Buscar
+        </button>
+      </div>
       <p className="col-span-full text-sm text-apagado" role="status">
         {pending ? "Actualizando resultados…" : "Los resultados se actualizan al cambiar un filtro."}
       </p>
