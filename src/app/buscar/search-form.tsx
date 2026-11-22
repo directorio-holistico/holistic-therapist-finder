@@ -2,10 +2,10 @@
 
 // The search form is a plain GET form: it works without JavaScript and the result has its own shareable address.
 // With JavaScript it also updates the search by itself when a filter changes (after a short pause, so moving through the
-// options with the keyboard does not fire a search for each one). The button stays for everyone else.
+// options with the keyboard does not fire a search for each one). The button is only for people without JavaScript.
 // El formulario es un GET común: funciona sin JavaScript y el resultado tiene su propia dirección para compartir.
 // Con JavaScript además actualiza la búsqueda solo cuando cambia un filtro (con una pausa corta, para que recorrer las
-// opciones con el teclado no dispare una búsqueda por cada una). El botón queda para el resto.
+// opciones con el teclado no dispare una búsqueda por cada una). El botón es solo para quien no tiene JavaScript.
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useTransition, type FormEvent, type MouseEvent } from "react";
@@ -115,39 +115,41 @@ export function SearchForm({ therapies, countries, regions, cities, query }: Pro
         </div>
       )}
 
-      {/* Two checkboxes, both checked by default (no filter). One must always stay checked. / Dos casillas, las dos tildadas por defecto (sin filtro). Siempre debe quedar una tildada. */}
-      {/* Bottom row: the modes on the left and the button on the right (one row on a computer, stacked only if it does not fit). / Fila de abajo: los modos a la izquierda y el botón a la derecha (una fila en la compu, apilados solo si no entra). */}
-      <div className="col-span-full flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <fieldset aria-describedby="mode-hint">
-          <legend className={labelClass}>Modo de atención</legend>
-          <div className="flex flex-nowrap gap-x-4">
-            {MODES.map((mode) => (
-              <label key={mode} className="inline-flex min-h-11 cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="mode"
-                  value={mode}
-                  defaultChecked={query.serviceMode === null || query.serviceMode === mode}
-                  onClick={keepOneChecked}
-                  className="size-5 shrink-0 cursor-pointer accent-boton focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
-                />
-                <ModeBadge mode={mode} compact />
-              </label>
-            ))}
-          </div>
-          <p id="mode-hint" className="sr-only">Tiene que quedar al menos una opción marcada.</p>
-        </fieldset>
+      {/* Two checkboxes, both checked by default (no filter). One must always stay checked. Same row as the other filters.
+          Dos casillas, las dos tildadas por defecto (sin filtro). Siempre debe quedar una tildada. En la misma fila que los otros filtros. */}
+      <fieldset aria-describedby="mode-hint">
+        <legend className={labelClass}>Modo de atención</legend>
+        <div className="flex flex-wrap items-center gap-x-4">
+          {MODES.map((mode) => (
+            <label key={mode} className="inline-flex min-h-11 cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                name="mode"
+                value={mode}
+                defaultChecked={query.serviceMode === null || query.serviceMode === mode}
+                onClick={keepOneChecked}
+                className="size-5 shrink-0 cursor-pointer accent-boton focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+              />
+              <ModeBadge mode={mode} bare />
+            </label>
+          ))}
+        </div>
+        <p id="mode-hint" className="sr-only">Tiene que quedar al menos una opción marcada.</p>
+      </fieldset>
 
-        <button
-          type="submit"
-          className="min-h-11 rounded-full bg-boton px-10 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento max-sm:w-full"
-        >
-          Buscar
-        </button>
-      </div>
-      <p className="col-span-full text-sm text-apagado" role="status">
-        {pending ? "Actualizando resultados…" : "Los resultados se actualizan al cambiar un filtro."}
-      </p>
+      {/* The button only exists without JavaScript (inside noscript): with JavaScript the search updates by itself.
+          El botón existe solo sin JavaScript (dentro de noscript): con JavaScript la búsqueda se actualiza sola. */}
+      <noscript>
+        <div className="col-span-full flex justify-center">
+          <button
+            type="submit"
+            className="min-h-11 rounded-full bg-boton px-10 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+          >
+            Buscar
+          </button>
+        </div>
+      </noscript>
+      <p className="sr-only" role="status">{pending ? "Actualizando resultados…" : ""}</p>
     </form>
   );
 }

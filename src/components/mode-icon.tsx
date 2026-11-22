@@ -36,21 +36,28 @@ function Icon({ mode, className, size = 16 }: { mode: string; className?: string
   );
 }
 
-// The one round icon used everywhere (cards, profile, legend), so it looks the same in all of them.
-// El único ícono redondo que se usa en todos lados (tarjetas, perfil, leyenda), así se ve igual en todos.
-function RoundIcon({ mode, compact = false }: { mode: string; compact?: boolean }) {
+// The one round icon used in cards and profile, so it looks the same in both.
+// El único ícono redondo que se usa en tarjetas y perfil, así se ve igual en ambos.
+function RoundIcon({ mode }: { mode: string }) {
   return (
-    <span aria-hidden="true" className={`inline-flex shrink-0 items-center justify-center rounded-full bg-fondo text-tinta ring-1 ring-linea ${compact ? "size-7" : "size-9"}`}>
-      <Icon mode={mode} size={compact ? 16 : 18} />
+    <span aria-hidden="true" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-fondo text-tinta ring-1 ring-linea">
+      <Icon mode={mode} size={18} />
     </span>
   );
 }
 
-// Icon plus text (profile, search form). "compact" is the smaller circle for the search form. / Ícono más texto (perfil, buscador). "compact" es el círculo más chico del buscador.
-export function ModeBadge({ mode, compact = false }: { mode: string; compact?: boolean }) {
+// Icon plus text (profile, search form). "bare" is the same icon without the circle, for the search form (little room there).
+// Ícono más texto (perfil, buscador). "bare" es el mismo ícono sin el círculo, para el buscador (ahí hay poco lugar).
+export function ModeBadge({ mode, bare = false }: { mode: string; bare?: boolean }) {
   return (
-    <span className={`inline-flex items-center text-sm text-tinta ${compact ? "gap-1.5" : "gap-2"}`}>
-      <RoundIcon mode={mode} compact={compact} />
+    <span className={`inline-flex items-center text-sm text-tinta ${bare ? "gap-1.5" : "gap-2"}`}>
+      {bare ? (
+        <span aria-hidden="true" className="inline-flex shrink-0 text-tinta">
+          <Icon mode={mode} size={16} />
+        </span>
+      ) : (
+        <RoundIcon mode={mode} />
+      )}
       {labelServiceMode(mode)}
     </span>
   );
