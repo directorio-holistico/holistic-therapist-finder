@@ -1,8 +1,10 @@
 # Holistic Therapist Finder
 
+[![CI](https://github.com/directorio-holistico/holistic-therapist-finder/actions/workflows/ci.yml/badge.svg)](https://github.com/directorio-holistico/holistic-therapist-finder/actions/workflows/ci.yml)
+
 Search engine to find holistic therapists by therapy and location.
 
-> **Status:** pre-launch. The site is deployed at <https://faroholistico.com> and is under active development in the open; therapists are not being onboarded yet. This repository is updated as the work progresses.
+> **Status:** live in production at <https://faroholistico.com> and under active development in the open. The directory has been announced to a first community of therapists and is waiting for the first sign-ups. This repository is updated as the work progresses.
 
 ## What is this?
 
@@ -38,11 +40,21 @@ This project is a free, no-sign-up directory:
 
 ## Design principles
 
-- **Privacy first:** collect only what is necessary; no patient health data is stored.
+- **Privacy first:** collect only what is necessary. No patient account, identity or health data is stored. The only patient-side data kept are searches with no results (therapy, place and mode) and a keyed hash of the origin used for the daily limit.
 - **Safe by default:** every profile is reviewed before it becomes public; no cure claims.
 - **Mobile first:** most visitors will arrive from a phone.
 - **No secrets in the repository:** configuration goes in environment variables (`.env.example` lists the required keys, with empty values).
 - **Database first:** schema changes are versioned SQL migrations (`supabase/migrations`), with row-level security, tests and verification queries.
+
+## Security, moderation and testing
+
+- **Security in the database:** Row Level Security on the tables, column-level permissions, and `SECURITY DEFINER` functions for the few operations that need elevated rights. Every change is a versioned SQL migration in `supabase/migrations`, with a verification query in `supabase/verification`.
+- **Moderation with an audit trail:** every profile change is a revision reviewed by the admin, and moderation actions are recorded in an audit log (tested in `supabase/tests/18-audit-log.test.sql`).
+- **Abuse limits:** contact reveal and reports use a bot check (Cloudflare Turnstile) and a daily limit per origin.
+- **Tests:** unit tests with Vitest in `tests/`, SQL test suites for the database in `supabase/tests/`, and access tests against the Supabase project (`scripts/db/Test-RemoteAnon.ps1`, `Test-RemoteIsolation.ps1`).
+- **Continuous integration:** GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and on every pull request, with read-only permissions. A failing run is fixed with a new commit; published history is not rewritten.
+
+*Seguridad, moderación y pruebas: Row Level Security, permisos por columna y funciones `SECURITY DEFINER` en la base; cada cambio de perfil es una revisión que aprueba el administrador, con registro de auditoría; límites anti-abuso con Turnstile; pruebas unitarias (Vitest) y de base de datos (SQL); y CI en GitHub Actions en cada push y pull request.*
 
 ## Free-plan limits / Límites de los planes gratuitos
 
@@ -114,7 +126,7 @@ Database helpers (PowerShell, Windows) live in `scripts/db/`: `Reset-LocalDb.ps1
 
 Directorio gratuito y sin registro para pacientes: se elige una terapia y una zona, y el sistema muestra los terapeutas disponibles con su contacto. El sistema solo conecta, no gestiona turnos. Las búsquedas sin resultados se guardan como demanda no cubierta para invitar terapeutas donde hacen falta.
 
-**Estado:** previo al lanzamiento. El sitio está desplegado en <https://faroholistico.com> y en desarrollo activo; todavía no se incorporan terapeutas.
+**Estado:** en producción en <https://faroholistico.com> y en desarrollo activo. Ya se comunicó a una primera comunidad de terapeutas y se esperan las primeras inscripciones.
 
 **Qué funciona hoy:** catálogo de terapias, búsqueda por terapia y zona, perfil público, "Ver contacto" con verificación anti-bots y límite diario, alta y panel del terapeuta (con foto opcional y consentimiento), moderación de cada cambio de perfil, denuncias públicas y páginas legales, y registro de búsquedas sin resultado. **Pendiente:** administración del catálogo de terapias.
 
