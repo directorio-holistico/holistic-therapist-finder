@@ -9,7 +9,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
 import { HealthNotice } from "@/components/health-notice";
-import { ModeBadge } from "@/components/mode-icon";
+import { ModeBadge, ModeIcon } from "@/components/mode-icon";
 import { SiteHeader } from "@/components/site-header";
 import { SOCIAL_HOVER, SocialIcon } from "@/components/social-icon";
 import { getTurnstileSiteKey } from "@/lib/env";
@@ -35,15 +35,19 @@ const LINK_LABELS: Record<ProfileLinkKind, string> = {
 function TherapyBlock({ therapy }: { therapy: TherapyDetail }) {
   return (
     <li className="flex flex-col rounded-2xl border border-linea bg-superficie p-5 shadow-sm">
-      <h3 className="font-display text-xl font-semibold text-tinta">{therapy.name}</h3>
+      {/* Title and mode icons on one row: the icons are explained once, above the list of therapies (see ModeLegend below).
+          Título e íconos de modo en una fila: los íconos se explican una sola vez, arriba de la lista de terapias (ver ModeLegend más abajo). */}
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-display text-xl font-semibold text-tinta">{therapy.name}</h3>
+        {therapy.serviceModes.length > 0 && (
+          <ul className="flex shrink-0 list-none gap-2 p-0" aria-label="Modo de atención">
+            {therapy.serviceModes.map((mode) => (
+              <li key={mode}><ModeIcon mode={mode} /></li>
+            ))}
+          </ul>
+        )}
+      </div>
       {therapy.description && <p className="mt-2 text-sm text-tinta">{therapy.description}</p>}
-      {therapy.serviceModes.length > 0 && (
-        <ul className="mt-3 flex list-none flex-wrap gap-2 p-0" aria-label="Modo de atención">
-          {therapy.serviceModes.map((mode) => (
-            <li key={mode}><ModeBadge mode={mode} /></li>
-          ))}
-        </ul>
-      )}
       <p className="mt-3 text-sm text-apagado">
         {[
           therapy.sessionFormats.length > 0 ? joinWithY(therapy.sessionFormats.map(labelSessionFormat)) : "",
@@ -68,6 +72,22 @@ function TherapyBlock({ therapy }: { therapy: TherapyDetail }) {
         )}
       </div>
     </li>
+  );
+}
+
+const MODE_ORDER = ["in_person", "remote"] as const;
+
+// Says once what each icon means, only for the modes this therapist actually uses. / Dice una sola vez qué significa cada ícono, solo de los modos que este terapeuta usa.
+function ModeLegend({ profile }: { profile: ProfileDetail }) {
+  const present = MODE_ORDER.filter((mode) => profile.therapies.some((therapy) => (therapy.serviceModes as readonly string[]).includes(mode)));
+  if (present.length === 0) return null;
+  return (
+    <p className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-apagado">
+      <span>Modo de atención:</span>
+      {present.map((mode) => (
+        <ModeBadge key={mode} mode={mode} bare />
+      ))}
+    </p>
   );
 }
 
@@ -114,6 +134,7 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
       {profile.therapies.length > 0 && (
         <section aria-labelledby="therapies-title" className="mt-8">
           <h2 id="therapies-title" className={h2}>Terapias</h2>
+          <ModeLegend profile={profile} />
           <ul className="mt-3 grid list-none gap-4 p-0 sm:grid-cols-2">
             {profile.therapies.map((therapy) => (
               <TherapyBlock key={therapy.therapyId} therapy={therapy} />
