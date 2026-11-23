@@ -4,7 +4,7 @@ import localFont from "next/font/local";
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BRAND_NAME } from "@/lib/brand";
-import { SITE_NAME, SITE_SLOGAN } from "@/lib/site";
+import { SITE_NAME, SITE_SLOGAN, SITE_URL } from "@/lib/site";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -22,9 +22,15 @@ const dmSans = localFont({
   display: "swap",
 });
 
+const SITE_DESCRIPTION = `${SITE_SLOGAN}. Encontrá terapeutas holísticos por terapia, país, ciudad y modo de atención.`;
+
+// Defaults for every page. Each page can override them. / Valores por defecto de todas las páginas. Cada página puede reemplazarlos.
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: { default: SITE_NAME, template: `%s | ${SITE_NAME}` },
-  description: `${SITE_SLOGAN}. Encontrá terapeutas holísticos por terapia, país, ciudad y modo de atención.`,
+  description: SITE_DESCRIPTION,
+  openGraph: { type: "website", siteName: SITE_NAME, title: SITE_NAME, description: SITE_DESCRIPTION },
+  twitter: { card: "summary", title: SITE_NAME, description: SITE_DESCRIPTION },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
