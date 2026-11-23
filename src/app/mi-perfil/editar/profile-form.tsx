@@ -8,6 +8,7 @@ import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
 import { countText, LIMITS, type FormDefaults } from "@/lib/profile-form";
 import { runGuarded, STALE_MESSAGE } from "@/lib/stale-action";
+import { discardDraft } from "../discard-draft-action";
 import { saveProfile, type EditState } from "./actions";
 import { PhotoField } from "./photo-field";
 
@@ -43,6 +44,8 @@ type Props = {
   livePhotoUrl: string | null;
   pendingPhotoUrl: string | null;
   photoLost: boolean;
+  // a draft is saved in the database (so "Descartar cambios" has something to throw away besides what is on screen) / hay un borrador guardado en la base
+  hasDraft: boolean;
 };
 
 // A text box with a live character counter. It NEVER cuts what the person types or pastes (no maxLength): if the text is too long
@@ -90,13 +93,15 @@ function CheckGroup({ legend, name, options, selected, label }: {
   );
 }
 
-export function ProfileForm({ defaults, catalogs, countries, regions, cities, initialCountryId, initialRegionId, missingCity, lastRejection, livePhotoUrl, pendingPhotoUrl, photoLost }: Props) {
+export function ProfileForm({ defaults, catalogs, countries, regions, cities, initialCountryId, initialRegionId, missingCity, lastRejection, livePhotoUrl, pendingPhotoUrl, photoLost, hasDraft }: Props) {
   const [state, action, pending] = useActionState(saveGuarded, INITIAL);
   const [, startTransition] = useTransition();
   const [countryId, setCountryId] = useState<number | null>(initialCountryId);
   const [regionId, setRegionId] = useState<number | null>(initialRegionId);
   // true from the first edit until the person saves or sends / true desde la primera edición hasta que guarda o envía
   const [dirty, setDirty] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
+  const [discardError, setDiscardError] = useState("");
   const [cityMissing, setCityMissing] = useState<boolean>(missingCity !== null);
   const regionOptions = regions.filter((region) => region.parentId === countryId);
   const cityOptions = cities.filter((city) => city.parentId === regionId);
@@ -122,6 +127,30 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         </p>
       </section>
     );
+  }
+
+  // "Descartar cambios": throws away the saved draft AND what is on screen, then goes back to "My profile". The published profile and
+  // every photo stay as they are. It asks first, because it cannot be undone. Without a saved draft the server just sends the person back.
+  // "Descartar cambios": tira el borrador guardado Y lo que hay en pantalla, y vuelve a "Mi perfil". El perfil publicado y las fotos
+  // quedan como están. Pregunta antes, porque no se puede deshacer. Sin borrador guardado, el servidor solo la devuelve a "Mi perfil".
+  function handleDiscard() {
+    const question = hasDraft
+      ? "¿Descartar los cambios guardados como borrador y lo que cambiaste en esta pantalla? No se puede deshacer. Tu perfil publicado no se modifica."
+      : "¿Descartar lo que cambiaste en esta pantalla? Se pierde y no se puede deshacer. Tu perfil publicado no se modifica.";
+    if (!window.confirm(question)) return;
+    setDiscardError("");
+    setDiscarding(true);
+    setDirty(false);
+    startTransition(async () => {
+      const result = await runGuarded(
+        () => discardDraft({ status: "idle", message: "" }),
+        unstable_isUnrecognizedActionError,
+        { status: "error" as const, message: "El sitio se actualizó y esta pantalla quedó vieja. Tocá «Recargar la página» y probá de nuevo." },
+      );
+      // on success the server redirects and this line is never reached / si salió bien el servidor redirige y esta línea no se alcanza
+      setDiscarding(false);
+      if (result.status === "error") setDiscardError(result.message);
+    });
   }
 
   // React 19 empties an uncontrolled form after a form action finishes, even when the action returned an error. To keep what the
@@ -353,7 +382,14 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             className={`col-span-2 ${PRIMARY}`}>
             {pending ? "Enviando…" : "Enviar a revisión"}
           </button>
+          {(hasDraft || dirty) && (
+            <button type="button" onClick={handleDiscard} disabled={pending || discarding}
+              className={`col-span-2 ${SECONDARY}`}>
+              {discarding ? "Descartando…" : "Descartar cambios"}
+            </button>
+          )}
         </div>
+        {discardError && <p role="alert" className="text-peligro-texto">{discardError}</p>}
         <p role={state.status === "error" ? "alert" : "status"} aria-live="polite"
           className={state.status === "error" ? "text-peligro-texto" : "text-tinta"}>
           {state.message}

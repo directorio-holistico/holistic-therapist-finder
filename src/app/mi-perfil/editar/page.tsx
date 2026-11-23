@@ -71,6 +71,7 @@ async function Editor() {
       livePhotoUrl={photoPublicUrl(getPublicEnv().supabaseUrl, data.livePhotoPath)}
       pendingPhotoUrl={pendingUrl}
       photoLost={photoLost}
+      hasDraft={data.hasDraft}
     />
   );
 }

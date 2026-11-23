@@ -27,6 +27,8 @@ export type EditorData =
       initialRegionId: number | null;
       missingCity: { regionId: number; cityName: string } | null;
       lastRejection: string | null;
+      // a saved draft is open (it can be discarded) / hay un borrador guardado abierto (se puede descartar)
+      hasDraft: boolean;
       // the photo shown on the public profile today (path in the public bucket) / la foto que hoy muestra el perfil público (ruta en el bucket público)
       livePhotoPath: string | null;
       // the profile id: the pending photo folder is named after it / el id del perfil: la carpeta de la foto pendiente se llama así
@@ -200,6 +202,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
     initialCountryId: region?.parentId ?? null,
     initialRegionId: regionId,
     missingCity,
+    hasDraft: open.data !== null,
     lastRejection: open.data || rejectedPayload !== null ? (rejected.data?.[0]?.rejection_reason ?? null) : null,
     livePhotoPath: profile.data.photo_path ?? null,
     profileId: profile.data.id,
