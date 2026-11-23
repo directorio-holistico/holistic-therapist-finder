@@ -15,15 +15,15 @@ begin
        where t.code = 'lnt_schwiderski') is distinct from 'LNT®' then
     raise exception 'LNT short name not set';
   end if;
-  -- only these therapies have a short name (9); updated on 20/11/2026 / solo estas terapias tienen nombre corto (9); actualizado el 20/11/2026
+  -- only these therapies have a short name (10); updated on 23/11/2026 / solo estas terapias tienen nombre corto (10); actualizado el 23/11/2026
   if exists (select 1 from public.therapy_translations tt join public.therapies t on t.id = tt.therapy_id
               where t.code not in ('lnt_schwiderski', 'therapeutic_massage', 'hebrew_pendulum', 'regression_therapy', 'acupuncture_tcm',
-                                   'social_process_facilitation', 'meditation_mindfulness', 'heat_elements_massage', 'cupping_moxibustion')
+                                   'social_process_facilitation', 'meditation_mindfulness', 'heat_elements_massage', 'cupping_moxibustion', 'psychoanalysis')
                 and tt.short_name is not null) then
-    raise exception 'only the 9 listed therapies should have a short name';
+    raise exception 'only the 10 listed therapies should have a short name';
   end if;
-  if (select count(*) from public.therapy_translations where short_name is not null) <> 9 then
-    raise exception 'exactly 9 therapies should have a short name';
+  if (select count(*) from public.therapy_translations where short_name is not null) <> 10 then
+    raise exception 'exactly 10 therapies should have a short name';
   end if;
   -- constraints: blank, padded and too long are rejected
   begin update public.therapy_translations set short_name = '' where therapy_id = (select id from public.therapies where code = 'reiki'); raise exception 'blank accepted';

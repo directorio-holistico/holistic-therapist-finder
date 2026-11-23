@@ -7,7 +7,7 @@ begin;
 do $$
 begin
   if (select count(*) from public.therapies) <> 40 then raise exception 'the catalog must have 40 therapies'; end if;
-  if (select count(*) from public.therapies where is_active) <> 33 then raise exception 'exactly 33 therapies must be active'; end if;
+  if (select count(*) from public.therapies where is_active) <> 34 then raise exception 'exactly 34 therapies must be active'; end if;
   -- every therapy has its Spanish name / toda terapia tiene su nombre en español
   if exists (select 1 from public.therapies t
              where not exists (select 1 from public.therapy_translations tt
@@ -27,18 +27,20 @@ begin
 end
 $$;
 
--- Visitors (anon) see the 33 active therapies with names, and none of the hidden ones.
--- Los visitantes (anon) ven las 33 terapias activas con nombre, y ninguna de las ocultas.
+-- Visitors (anon) see the 34 active therapies with names, and none of the hidden ones.
+-- Los visitantes (anon) ven las 34 terapias activas con nombre, y ninguna de las ocultas.
 set session authorization authenticator;
 set role anon;
 select set_config('request.jwt.claims', '', true);
 do $$
 begin
-  if (select count(*) from public.therapies) <> 33 then raise exception 'anon must see exactly the 33 active therapies'; end if;
-  if (select count(*) from public.therapy_translations) <> 33 then raise exception 'anon must see exactly 33 therapy names'; end if;
-  if exists (select 1 from public.therapy_translations where name in ('Osteopatía', 'Suplementos Dietéticos', 'Toque Terapéutico', 'Psicoanálisis y psicoterapia psicoanalítica')) then
+  if (select count(*) from public.therapies) <> 34 then raise exception 'anon must see exactly the 34 active therapies'; end if;
+  if (select count(*) from public.therapy_translations) <> 34 then raise exception 'anon must see exactly 34 therapy names'; end if;
+  if exists (select 1 from public.therapy_translations where name in ('Osteopatía', 'Suplementos Dietéticos', 'Toque Terapéutico')) then
     raise exception 'anon can see a hidden therapy';
   end if;
+  -- activated on 23/11/2026 (Psicoanálisis y psicoterapia psicoanalítica) / activada el 23/11/2026
+  if not exists (select 1 from public.therapy_translations where name = 'Psicoanálisis y psicoterapia psicoanalítica') then raise exception 'anon cannot see psychoanalysis'; end if;
   if not exists (select 1 from public.therapy_translations where name = 'Reiki') then raise exception 'anon cannot see Reiki'; end if;
   if not exists (select 1 from public.therapy_translations where name like 'LNT%') then raise exception 'anon cannot see LNT'; end if;
   if not exists (select 1 from public.therapy_translations where name = 'Constelaciones') then raise exception 'anon cannot see Constelaciones'; end if;
