@@ -62,7 +62,7 @@ async function getLanguageId(client: Client): Promise<number> {
 export async function listTherapies(client: Client): Promise<CatalogOption[]> {
   const languageId = await getLanguageId(client);
 
-  const therapies = await client.from("therapies").select("id, code").limit(MAX_ROWS);
+  const therapies = await client.from("therapies").select("id, code").eq("is_active", true).limit(MAX_ROWS);
   if (therapies.error) fail("therapies / terapias", therapies.error.message);
   const items = therapies.data ?? [];
   if (items.length === 0) return [];
@@ -88,7 +88,7 @@ export async function listTherapies(client: Client): Promise<CatalogOption[]> {
 export async function listLocations(client: Client, parentId: number | null): Promise<CatalogOption[]> {
   const languageId = await getLanguageId(client);
 
-  const base = client.from("locations").select("id");
+  const base = client.from("locations").select("id").eq("is_active", true);
   const locations = await (parentId === null ? base.is("parent_id", null) : base.eq("parent_id", parentId)).limit(MAX_ROWS);
   if (locations.error) fail("locations / ubicaciones", locations.error.message);
   const items = locations.data ?? [];

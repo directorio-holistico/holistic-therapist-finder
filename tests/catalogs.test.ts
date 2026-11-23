@@ -115,6 +115,13 @@ describe("listTherapies", () => {
     expect(calls.map((call) => call.table)).toEqual(["languages", "therapies"]);
   });
 
+  it("asks only for active therapies / pide solo terapias activas", async () => {
+    const { client, calls } = fakeClient({ languages: [{ id: 1 }], therapies: [] });
+    await listTherapies(client);
+    const therapyCall = calls.find((call) => call.table === "therapies");
+    expect(therapyCall?.steps).toContainEqual(["eq", "is_active", true]);
+  });
+
   it("fails clearly when the language is missing or a read errors", async () => {
     await expect(listTherapies(fakeClient({ languages: [] }).client)).rejects.toThrow(/not found/);
     await expect(listTherapies(fakeClient({ languages: { error: "boom" } }).client)).rejects.toThrow(/Could not read/);
@@ -148,5 +155,6 @@ describe("listLocations", () => {
     expect(await listLocations(client, 1)).toEqual([{ id: 5, name: "Neuquén" }]);
     const locationCall = calls.find((call) => call.table === "locations");
     expect(locationCall?.steps).toContainEqual(["eq", "parent_id", 1]);
+    expect(locationCall?.steps).toContainEqual(["eq", "is_active", true]);
   });
 });
