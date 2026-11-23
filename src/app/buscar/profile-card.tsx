@@ -4,21 +4,17 @@
 import Link from "next/link";
 import { Avatar } from "@/components/avatar";
 import { ModeIcon } from "@/components/mode-icon";
-import { capItems, flagSrc } from "@/lib/card-view";
+import { CountryFlag } from "@/components/country-flag";
+import { capItems } from "@/lib/card-view";
 import type { SearchCard } from "@/lib/search";
 
 const MAX_THERAPIES = 3;
 
 export function ProfileCard({ card }: { card: SearchCard }) {
   const { shown, hidden } = capItems(card.therapyShorts, MAX_THERAPIES);
-  const flag = flagSrc(card.countryIso);
   return (
     <article className="relative flex min-w-0 flex-col items-center rounded-2xl border border-linea bg-superficie p-6 text-center shadow-sm motion-safe:transition-shadow motion-safe:hover:shadow-md">
-      {flag && (
-        // Plain <img>: a small static SVG from /public; the country name is the accessible text. / <img> simple: un SVG chico y estático de /public; el nombre del país es el texto accesible.
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={flag} alt={card.countryName ?? ""} title={card.countryName ?? undefined} width={32} height={24} loading="lazy" decoding="async" className="absolute right-4 top-4 h-6 w-8 rounded-sm object-cover ring-1 ring-linea" />
-      )}
+      <CountryFlag iso={card.countryIso} name={card.countryName} />
       {/* Avatar centered; the mode icons stack vertically at its right. / Avatar centrado; los íconos de modalidad apilados a su derecha. */}
       <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
         <span aria-hidden="true" />

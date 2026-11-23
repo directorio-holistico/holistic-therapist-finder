@@ -8,6 +8,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
+import { CountryFlag } from "@/components/country-flag";
 import { HealthNotice } from "@/components/health-notice";
 import { ModeBadge, ModeIcon } from "@/components/mode-icon";
 import { SiteHeader } from "@/components/site-header";
@@ -110,7 +111,8 @@ function ProfileView({ profile }: { profile: ProfileDetail }) {
   const h2 = "font-display text-2xl font-semibold text-tinta";
   return (
     <article>
-      <header className="rounded-2xl border border-linea bg-superficie p-6 shadow-sm sm:flex sm:items-center sm:gap-6">
+      <header className="relative rounded-2xl border border-linea bg-superficie p-6 shadow-sm sm:flex sm:items-center sm:gap-6">
+        <CountryFlag iso={profile.countryIso} name={profile.countryName} size="lg" />
         {/* Large photo (or initials when there is none). / Foto grande (o iniciales si no hay). */}
         <div className="flex justify-center sm:justify-start">
           <Avatar name={profile.displayName} photoPath={profile.photoPath} size="xl" />
