@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { starRingGradient, STAR_DOT_COLORS } from "@/lib/brand";
-import { capItems, initialsOf } from "@/lib/card-view";
+import { capItems, flagSrc, initialsOf } from "@/lib/card-view";
 
 describe("initialsOf", () => {
   it("takes two initials and ignores the [DEMO] tag", () => {
@@ -33,5 +33,20 @@ describe("starRingGradient", () => {
     expect(g.startsWith("conic-gradient(")).toBe(true);
     for (const c of STAR_DOT_COLORS) expect(g).toContain(c);
     expect(g).toContain("330deg 360deg");
+  });
+});
+
+describe("flagSrc", () => {
+  it("returns the file of the three launch countries, whatever the case or spaces", () => {
+    expect(flagSrc("AR")).toBe("/flags/ar.svg");
+    expect(flagSrc(" mx ")).toBe("/flags/mx.svg");
+    expect(flagSrc("es")).toBe("/flags/es.svg");
+  });
+  it("returns null when there is no flag, instead of building a path", () => {
+    expect(flagSrc("CL")).toBeNull();
+    expect(flagSrc("../x")).toBeNull();
+    expect(flagSrc("")).toBeNull();
+    expect(flagSrc(null)).toBeNull();
+    expect(flagSrc(undefined)).toBeNull();
   });
 });

@@ -18,6 +18,9 @@ export type SearchCard = {
   displayName: string;
   headline: string | null;
   place: string;
+  // ISO 3166-1 alpha-2 code of the country (e.g. "AR"), or null. / Código ISO 3166-1 alfa-2 del país (ej. "AR"), o null.
+  countryIso: string | null;
+  countryName: string | null;
   // Path of the photo inside the public bucket, or null. / Ruta de la foto dentro del bucket público, o null.
   photoPath: string | null;
   therapies: string[];
@@ -46,6 +49,7 @@ export type SearchRow = {
   city_name?: string | null;
   region_name?: string | null;
   country_name?: string | null;
+  country_iso?: string | null;
   therapy_ids?: number[] | null;
   therapy_names?: string[] | null;
   therapy_short_names?: string[] | null;
@@ -116,6 +120,8 @@ export function toCard(row: SearchRow, searchedTherapyId: number | null = null):
     photoPath: row.photo_path ?? null,
     headline: row.headline ?? null,
     place,
+    countryIso: row.country_iso?.trim() ? row.country_iso.trim().toUpperCase() : null,
+    countryName: row.country_name?.trim() ? row.country_name.trim() : null,
     therapies: therapyItems.map((item) => item.name),
     therapyShorts: therapyItems.map((item) => item.short),
     serviceModes: row.service_modes ?? [],

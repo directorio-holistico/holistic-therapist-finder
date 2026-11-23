@@ -17,3 +17,13 @@ export function capItems<T>(items: readonly T[], max: number): { shown: T[]; hid
   const limit = Math.max(0, Math.floor(max));
   return { shown: items.slice(0, limit), hidden: Math.max(0, items.length - limit) };
 }
+
+// Countries that have a flag file in public/flags (own copies from flag-icons, MIT). Add a code here when the file is added.
+// Países con archivo de bandera en public/flags (copias propias de flag-icons, MIT). Sumar el código acá al agregar el archivo.
+const FLAG_CODES: ReadonlySet<string> = new Set(["AR", "MX", "ES"]);
+
+/** Public path of the flag for an ISO country code, or null when there is none. / Ruta pública de la bandera de un código ISO de país, o null si no hay. */
+export function flagSrc(iso: string | null | undefined): string | null {
+  const code = iso?.trim().toUpperCase() ?? "";
+  return FLAG_CODES.has(code) ? `/flags/${code.toLowerCase()}.svg` : null;
+}

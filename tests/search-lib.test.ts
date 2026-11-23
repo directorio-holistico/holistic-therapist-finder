@@ -96,6 +96,12 @@ describe("rows to cards", () => {
     expect(card).toMatchObject({ profileId: "p1", group: 2, place: "Neuquén, Argentina", therapies: ["Reiki"], ratesCurrent: true, isPinned: false, rates: [], languages: [] });
   });
 
+  it("carries the country code and name for the flag, normalised", () => {
+    const card = toCard({ profile_id: "p", display_name: "Ana", country_iso: " ar ", country_name: "Argentina" });
+    expect(card).toMatchObject({ countryIso: "AR", countryName: "Argentina" });
+    expect(toCard({ profile_id: "p", display_name: "Ana" })).toMatchObject({ countryIso: null, countryName: null });
+  });
+
   it("skips a row with no id or name", () => {
     expect(toCard({ display_name: "Sin id" })).toBeNull();
     expect(toCard({ profile_id: "x" })).toBeNull();
