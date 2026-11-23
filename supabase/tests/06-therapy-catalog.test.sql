@@ -6,8 +6,13 @@ begin;
 
 do $$
 begin
-  if (select count(*) from public.therapies) <> 40 then raise exception 'the catalog must have 40 therapies'; end if;
-  if (select count(*) from public.therapies where is_active) <> 34 then raise exception 'exactly 34 therapies must be active'; end if;
+  -- no hard-coded totals: the catalog changes often. The rules are checked and the numbers are read from the catalog.
+  -- sin totales fijos: el catálogo cambia seguido. Se comprueban las reglas y los números se leen del catálogo.
+  if not exists (select 1 from public.therapies where is_active) then raise exception 'the catalog must have active therapies'; end if;
+  -- remember, for the visitor checks below, which therapies are active and which are hidden (transaction-local)
+  -- se guarda, para las pruebas del visitante, qué terapias están activas y cuáles ocultas (solo dentro de la transacción)
+  perform set_config('test.active_therapies', (select count(*) from public.therapies where is_active)::text, true);
+  perform set_config('test.inactive_ids', (select coalesce(string_agg(id::text, ','), '') from public.therapies where not is_active), true);
   -- every therapy has its Spanish name / toda terapia tiene su nombre en español
   if exists (select 1 from public.therapies t
              where not exists (select 1 from public.therapy_translations tt
@@ -27,20 +32,24 @@ begin
 end
 $$;
 
--- Visitors (anon) see the 34 active therapies with names, and none of the hidden ones.
--- Los visitantes (anon) ven las 34 terapias activas con nombre, y ninguna de las ocultas.
+-- Visitors (anon) see exactly the active therapies, each with a name, and none of the hidden ones.
+-- Los visitantes (anon) ven exactamente las terapias activas, cada una con nombre, y ninguna de las ocultas.
 set session authorization authenticator;
 set role anon;
 select set_config('request.jwt.claims', '', true);
 do $$
 begin
-  if (select count(*) from public.therapies) <> 34 then raise exception 'anon must see exactly the 34 active therapies'; end if;
-  if (select count(*) from public.therapy_translations) <> 34 then raise exception 'anon must see exactly 34 therapy names'; end if;
-  if exists (select 1 from public.therapy_translations where name in ('Osteopatía', 'Suplementos Dietéticos', 'Toque Terapéutico')) then
+  if (select count(*) from public.therapies) <> current_setting('test.active_therapies')::int then raise exception 'anon must see exactly the active therapies'; end if;
+  if exists (select 1 from public.therapies t where not exists (select 1 from public.therapy_translations tt where tt.therapy_id = t.id)) then
+    raise exception 'anon sees a therapy without a name';
+  end if;
+  -- hidden therapies reach visitors neither as therapies nor as names / las ocultas no llegan al visitante ni como terapia ni como nombre
+  if exists (select 1 from public.therapies where id = any (string_to_array(nullif(current_setting('test.inactive_ids'), ''), ',')::int[])) then
     raise exception 'anon can see a hidden therapy';
   end if;
-  -- activated on 23/11/2026 (Psicoanálisis y psicoterapia psicoanalítica) / activada el 23/11/2026
-  if not exists (select 1 from public.therapy_translations where name = 'Psicoanálisis y psicoterapia psicoanalítica') then raise exception 'anon cannot see psychoanalysis'; end if;
+  if exists (select 1 from public.therapy_translations where therapy_id = any (string_to_array(nullif(current_setting('test.inactive_ids'), ''), ',')::int[])) then
+    raise exception 'anon can see the name of a hidden therapy';
+  end if;
   if not exists (select 1 from public.therapy_translations where name = 'Reiki') then raise exception 'anon cannot see Reiki'; end if;
   if not exists (select 1 from public.therapy_translations where name like 'LNT%') then raise exception 'anon cannot see LNT'; end if;
   if not exists (select 1 from public.therapy_translations where name = 'Constelaciones') then raise exception 'anon cannot see Constelaciones'; end if;
