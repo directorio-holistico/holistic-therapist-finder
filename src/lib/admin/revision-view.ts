@@ -13,6 +13,7 @@ import { instagramIsValid, socialLinkIsValid } from "@/lib/profile-form";
 
 export type ViewLookups = {
   therapies: ReadonlyMap<number, string>;
+  inactiveTherapies?: ReadonlySet<number>; // therapies that exist but are hidden / terapias que existen pero están ocultas
   currencies: ReadonlyMap<number, string>;
   audiences: ReadonlyMap<number, string>;
   languages: ReadonlyMap<number, string>;
@@ -42,7 +43,7 @@ export type RevisionView = {
   links: ContactLink[];
 };
 
-const payloadSchema = z.looseObject({
+export const payloadSchema = z.looseObject({
   display_name: z.string().nullish(),
   headline: z.string().nullish(),
   about: z.string().nullish(),

@@ -7,8 +7,8 @@ const INITIAL: DecisionState = { status: "idle", message: "" };
 const FIELD = "min-h-11 w-full rounded-xl border border-campo bg-superficie p-3 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento";
 const LABEL = "font-medium text-tinta";
 
-export function DecisionForms({ revisionId, canApprove, whyNot, linksToCheck }: {
-  revisionId: string; canApprove: boolean; whyNot: string | null; linksToCheck: number;
+export function DecisionForms({ revisionId, canApprove, whyNot, linksToCheck, suggestedReason }: {
+  revisionId: string; canApprove: boolean; whyNot: string | null; linksToCheck: number; suggestedReason: string;
 }) {
   const [approveState, approve, approving] = useActionState(approveRevision, INITIAL);
   const [rejectState, reject, rejecting] = useActionState(rejectRevision, INITIAL);
@@ -42,7 +42,7 @@ export function DecisionForms({ revisionId, canApprove, whyNot, linksToCheck }: 
         <input type="hidden" name="revisionId" value={revisionId} />
         <div className="grid gap-1">
           <label htmlFor="reason" className={LABEL}>Motivo (lo ve el terapeuta)</label>
-          <textarea id="reason" name="reason" rows={4} maxLength={1000} required className={FIELD} />
+          <textarea id="reason" name="reason" rows={suggestedReason === "" ? 4 : 8} maxLength={1000} required defaultValue={suggestedReason} className={FIELD} />
         </div>
         {rejectState.status === "error" && <p role="alert" className="text-peligro-texto">{rejectState.message}</p>}
         <button type="submit" disabled={busy}

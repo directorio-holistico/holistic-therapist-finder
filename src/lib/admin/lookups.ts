@@ -3,7 +3,7 @@
 
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { CATALOG_LANGUAGE_CODE, listFormCatalogs } from "@/lib/catalogs";
+import { CATALOG_LANGUAGE_CODE, listFormCatalogs, listTherapies } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
 import type { ViewLookups } from "@/lib/admin/revision-view";
 import type { Database } from "@/lib/supabase/database.types";
@@ -12,9 +12,14 @@ type Client = SupabaseClient<Database>;
 
 export async function loadViewLookups(client: Client): Promise<ViewLookups> {
   const catalogs = await listFormCatalogs(client);
+  // The form only offers active therapies, but a revision can still hold a hidden one: it must be NAMED here, and flagged.
+  // El formulario ofrece solo terapias activas, pero una revisión puede traer una oculta: acá hay que NOMBRARLA y marcarla.
+  const allTherapies = await listTherapies(client, false);
+  const activeTherapyIds = new Set(catalogs.therapies.map((therapy) => therapy.id));
   const codes = (rows: { id: number; code: string }[], label: (code: string) => string) => new Map(rows.map((row) => [row.id, label(row.code)]));
   return {
-    therapies: new Map(catalogs.therapies.map((therapy) => [therapy.id, therapy.name])),
+    therapies: new Map(allTherapies.map((therapy) => [therapy.id, therapy.name])),
+    inactiveTherapies: new Set(allTherapies.filter((therapy) => !activeTherapyIds.has(therapy.id)).map((therapy) => therapy.id)),
     currencies: new Map(catalogs.currencies.map((currency) => [currency.id, currency.code])),
     audiences: codes(catalogs.rateAudiences, labelRateAudience),
     languages: codes(catalogs.languages, labelLanguage),

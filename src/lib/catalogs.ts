@@ -58,11 +58,13 @@ async function getLanguageId(client: Client): Promise<number> {
   return row.id;
 }
 
-// Active therapies, named and sorted. / Terapias activas, con nombre y ordenadas.
-export async function listTherapies(client: Client): Promise<CatalogOption[]> {
+// Active therapies, named and sorted. The administrator's views pass onlyActive = false to also name the hidden ones.
+// Terapias activas, con nombre y ordenadas. Las vistas del administrador pasan onlyActive = false para nombrar también las ocultas.
+export async function listTherapies(client: Client, onlyActive = true): Promise<CatalogOption[]> {
   const languageId = await getLanguageId(client);
 
-  const therapies = await client.from("therapies").select("id, code").eq("is_active", true).limit(MAX_ROWS);
+  const base = client.from("therapies").select("id, code");
+  const therapies = await (onlyActive ? base.eq("is_active", true) : base).limit(MAX_ROWS);
   if (therapies.error) fail("therapies / terapias", therapies.error.message);
   const items = therapies.data ?? [];
   if (items.length === 0) return [];

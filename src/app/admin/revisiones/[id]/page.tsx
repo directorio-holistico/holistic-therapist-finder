@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import { z } from "zod";
 import { loadViewLookups, locationPath } from "@/lib/admin/lookups";
 import { changedFields, contactPhone, describeRevision, decisionFacts, FIELD_NAMES, type FieldKey, type LinkKind } from "@/lib/admin/revision-view";
+import { revisionProblems, suggestedReason } from "@/lib/admin/revision-problems";
 import { requireAdmin } from "@/lib/admin/guard";
 import { pendingPhotoUrl } from "@/lib/photo-storage";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -76,6 +77,11 @@ async function Detail({ params }: Props) {
   const was = previousView(previous.data?.payload, lookups);
   const mark = (key: FieldKey) => diff?.has(key) ?? false;
   const facts = decisionFacts(row.payload, lookups.contactTypes, row.profile_id);
+  // Data the database would refuse on approving, told BEFORE the click (the database still re-checks everything on approve_revision).
+  // Datos que la base rechazaría al aprobar, avisados ANTES del clic (la base igual revisa todo de nuevo en approve_revision).
+  const cityCheck = view?.locationId != null ? await supabase.from("locations").select("is_active").eq("id", view.locationId).maybeSingle() : null;
+  if (cityCheck?.error) throw new Error(`Could not read the city / No se pudo leer la ciudad: ${cityCheck.error.message}`);
+  const problems = revisionProblems(row.payload, lookups, { locationActive: cityCheck === null ? null : (cityCheck.data?.is_active ?? false) });
   const phone = contactPhone(row.payload, lookups.contactTypes);
   // the proposed photo is shown only if its path is a pending file of THIS profile / la foto propuesta solo se muestra si es un archivo pendiente de ESTE perfil
   const photoUrl = view?.photo.kind === "set" && facts?.photoOk ? await pendingPhotoUrl(view.photo.path) : null;
@@ -98,7 +104,9 @@ async function Detail({ params }: Props) {
           ? "Todavía no tiene ciudad: no se puede aprobar."
           : !facts.photoOk
             ? "La foto propuesta tiene una ruta inválida: rechazala."
-            : null;
+            : problems.length > 0
+              ? "Hay datos que la base no aceptaría (están en el recuadro de arriba). Rechazala: el motivo ya está escrito."
+              : null;
 
   return (
     <>
@@ -135,6 +143,16 @@ async function Detail({ params }: Props) {
         <section role="note" className="mt-4 rounded-lg border border-aviso-borde bg-aviso-fondo p-3 text-aviso-texto">
           <h2 className="font-semibold">Pidió una ciudad que no está en la lista</h2>
           <p>{request.data.city_name}{requestRegion ? ` (región: ${requestRegion})` : ""}</p>
+        </section>
+      )}
+
+      {problems.length > 0 && (
+        <section role="note" className="mt-4 rounded-lg border border-aviso-borde bg-aviso-fondo p-3 text-aviso-texto">
+          <h2 className="font-semibold">Hay datos que impiden aprobar</h2>
+          <ul className="mt-1 list-disc pl-5">
+            {problems.map((problem) => <li key={problem}>{problem}</li>)}
+          </ul>
+          <p className="mt-1 text-sm">La base no los aceptaría. Rechazá la revisión: el motivo ya está escrito más abajo y lo ve el terapeuta.</p>
         </section>
       )}
 
@@ -196,7 +214,7 @@ async function Detail({ params }: Props) {
         </dl>
       )}
 
-      {isPending && <DecisionForms revisionId={row.id} canApprove={whyNot === null} whyNot={whyNot} linksToCheck={facts?.linksToCheck ?? 0} />}
+      {isPending && <DecisionForms revisionId={row.id} canApprove={whyNot === null} whyNot={whyNot} linksToCheck={facts?.linksToCheck ?? 0} suggestedReason={suggestedReason(problems)} />}
     </>
   );
 }

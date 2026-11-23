@@ -122,6 +122,13 @@ describe("listTherapies", () => {
     expect(therapyCall?.steps).toContainEqual(["eq", "is_active", true]);
   });
 
+  it("can also list the hidden therapies (administrator views) / puede listar también las ocultas (vistas del administrador)", async () => {
+    const { client, calls } = fakeClient({ languages: [{ id: 1 }], therapies: [] });
+    await listTherapies(client, false);
+    const therapyCall = calls.find((call) => call.table === "therapies");
+    expect(therapyCall?.steps).not.toContainEqual(["eq", "is_active", true]);
+  });
+
   it("fails clearly when the language is missing or a read errors", async () => {
     await expect(listTherapies(fakeClient({ languages: [] }).client)).rejects.toThrow(/not found/);
     await expect(listTherapies(fakeClient({ languages: { error: "boom" } }).client)).rejects.toThrow(/Could not read/);
