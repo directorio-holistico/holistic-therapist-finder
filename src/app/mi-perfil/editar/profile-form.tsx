@@ -101,6 +101,8 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
   // true from the first edit until the person saves or sends / true desde la primera edición hasta que guarda o envía
   const [dirty, setDirty] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  // the "my therapy is not in the list" box starts open when a request is already written / la caja "mi terapia no está" arranca abierta si ya hay un pedido escrito
+  const [suggestOpen, setSuggestOpen] = useState(defaults.suggestedTherapy !== "");
   const [discardError, setDiscardError] = useState("");
   const [cityMissing, setCityMissing] = useState<boolean>(missingCity !== null);
   const regionOptions = regions.filter((region) => region.parentId === countryId);
@@ -255,6 +257,26 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         <p className={HELP}>
           Elegí hasta {defaults.therapies.length} terapias. Para cada una marcá cómo la das: al menos una modalidad (presencial o a distancia) y un formato (individual o grupal). La duración y las tarifas son opcionales. Escribí solo números, por ejemplo 15000. &quot;Locales&quot; son quienes viven en el mismo país donde atendés. No prometas curas.
         </p>
+        {/* Highlighted and at the TOP of the section, so it is found without scrolling through every therapy row. The checkbox has no
+            name: it is not sent; only the text is (and only while the box is ticked, so unticking it clears the request).
+            Resaltado y ARRIBA de la sección, para encontrarlo sin recorrer todas las filas de terapias. El tilde no tiene name: no se
+            envía; solo se envía el texto (y solo mientras está tildado, así destildar borra el pedido). */}
+        <div className="grid gap-3 rounded-xl border-2 border-acento bg-superficie p-4">
+          <label className="flex items-start gap-3 font-medium text-tinta">
+            <input type="checkbox" checked={suggestOpen} onChange={(event) => setSuggestOpen(event.target.checked)} className="mt-1 h-5 w-5 accent-acento" />
+            <span>Mi terapia no está en la lista</span>
+          </label>
+          {suggestOpen && (
+            <div className="grid gap-1">
+              <label htmlFor="suggestedTherapy" className={LABEL}>Escribí el nombre de tu terapia</label>
+              <input id="suggestedTherapy" name="suggestedTherapy" type="text" maxLength={LIMITS.suggestedTherapy} autoComplete={NO_AUTOFILL}
+                defaultValue={defaults.suggestedTherapy} aria-describedby="suggestedTherapy-help" aria-invalid={invalid("suggestedTherapy")} className={FIELD} />
+              <p id="suggestedTherapy-help" className={HELP}>
+                Escribí solo el nombre (hasta 3, separadas por coma). Lo evaluamos y, si la agregamos, te avisamos para que la elijas. No se publica en tu perfil.
+              </p>
+            </div>
+          )}
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {([["currencyOwn", "own_country", defaults.currencyOwn], ["currencyOther", "other_countries", defaults.currencyOther]] as const).map(([name, audience, current]) => (
             <div key={name} className="grid gap-1">
@@ -299,14 +321,6 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             </div>
           </fieldset>
         ))}
-        <div className="grid gap-1 rounded-xl border border-linea bg-superficie p-4">
-          <label htmlFor="suggestedTherapy" className={LABEL}>Mi terapia no está en la lista (opcional)</label>
-          <input id="suggestedTherapy" name="suggestedTherapy" type="text" maxLength={LIMITS.suggestedTherapy} autoComplete={NO_AUTOFILL}
-            defaultValue={defaults.suggestedTherapy} aria-describedby="suggestedTherapy-help" aria-invalid={invalid("suggestedTherapy")} className={FIELD} />
-          <p id="suggestedTherapy-help" className={HELP}>
-            Escribí solo el nombre (hasta 3, separadas por coma). Lo evaluamos y, si la agregamos, te avisamos para que la elijas. No se publica en tu perfil.
-          </p>
-        </div>
       </section>
 
       <section className={SECTION} aria-labelledby="sec-atencion">
