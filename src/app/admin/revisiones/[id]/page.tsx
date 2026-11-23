@@ -81,7 +81,7 @@ async function Detail({ params }: Props) {
   // Datos que la base rechazaría al aprobar, avisados ANTES del clic (la base igual revisa todo de nuevo en approve_revision).
   const cityCheck = view?.locationId != null ? await supabase.from("locations").select("is_active").eq("id", view.locationId).maybeSingle() : null;
   if (cityCheck?.error) throw new Error(`Could not read the city / No se pudo leer la ciudad: ${cityCheck.error.message}`);
-  const problems = revisionProblems(row.payload, lookups, { locationActive: cityCheck === null ? null : (cityCheck.data?.is_active ?? false) });
+  const problems = revisionProblems(row.payload, lookups, { locationActive: cityCheck === null ? null : (cityCheck.data?.is_active ?? false), suggestedTherapy: row.suggested_therapy });
   const phone = contactPhone(row.payload, lookups.contactTypes);
   // the proposed photo is shown only if its path is a pending file of THIS profile / la foto propuesta solo se muestra si es un archivo pendiente de ESTE perfil
   const photoUrl = view?.photo.kind === "set" && facts?.photoOk ? await pendingPhotoUrl(view.photo.path) : null;

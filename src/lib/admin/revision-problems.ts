@@ -11,6 +11,8 @@ import { containsContactData } from "@/lib/profile-form";
 export type ProblemContext = {
   // Is the chosen city active? null = unknown (not read) or no city. / ¿La ciudad elegida está activa? null = no se leyó o no hay ciudad.
   locationActive: boolean | null;
+  // The therapy the therapist asked to add (column suggested_therapy), if any. / La terapia que el terapeuta pidió agregar, si hay.
+  suggestedTherapy?: string | null;
 };
 
 // Same limits as the database (CHECK constraints and validate_profile_texts). / Mismos límites que la base.
@@ -37,6 +39,16 @@ export function revisionProblems(payload: unknown, lookups: ViewLookups, context
   if (about.length > MAX_ABOUT) found.add(`«Sobre mí» es demasiado largo (máximo ${MAX_ABOUT} caracteres).`);
   if (about !== "" && containsContactData(about)) {
     found.add("En «Sobre mí» no se pueden incluir enlaces, mails, @usuarios ni teléfonos: para eso están los campos de contacto.");
+  }
+  // A profile with no therapy would be published empty: the database does not forbid it, so it is stopped here.
+  // Un perfil sin terapias se publicaría vacío: la base no lo prohíbe, por eso se frena acá.
+  if (p.therapies !== undefined && p.therapies.length === 0) {
+    const asked = context.suggestedTherapy?.trim();
+    found.add(
+      asked
+        ? `Pediste agregar «${asked}». La estamos evaluando; si la agregamos, te avisamos para que la elijas en tu perfil.`
+        : "No elegiste ninguna terapia. Elegí al menos una.",
+    );
   }
   for (const id of p.languages ?? []) {
     if (!lookups.languages.has(id)) found.add("Hay un idioma elegido que ya no está disponible. Revisá los idiomas.");

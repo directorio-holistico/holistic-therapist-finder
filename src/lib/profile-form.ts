@@ -15,6 +15,8 @@ export const LIMITS = {
   therapyDescription: 200,
   zone: 80,
   cityName: 80,
+  // same limit as the database column profile_revisions.suggested_therapy / mismo límite que la columna de la base
+  suggestedTherapy: 120,
   contactValue: 300,
   earliestYear: 1900,
   minMinutes: 5,
@@ -239,6 +241,9 @@ export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: Read
       cityId: z.number().int().positive().nullable(),
       regionId: z.number().int().positive().nullable(),
       cityName: optionalText(LIMITS.cityName, "Ciudad"),
+      // "My therapy is not in the list": only the NAME, read by the administrator (never published). / "Mi terapia no está en la lista": solo el NOMBRE, lo lee el administrador (nunca se publica).
+      suggestedTherapy: optionalText(LIMITS.suggestedTherapy, "Terapia que falta")
+        .refine((value) => value === null || !containsContactData(value), `Terapia que falta: no admite ${NO_CONTACT_IN_TEXT}.`),
       languages: idList("Elegí al menos un idioma de atención."),
       phone: z
         .string()
@@ -304,8 +309,10 @@ export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: Read
         ownAmounts ||= slot.value.rateOwn !== null;
         otherAmounts ||= slot.value.rateOther !== null;
       });
-      if (slots.every((slot) => slot.skip)) {
-        ctx.addIssue({ code: "custom", message: "Elegí al menos una terapia.", path: ["therapyId_0"] });
+      // No therapy chosen is fine only when the person wrote the one that is missing (the administrator then evaluates it).
+      // Ninguna terapia elegida solo se admite si la persona escribió la que falta (el administrador la evalúa después).
+      if (slots.every((slot) => slot.skip) && value.suggestedTherapy === null) {
+        ctx.addIssue({ code: "custom", message: "Elegí al menos una terapia, o escribí la que falta en «Mi terapia no está en la lista».", path: ["therapyId_0"] });
       }
       const checkCurrency = (used: boolean, currencyId: number | null, field: string, audience: string, pick: (slot: TherapySlot) => number | null) => {
         if (!used) return;
@@ -386,6 +393,7 @@ export function readProfileForm(formData: FormData, maxYear: number, currencyMin
     cityId: toInt(formData.get("cityId")),
     regionId: toInt(formData.get("regionId")),
     cityName: text(formData.get("cityName")),
+    suggestedTherapy: text(formData.get("suggestedTherapy")),
     languages: toIntList(formData.getAll("languages")),
     phone: text(formData.get("phone")),
     phoneWhatsapp: formData.get("phoneWhatsapp") === "on",
@@ -495,6 +503,8 @@ export type FormDefaults = {
   // photo: a pending photo path waiting in the draft, or the wish to remove the current one / foto: ruta pendiente en el borrador o pedido de quitar la actual
   photoNew: string;
   photoRemove: boolean;
+  // the therapy the person asked to add (column suggested_therapy of the revision, not part of the payload) / la terapia que pidió agregar (columna de la revisión, no va en el payload)
+  suggestedTherapy: string;
 };
 export type TherapyDefaults = { therapyId: number | null; description: string; minutes: string; rateOwn: string; rateOther: string; serviceModes: number[]; sessionFormats: number[] };
 export const EMPTY_THERAPY_SLOT: TherapyDefaults = { therapyId: null, description: "", minutes: "", rateOwn: "", rateOther: "", serviceModes: [], sessionFormats: [] };
@@ -507,7 +517,7 @@ export const EMPTY_DEFAULTS: FormDefaults = {
   languages: [], phone: "", phoneWhatsapp: false, email: "", website: "", instagram: "",
   facebook: "", tiktok: "", youtube: "",
   therapies: Array.from({ length: MAX_THERAPIES }, () => EMPTY_THERAPY_SLOT), currencyOwn: null, currencyOther: null,
-  photoNew: "", photoRemove: false,
+  photoNew: "", photoRemove: false, suggestedTherapy: "",
 };
 
 const payloadSchema = z.object({
@@ -570,6 +580,7 @@ export function defaultsFromPayload(payload: unknown, contactTypes: ContactTypeI
     currencyOther: currencyFor(audiences.other),
     photoNew: typeof p.photo_path === "string" ? p.photo_path : "",
     photoRemove: p.photo_path === null,
+    suggestedTherapy: base.suggestedTherapy,
   };
 }
 

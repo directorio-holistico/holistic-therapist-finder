@@ -79,7 +79,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
   const statusCode = status.data?.code ?? "";
   if (statusCode === "suspended" || statusCode === "erased") return { kind: "blocked", status: statusCode };
 
-  const open = await client.from("profile_revisions").select("id, status_id, payload").eq("profile_id", profile.data.id).is("closed_at", null).maybeSingle();
+  const open = await client.from("profile_revisions").select("id, status_id, payload, suggested_therapy").eq("profile_id", profile.data.id).is("closed_at", null).maybeSingle();
   if (open.error) fail("the open revision / la revisión abierta", open.error.message);
   if (open.data) {
     const revisionStatus = await client.from("revision_statuses").select("code").eq("id", open.data.status_id).maybeSingle();
@@ -99,17 +99,21 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
   // Sin revisión abierta, la última decisión define de dónde parte el formulario: si fue un RECHAZO, el terapeuta corrige esa misma
   // propuesta (si no, un perfil que nunca fue aprobado se abriría vacío y parecería que se perdió todo lo cargado).
   let rejectedPayload: unknown = null;
+  let rejectedSuggestion = "";
   if (!open.data) {
     const decided = await client
       .from("profile_revisions")
-      .select("payload, rejection_reason")
+      .select("payload, rejection_reason, suggested_therapy")
       .eq("profile_id", profile.data.id)
       .not("decided_at", "is", null)
       .order("decided_at", { ascending: false })
       .limit(1);
     if (decided.error) fail("the last decision / la última decisión", decided.error.message);
     const latest = decided.data?.[0];
-    if (latest && latest.rejection_reason !== null) rejectedPayload = latest.payload;
+    if (latest && latest.rejection_reason !== null) {
+      rejectedPayload = latest.payload;
+      rejectedSuggestion = latest.suggested_therapy ?? "";
+    }
   }
 
   // Start from the live profile; a draft in progress (or the last rejected proposal) replaces it.
@@ -119,6 +123,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
     defaults = defaultsFromPayload(open.data ? open.data.payload : rejectedPayload, contactTypes, audiences, {
       ...EMPTY_DEFAULTS,
       displayName: profile.data.display_name ?? "",
+      suggestedTherapy: open.data ? (open.data.suggested_therapy ?? "") : rejectedSuggestion,
     });
   } else {
     const [languages, modes, formats, contacts, therapies, rates] = await Promise.all([
@@ -164,6 +169,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
       currencyOther: rateRows.find((row) => row.rate_audience_id === audiences.other)?.currency_id ?? null,
       photoNew: "",
       photoRemove: false,
+      suggestedTherapy: "",
     };
   }
 

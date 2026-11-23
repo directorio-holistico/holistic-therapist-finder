@@ -332,3 +332,43 @@ describe("location tree helper", () => {
     expect(options).toEqual([{ id: 2, name: "Ávila", parentId: 10 }, { id: 1, name: "Zárate", parentId: 10 }]);
   });
 });
+
+describe("therapy that is not in the list", () => {
+  const NO_THERAPY = (() => {
+    const fields: Record<string, string | string[]> = { ...VALID };
+    delete fields["therapyId_0"];
+    delete fields["serviceModes_0"];
+    delete fields["sessionFormats_0"];
+    return fields;
+  })();
+
+  it("accepts a form with no therapy chosen when the missing one is written", () => {
+    const parsed = readProfileForm(form({ ...NO_THERAPY, suggestedTherapy: "  Hipnosis   ericksoniana " }), YEAR);
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+    expect(parsed.data.suggestedTherapy).toBe("Hipnosis ericksoniana");
+    expect(parsed.data.therapies).toEqual([]);
+  });
+
+  it("still needs a therapy when nothing is written", () => {
+    expect(readProfileForm(form(NO_THERAPY), YEAR).success).toBe(false);
+    expect(readProfileForm(form({ ...NO_THERAPY, suggestedTherapy: "   " }), YEAR).success).toBe(false);
+  });
+
+  it("is optional next to a chosen therapy and empty means null", () => {
+    const parsed = readProfileForm(form({ ...VALID, suggestedTherapy: "" }), YEAR);
+    expect(parsed.success && parsed.data.suggestedTherapy).toBeNull();
+  });
+
+  it("refuses contact data and texts longer than the database column", () => {
+    expect(readProfileForm(form({ ...NO_THERAPY, suggestedTherapy: "mi terapia www.ejemplo.com" }), YEAR).success).toBe(false);
+    expect(readProfileForm(form({ ...NO_THERAPY, suggestedTherapy: "a".repeat(121) }), YEAR).success).toBe(false);
+    expect(readProfileForm(form({ ...NO_THERAPY, suggestedTherapy: "a".repeat(120) }), YEAR).success).toBe(true);
+  });
+
+  it("does not travel inside the payload", () => {
+    const parsed = readProfileForm(form({ ...VALID, suggestedTherapy: "Otra terapia" }), YEAR);
+    if (!parsed.success) throw new Error("expected a valid form");
+    expect(Object.keys(buildPayload(parsed.data, TYPES, AUD))).not.toContain("suggested_therapy");
+  });
+});

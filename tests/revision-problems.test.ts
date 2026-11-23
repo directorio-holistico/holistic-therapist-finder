@@ -116,3 +116,21 @@ describe("suggestedReason", () => {
     expect(suggestedReason(many).length).toBeLessThanOrEqual(1000);
   });
 });
+
+describe("revision with no therapies", () => {
+  it("is stopped, and says which therapy was asked for", () => {
+    const payload = { ...clean(), therapies: [] };
+    expect(revisionProblems(payload, LOOKUPS, { ...OK, suggestedTherapy: "Hipnoterapia ericksoniana" })).toEqual([
+      "Pediste agregar «Hipnoterapia ericksoniana». La estamos evaluando; si la agregamos, te avisamos para que la elijas en tu perfil.",
+    ]);
+  });
+  it("asks to choose one when nothing was asked for", () => {
+    expect(revisionProblems({ ...clean(), therapies: [] }, LOOKUPS, OK)).toEqual(["No elegiste ninguna terapia. Elegí al menos una."]);
+    expect(revisionProblems({ ...clean(), therapies: [] }, LOOKUPS, { ...OK, suggestedTherapy: "   " })).toEqual(["No elegiste ninguna terapia. Elegí al menos una."]);
+  });
+  it("does not complain when the payload does not touch the therapies", () => {
+    const withoutTherapies: Record<string, unknown> = { ...clean() };
+    delete withoutTherapies["therapies"];
+    expect(revisionProblems(withoutTherapies, LOOKUPS, OK)).toEqual([]);
+  });
+});

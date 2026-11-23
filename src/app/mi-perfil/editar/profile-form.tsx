@@ -270,6 +270,14 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             </div>
           </fieldset>
         ))}
+        <div className="grid gap-1 rounded-xl border border-linea bg-superficie p-4">
+          <label htmlFor="suggestedTherapy" className={LABEL}>Mi terapia no está en la lista (opcional)</label>
+          <input id="suggestedTherapy" name="suggestedTherapy" type="text" maxLength={LIMITS.suggestedTherapy} autoComplete={NO_AUTOFILL}
+            defaultValue={defaults.suggestedTherapy} aria-describedby="suggestedTherapy-help" aria-invalid={invalid("suggestedTherapy")} className={FIELD} />
+          <p id="suggestedTherapy-help" className={HELP}>
+            Escribí solo el nombre (hasta 3, separadas por coma). Lo evaluamos y, si la agregamos, te avisamos para que la elijas. No se publica en tu perfil.
+          </p>
+        </div>
       </section>
 
       <section className={SECTION} aria-labelledby="sec-atencion">

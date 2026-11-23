@@ -11,6 +11,7 @@ import { listFormCatalogs, listLocations } from "@/lib/catalogs";
 import { findExistingCity } from "@/lib/city-match";
 import { ACCEPTANCE_REQUIRED_MESSAGE, isAcceptanceRequired } from "@/lib/legal/acceptance";
 import { isPendingPhotoPath } from "@/lib/photo-rules";
+import { findExistingTherapy } from "@/lib/therapy-match";
 import { buildPayload, firstIssue, readProfileForm } from "@/lib/profile-form";
 import { audienceIds, contactTypeIds } from "@/lib/profile-load";
 import type { Database } from "@/lib/supabase/database.types";
@@ -47,6 +48,15 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
     return fail(issue.message, issue.fields);
   }
   let values = parsed.data;
+
+  // A therapy that is ALREADY in the list is not requested again: the person is told to choose it. (Hidden therapies are not in
+  // the form's list, so asking for one of them is a valid request.)
+  // Una terapia que YA está en la lista no se pide de nuevo: se le dice a la persona que la elija. (Las terapias ocultas no están
+  // en la lista del formulario, así que pedir una de ellas es un pedido válido.)
+  if (values.suggestedTherapy !== null) {
+    const existing = findExistingTherapy(catalogs.therapies, values.suggestedTherapy);
+    if (existing) return fail(`«${existing.name}» ya está en la lista: elegila en el campo «Terapia».`, ["suggestedTherapy"]);
+  }
 
   // an administrator can read every profile: filter by the logged-in person / un administrador puede leer todos los perfiles: se filtra por la persona
   const person = await supabase.from("people").select("id").eq("auth_user_id", auth.user.id).maybeSingle();
@@ -103,7 +113,7 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
   const payload = buildPayload(values, contactTypes, audiences);
   let revisionId = open.data?.id ?? null;
   if (revisionId) {
-    const updated = await supabase.from("profile_revisions").update({ payload }).eq("id", revisionId);
+    const updated = await supabase.from("profile_revisions").update({ payload, suggested_therapy: values.suggestedTherapy }).eq("id", revisionId);
     if (isAcceptanceRequired(updated.error)) return fail(ACCEPTANCE_REQUIRED_MESSAGE);
     if (updated.error) {
       console.error(`draft update failed / falló la actualización del borrador: ${updated.error.code ?? "unknown"}`);
@@ -114,7 +124,7 @@ export async function saveProfile(_previous: EditState, formData: FormData): Pro
     // "draft". So the row is typed by hand with ONLY the two columns the therapist may write.
     // El tipo Insert generado pide status_id, pero los roles de la API no pueden escribirlo (permisos por columna): un trigger
     // pone "draft". Por eso la fila se tipa a mano con SOLO las dos columnas que el terapeuta puede escribir.
-    const draft = { profile_id: profile.data.id, payload } as unknown as Database["public"]["Tables"]["profile_revisions"]["Insert"];
+    const draft = { profile_id: profile.data.id, payload, suggested_therapy: values.suggestedTherapy } as unknown as Database["public"]["Tables"]["profile_revisions"]["Insert"];
     const created = await supabase.from("profile_revisions").insert(draft).select("id").single();
     if (isAcceptanceRequired(created.error)) return fail(ACCEPTANCE_REQUIRED_MESSAGE);
     if (created.error || !created.data) {
