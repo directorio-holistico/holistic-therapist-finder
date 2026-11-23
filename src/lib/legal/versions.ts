@@ -7,9 +7,9 @@
 import type { InfoDocumentCode, LegalDocumentCode } from "./types";
 
 export const LEGAL_VERSIONS: Record<LegalDocumentCode, string> = {
-  terms: "2026-11-e",
+  terms: "2026-11-f",
   privacy: "2026-11-e",
-  legal_declaration: "2026-11-a",
+  legal_declaration: "2026-11-b",
   offers_consent: "2026-11-a",
 };
 
@@ -20,7 +20,7 @@ export const INFO_VERSIONS: Record<InfoDocumentCode, string> = {
   cookies: "2026-11-a",
 };
 
-export const LEGAL_UPDATED_LABEL = "19 de noviembre de 2026";
+export const LEGAL_UPDATED_LABEL = "23 de noviembre de 2026";
 
 // TRUE while no lawyer has reviewed the texts: every page shows a visible notice. Set it to false ONLY after the review
 // (the tests then require the controller's address, so nobody launches with a placeholder).

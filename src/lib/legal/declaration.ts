@@ -13,6 +13,7 @@ export const DECLARATION: LegalDocument = {
         { type: "ul", items: [
           "Soy mayor de edad y los datos que cargo son verdaderos y actuales.",
           "Tengo derecho a ofrecer las terapias que publico en los lugares donde las ofrezco, y cumplo las normas que me sean aplicables.",
+          "Si publico una terapia ligada a una profesión regulada (por ejemplo, psicoanálisis), tengo el título, la matrícula o la habilitación que la ley de mi lugar exige para ejercerla, y no me presento con otros que no tengo.",
           "No prometo curas ni resultados, no afirmo que mis terapias traten, prevengan o curen enfermedades, y no las presento como reemplazo de la atención médica o psicológica.",
           "No pido ni sugiero a nadie que abandone o evite un tratamiento médico.",
           "No incluyo en mi perfil datos de pacientes ni datos de salud de otras personas.",
