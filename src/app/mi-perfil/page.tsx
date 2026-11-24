@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/format";
 import { loadPendingDocuments } from "@/lib/legal/pending";
 import { createServerSupabase } from "@/lib/supabase/server-client";
 import { AcceptanceBanner } from "./acceptance-banner";
+import { ApprovalNote } from "./approval-note";
 import { DiscardDraftButton } from "./discard-draft-button";
 
 export const metadata: Metadata = { title: "Mi perfil", robots: { index: false } };
@@ -59,6 +60,19 @@ async function latestRevisionCode(supabase: Supabase, profileId: string): Promis
   }
 }
 
+// The message the administrator left on the latest approval that carried one (the person may have deleted it). Reading it must never
+// break this page: any failure means "nothing to show".
+// El mensaje que dejó el administrador en la última aprobación que traía uno (la persona pudo eliminarlo). Leerlo nunca debe
+// romper esta página: cualquier falla significa "nada para mostrar".
+async function latestApprovalNote(supabase: Supabase, profileId: string): Promise<{ id: string; text: string } | null> {
+  try {
+    const { data } = await supabase.from("profile_revisions").select("id, approval_note").eq("profile_id", profileId).not("approval_note", "is", null).order("decided_at", { ascending: false }).limit(1).maybeSingle();
+    return data && data.approval_note ? { id: data.id, text: data.approval_note } : null;
+  } catch {
+    return null;
+  }
+}
+
 async function Account({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   // The session check reads the clock (token expiry): it must run on a real request, never in a prerender pass.
   // La verificación de sesión lee el reloj (vencimiento del token): debe correr en un pedido real, nunca en un prerender.
@@ -97,6 +111,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
   const savedDraft = (await searchParams).guardado === "1";
   const revisionCode = person && profile ? await latestRevisionCode(supabase, profile.id) : null;
   const hasDraft = revisionCode === "draft";
+  const approvalNote = person && profile ? await latestApprovalNote(supabase, profile.id) : null;
 
   return (
     <>
@@ -144,6 +159,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
           </div>
         </section>
       )}
+      {!adminOnly && person && profile && approvalNote && <ApprovalNote revisionId={approvalNote.id} text={approvalNote.text} />}
       {!adminOnly && person && profile && (
         <section aria-labelledby="recordatorio" className={CARD}>
           <h2 id="recordatorio" className={TITLE}>Para tener presente</h2>

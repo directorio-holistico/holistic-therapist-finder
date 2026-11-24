@@ -696,6 +696,7 @@ export type Database = {
       }
       profile_revisions: {
         Row: {
+          approval_note: string | null
           closed_at: string | null
           created_at: string
           decided_at: string | null
@@ -711,6 +712,7 @@ export type Database = {
           suggested_therapy: string | null
         }
         Insert: {
+          approval_note?: string | null
           closed_at?: string | null
           created_at?: string
           decided_at?: string | null
@@ -726,6 +728,7 @@ export type Database = {
           suggested_therapy?: string | null
         }
         Update: {
+          approval_note?: string | null
           closed_at?: string | null
           created_at?: string
           decided_at?: string | null
@@ -1571,7 +1574,10 @@ export type Database = {
         Args: { p_payload: Json; p_profile_id: string }
         Returns: undefined
       }
-      approve_revision: { Args: { p_revision_id: string }; Returns: undefined }
+      approve_revision: {
+        Args: { p_note?: string; p_revision_id: string }
+        Returns: undefined
+      }
       assert_current_acceptances: { Args: never; Returns: undefined }
       check_erasure_fingerprints: {
         Args: { p_fingerprints: Json }
@@ -1585,6 +1591,10 @@ export type Database = {
       contains_contact_data: { Args: { p_text: string }; Returns: boolean }
       current_person_id: { Args: never; Returns: string }
       current_user_has_password: { Args: never; Returns: boolean }
+      delete_my_approval_note: {
+        Args: { p_revision_id: string }
+        Returns: undefined
+      }
       discard_revision: { Args: { p_revision_id: string }; Returns: undefined }
       erase_therapist: {
         Args: {

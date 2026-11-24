@@ -181,6 +181,8 @@ CheckDenied "call submit_revision(uuid)" (Get-Status "POST" "$base/rpc/submit_re
 CheckDenied "call admin_add_therapy(...)" (Get-Status "POST" "$base/rpc/admin_add_therapy" '{"p_code":"zz_anon_probe","p_name":"zz anon probe"}')
 CheckDenied "call admin_set_therapy_active(integer, boolean)" (Get-Status "POST" "$base/rpc/admin_set_therapy_active" '{"p_therapy_id":1,"p_is_active":false}')
 CheckDenied "call admin_dismiss_suggested_therapy(uuid)" (Get-Status "POST" "$base/rpc/admin_dismiss_suggested_therapy" ('{"p_revision_id":"' + $zeroUuid + '"}'))
+CheckDenied "call approve_revision(uuid, text)" (Get-Status "POST" "$base/rpc/approve_revision" ('{"p_revision_id":"' + $zeroUuid + '","p_note":"x"}'))
+CheckDenied "call delete_my_approval_note(uuid)" (Get-Status "POST" "$base/rpc/delete_my_approval_note" ('{"p_revision_id":"' + $zeroUuid + '"}'))
 foreach ($t in @("terms_acceptances", "profile_revisions", "therapist_profiles", "profile_therapies")) {
   Check "insert into $t" (Get-Status "POST" "$base/$t" "{}") $false
 }

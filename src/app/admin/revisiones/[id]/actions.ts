@@ -7,6 +7,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { readApprovalNote } from "@/lib/admin/approval-note";
 import { requireAdmin } from "@/lib/admin/guard";
 import { decisionFacts } from "@/lib/admin/revision-view";
 import { isPendingPhotoPath, photoChangeOf } from "@/lib/photo-rules";
@@ -41,6 +42,10 @@ export async function approveRevision(_previous: DecisionState, formData: FormDa
   if (!facts.photoOk) return fail("La foto de la revisión tiene una ruta inválida: rechazala.");
   if (!facts.hasCity) return fail("Todavía no tiene ciudad. Cargá la ciudad primero (o rechazala pidiendo que elija una).");
   if (facts.linksToCheck > 0 && formData.get("linksChecked") !== "on") return fail("Marcá que revisaste los enlaces antes de aprobar.");
+  // Optional message for the therapist (she reads it in "Mi perfil"). Checked BEFORE the photo is copied: a refusal changes nothing.
+  // Mensaje opcional para la terapeuta (lo lee en "Mi perfil"). Se revisa ANTES de copiar la foto: un rechazo no cambia nada.
+  const note = readApprovalNote(formData.get("note"));
+  if (!note.ok) return fail(note.message);
 
   // PHOTO. The pending file is copied to the public bucket BEFORE approving: if the copy fails nothing changes. If approving fails
   // afterwards, the copy is deleted. The path must be a pending file of this very profile (never trust the payload).
@@ -54,7 +59,7 @@ export async function approveRevision(_previous: DecisionState, formData: FormDa
   const before = change.kind === "none" ? null : await supabase.from("therapist_profiles").select("photo_path").eq("id", revision.data.profile_id).maybeSingle();
   const oldPhoto = before?.data?.photo_path ?? null;
 
-  const result = await supabase.rpc("approve_revision", { p_revision_id: id.data });
+  const result = await supabase.rpc("approve_revision", { p_revision_id: id.data, ...(note.value === null ? {} : { p_note: note.value }) });
   if (result.error) {
     if (change.kind === "set") await removePublicPhoto(change.path);
     return explain(result.error, "approve_revision");

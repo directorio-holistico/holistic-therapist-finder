@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { APPROVAL_NOTE_MAX } from "@/lib/admin/approval-note";
 import { approveRevision, rejectRevision, type DecisionState } from "./actions";
 
 const INITIAL: DecisionState = { status: "idle", message: "" };
@@ -29,6 +30,11 @@ export function DecisionForms({ revisionId, canApprove, whyNot, linksToCheck, su
             <span>Revisé los enlaces públicos (web y redes): son del terapeuta y no son engañosos.</span>
           </label>
         )}
+        <div className="grid gap-1">
+          <label htmlFor="note" className={LABEL}>Mensaje para el terapeuta (opcional)</label>
+          <p id="note-help" className="text-sm text-apagado">Lo ve en su perfil y puede eliminarlo. Dejalo vacío si no querés enviar nada.</p>
+          <textarea id="note" name="note" rows={5} maxLength={APPROVAL_NOTE_MAX} aria-describedby="note-help" className={FIELD} />
+        </div>
         {whyNot && <p className="text-sm text-aviso-texto">{whyNot}</p>}
         {approveState.status === "error" && <p role="alert" className="text-peligro-texto">{approveState.message}</p>}
         <button type="submit" disabled={busy || !canApprove || needsLinksCheck}
