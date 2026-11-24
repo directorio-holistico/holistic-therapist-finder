@@ -1559,6 +1559,10 @@ export type Database = {
         }
         Returns: number
       }
+      admin_dismiss_suggested_therapy: {
+        Args: { p_revision_id: string }
+        Returns: undefined
+      }
       admin_set_therapy_active: {
         Args: { p_is_active: boolean; p_therapy_id: number }
         Returns: undefined
