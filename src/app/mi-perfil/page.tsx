@@ -32,6 +32,7 @@ const CARD = "mt-6 rounded-xl border border-linea bg-superficie p-5";
 const TITLE = "font-display text-xl font-semibold text-tinta";
 const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento";
 const PRIMARY = `inline-flex min-h-11 items-center rounded-full bg-boton px-5 font-medium text-boton-texto ${FOCUS}`;
+const SECONDARY = `inline-flex min-h-11 items-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-fondo ${FOCUS}`;
 const TEXT_LINK = `text-acento underline underline-offset-4 ${FOCUS}`;
 const STATUS_STYLES: Record<string, string> = {
   unpublished: "border-aviso-borde bg-aviso-fondo text-aviso-texto",
@@ -138,6 +139,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
           )}
           <div className="mt-4 flex flex-wrap items-start gap-3">
             <Link href="/mi-perfil/editar" className={PRIMARY}>{hasDraft ? "Continuar y enviar" : "Editar mi perfil"}</Link>
+            <Link href="/mi-perfil/contrasena" className={SECONDARY}>Cambiar mi contraseña</Link>
             {hasDraft && <DiscardDraftButton />}
           </div>
         </section>
@@ -163,7 +165,9 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
         </section>
       )}
       {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className={TEXT_LINK} href="/admin">Ir a administración</Link></p>}
-      <p className="mt-6 text-sm"><Link className={TEXT_LINK} href="/mi-perfil/contrasena">Cambiar mi contraseña</Link></p>
+      {(adminOnly || !person || !profile) && (
+        <p className="mt-6 text-sm"><Link className={TEXT_LINK} href="/mi-perfil/contrasena">Cambiar mi contraseña</Link></p>
+      )}
     </>
   );
 }
