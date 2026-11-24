@@ -7,7 +7,6 @@
 -- Se detiene con error si la región falta o es ambigua, en vez de no hacer nada en silencio.
 -- Catalog data only: no tables, policies or grants are touched. / Solo datos de catálogo: no se tocan tablas, políticas ni permisos.
 
-begin;
 
 do $$
 declare
@@ -37,4 +36,3 @@ begin
   end if;
 end $$;
 
-commit;

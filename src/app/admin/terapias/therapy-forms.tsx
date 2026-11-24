@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { THERAPY_CODE_PATTERN, THERAPY_LIMITS, proposeTherapyCode } from "@/lib/admin/therapy-admin";
-import { addTherapy, setTherapyActive, type ActionState } from "./actions";
+import { addTherapy, dismissSuggestion, setTherapyActive, type ActionState } from "./actions";
 
 const INITIAL: ActionState = { status: "idle", message: "" };
 const FIELD = "min-h-11 w-full rounded-xl border border-campo bg-superficie p-3 text-base text-tinta focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-acento";
@@ -20,8 +20,7 @@ export function AddTherapyForm({ defaultName }: { defaultName: string }) {
   const ready = name.trim().length > 0 && THERAPY_CODE_PATTERN.test(code.trim());
 
   return (
-    <form action={action} className="grid gap-4 rounded-xl border-2 border-acento bg-superficie p-5">
-      <h2 id="nueva" className="font-display text-xl font-semibold text-tinta">Agregar una terapia</h2>
+    <form action={action} className="mt-2 grid gap-4">
       <div className="grid gap-1">
         <label htmlFor="therapy-name" className={LABEL}>Nombre</label>
         <input id="therapy-name" name="name" type="text" required maxLength={THERAPY_LIMITS.name} autoComplete="off" value={name}
@@ -73,6 +72,24 @@ export function TherapyToggle({ therapyId, name, isActive, profiles }: { therapy
       <button type="submit" disabled={pending} className={SECONDARY}>
         {pending ? "Guardando…" : hide ? "Ocultar" : "Mostrar"}
       </button>
+      {state.status === "error" && <p role="alert" className="text-sm text-peligro-texto">{state.message}</p>}
+    </form>
+  );
+}
+
+export function DismissSuggestion({ revisionId }: { revisionId: string }) {
+  const [state, action, pending] = useActionState(dismissSuggestion, INITIAL);
+  return (
+    <form
+      action={action}
+      onSubmit={(event) => {
+        // The text is erased for good: say it before doing it. / El texto se borra para siempre: se dice antes de hacerlo.
+        if (!window.confirm("¿Descartar este pedido? Se borra lo que escribió el terapeuta y no se puede deshacer.")) event.preventDefault();
+      }}
+      className="grid gap-1"
+    >
+      <input type="hidden" name="revisionId" value={revisionId} />
+      <button type="submit" disabled={pending} className={SECONDARY}>{pending ? "Descartando…" : "Descartar pedido"}</button>
       {state.status === "error" && <p role="alert" className="text-sm text-peligro-texto">{state.message}</p>}
     </form>
   );

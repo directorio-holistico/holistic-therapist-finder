@@ -9,9 +9,10 @@
 
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { requireAdmin } from "@/lib/admin/guard";
 import { THERAPIES_CACHE_TAG } from "@/lib/catalog-cache";
-import { explainTherapyError, readAddTherapyForm } from "@/lib/admin/therapy-admin";
+import { explainDismissError, explainTherapyError, readAddTherapyForm } from "@/lib/admin/therapy-admin";
 
 export type ActionState = { status: "idle" | "error"; message: string };
 const fail = (message: string): ActionState => ({ status: "error", message });
@@ -51,4 +52,19 @@ export async function setTherapyActive(_previous: ActionState, formData: FormDat
   }
   updateTag(THERAPIES_CACHE_TAG);
   redirect("/admin/terapias");
+}
+
+// Clears a therapist's request once its revision is decided (the database refuses an open one). The therapy list does not change.
+// Borra el pedido de un terapeuta cuando su revisión ya está decidida (la base rechaza una abierta). La lista de terapias no cambia.
+export async function dismissSuggestion(_previous: ActionState, formData: FormData): Promise<ActionState> {
+  const { supabase } = await requireAdmin();
+  const revisionId = z.uuid().safeParse(formData.get("revisionId"));
+  if (!revisionId.success) return fail("Pedido inválido.");
+
+  const result = await supabase.rpc("admin_dismiss_suggested_therapy", { p_revision_id: revisionId.data });
+  if (result.error) {
+    console.error(`admin_dismiss_suggested_therapy failed / falló admin_dismiss_suggested_therapy: ${result.error.code ?? "unknown"}`);
+    return fail(explainDismissError(result.error));
+  }
+  redirect("/admin/terapias?resultado=descartada");
 }

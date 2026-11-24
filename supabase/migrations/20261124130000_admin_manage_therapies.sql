@@ -19,7 +19,6 @@
 --    puede aprobar hasta mostrarla de nuevo (igual que las terapias ya ocultas).
 --  * Only Spanish names for now (Phase 1). / Solo nombres en español por ahora (Fase 1).
 
-begin;
 
 -- 1) Audit of the catalog / Auditoría del catálogo
 create trigger audit_therapies
@@ -103,4 +102,3 @@ $$;
 revoke execute on function public.admin_set_therapy_active(integer, boolean) from public, anon, service_role;
 grant execute on function public.admin_set_therapy_active(integer, boolean) to authenticated;
 
-commit;

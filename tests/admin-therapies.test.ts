@@ -1,7 +1,7 @@
 // What the admin screen that adds, hides and shows therapies accepts and explains. / Lo que acepta y explica la pantalla de admin de terapias.
 import { describe, expect, it } from "vitest";
 import {
-  THERAPY_CODE_PATTERN, explainTherapyError, parseNameParam, proposeTherapyCode, readAddTherapyForm, revisionStatusLabel, splitSuggestedTherapies,
+  THERAPY_CODE_PATTERN, canDismissSuggestion, explainDismissError, explainTherapyError, parseNameParam, proposeTherapyCode, readAddTherapyForm, revisionStatusLabel, splitSuggestedTherapies,
 } from "../src/lib/admin/therapy-admin";
 
 function form(fields: Record<string, string>): FormData {
@@ -95,5 +95,19 @@ describe("revisionStatusLabel", () => {
     expect(revisionStatusLabel("approved")).toBe("Aprobada");
     expect(revisionStatusLabel("pending_review")).toBe("Esperando revisión");
     expect(revisionStatusLabel("otra")).toBe("otra");
+  });
+});
+
+describe("dismissing a request", () => {
+  it("allows it only for a decided revision", () => {
+    for (const code of ["approved", "rejected", "discarded"]) expect(canDismissSuggestion(code)).toBe(true);
+    for (const code of ["draft", "pending_review", "?", ""]) expect(canDismissSuggestion(code)).toBe(false);
+  });
+  it("explains each refusal", () => {
+    expect(explainDismissError({ code: "42501" })).toContain("no sos administrador");
+    expect(explainDismissError({ code: "55000" })).toContain("Primero decidí la revisión");
+    expect(explainDismissError({ code: "P0002" })).toContain("ya no existe");
+    expect(explainDismissError({ code: "22023" })).toContain("inválido");
+    expect(explainDismissError({})).toContain("Probá de nuevo");
   });
 });

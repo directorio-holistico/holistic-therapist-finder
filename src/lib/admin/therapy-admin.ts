@@ -101,6 +101,21 @@ const REVISION_STATUS_LABELS: Record<string, string> = {
 };
 export const revisionStatusLabel = (code: string): string => REVISION_STATUS_LABELS[code] ?? code;
 
+// A request can be cleared only when its revision is decided (approved, rejected or discarded); an open one is still being worked on.
+// Un pedido se puede borrar solo cuando su revisión está decidida (aprobada, rechazada o descartada); una abierta sigue en trabajo.
+export const canDismissSuggestion = (statusCode: string): boolean => ["approved", "rejected", "discarded"].includes(statusCode);
+
+export function explainDismissError(error: { code?: string }): string {
+  switch (error.code) {
+    case "42501": return "No se pudo: no sos administrador.";
+    case "55000": return "Primero decidí la revisión (aprobarla o rechazarla); después podés descartar el pedido.";
+    case "P0002": return "Ese pedido ya no existe. Recargá la lista.";
+    case "22023": return "Pedido inválido.";
+    default: return "No pudimos completar la acción. Probá de nuevo en unos minutos.";
+  }
+}
+
 export const RESULT_NOTICES: Record<string, string> = {
   agregada: "La terapia quedó agregada.",
+  descartada: "El pedido quedó descartado.",
 };

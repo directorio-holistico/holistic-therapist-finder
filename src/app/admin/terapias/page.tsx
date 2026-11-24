@@ -6,16 +6,39 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/admin/guard";
-import { loadSuggestions, loadTherapyCatalog } from "@/lib/admin/therapies";
-import { RESULT_NOTICES, THERAPY_LIMITS, parseNameParam, revisionStatusLabel, splitSuggestedTherapies } from "@/lib/admin/therapy-admin";
+import { loadSuggestions, loadTherapyCatalog, type TherapyRow } from "@/lib/admin/therapies";
+import {
+  RESULT_NOTICES, THERAPY_LIMITS, canDismissSuggestion, parseNameParam, revisionStatusLabel, splitSuggestedTherapies,
+} from "@/lib/admin/therapy-admin";
 import { formatDate } from "@/lib/format";
 import { findExistingTherapy } from "@/lib/therapy-match";
-import { AddTherapyForm, TherapyToggle } from "./therapy-forms";
+import { AddTherapyForm, DismissSuggestion, TherapyToggle } from "./therapy-forms";
 
 type SearchParams = Promise<{ resultado?: string | string[]; nombre?: string | string[] }>;
 
 const BOX = "rounded-xl border border-linea bg-superficie p-5";
 const TITLE = "font-display text-xl font-semibold text-tinta";
+const SUMMARY = "flex min-h-11 cursor-pointer items-center font-display text-xl font-semibold text-tinta focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento";
+
+function TherapyList({ rows }: { rows: TherapyRow[] }) {
+  return (
+    <ul className="mt-3 grid gap-3">
+      {rows.map((therapy) => (
+        <li key={therapy.id} className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-linea bg-fondo p-4">
+          <div className="min-w-0">
+            <p className="font-medium text-tinta">{therapy.name}</p>
+            <p className="mt-1 text-sm text-apagado">
+              Código {therapy.code}
+              {therapy.shortName ? ` · corto «${therapy.shortName}»` : ""}
+              {` · ${therapy.profiles} ${therapy.profiles === 1 ? "perfil" : "perfiles"}`}
+            </p>
+          </div>
+          <TherapyToggle therapyId={therapy.id} name={therapy.name} isActive={therapy.isActive} profiles={therapy.profiles} />
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 async function Content({ searchParams }: { searchParams: SearchParams }) {
   const { supabase } = await requireAdmin();
@@ -26,15 +49,18 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
 
   const [therapies, suggestions] = await Promise.all([loadTherapyCatalog(supabase), loadSuggestions(supabase)]);
   const options = therapies.map((therapy) => ({ id: therapy.id, name: therapy.name }));
-  const hidden = therapies.filter((therapy) => !therapy.isActive).length;
+  const visible = therapies.filter((therapy) => therapy.isActive);
+  const hidden = therapies.filter((therapy) => !therapy.isActive);
 
   return (
     <>
       {notice && <p role="status" className="mt-4 rounded-lg border border-ok-borde bg-ok-fondo p-3 text-ok-texto">{notice}</p>}
 
-      <div className="mt-6">
+      {/* open only when a request's "Agregar esta terapia" link brought a name / abierto solo cuando lo trae el enlace "Agregar esta terapia" de un pedido */}
+      <details id="nueva" open={defaultName !== ""} className={`mt-6 ${BOX}`}>
+        <summary className={SUMMARY}>Agregar una terapia</summary>
         <AddTherapyForm key={defaultName} defaultName={defaultName} />
-      </div>
+      </details>
 
       <section aria-labelledby="sugeridas" className="mt-8">
         <h2 id="sugeridas" className={TITLE}>Terapias pedidas por terapeutas</h2>
@@ -44,8 +70,15 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
           <ul className="mt-3 grid gap-3">
             {suggestions.map((row) => (
               <li key={row.revisionId} className={BOX}>
-                <p className="text-tinta">{row.profileName}</p>
-                <p className="mt-1 text-sm text-apagado">{revisionStatusLabel(row.statusCode)} · {formatDate(row.at) ?? "—"}</p>
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-tinta">{row.profileName}</p>
+                    <p className="mt-1 text-sm text-apagado">{revisionStatusLabel(row.statusCode)} · {formatDate(row.at) ?? "—"}</p>
+                  </div>
+                  {canDismissSuggestion(row.statusCode)
+                    ? <DismissSuggestion revisionId={row.revisionId} />
+                    : <p className="max-w-56 text-sm text-apagado">Se puede descartar cuando la revisión esté decidida.</p>}
+                </div>
                 <ul className="mt-3 grid gap-2">
                   {splitSuggestedTherapies(row.text).map((name) => {
                     const existing = findExistingTherapy(options, name);
@@ -70,25 +103,15 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
         )}
       </section>
 
-      <section aria-labelledby="catalogo" className="mt-8">
-        <h2 id="catalogo" className={TITLE}>Terapias del catálogo</h2>
-        <p className="mt-1 text-apagado">{therapies.length - hidden} visibles y {hidden} ocultas.</p>
-        <ul className="mt-3 grid gap-3">
-          {therapies.map((therapy) => (
-            <li key={therapy.id} className={`${BOX} flex flex-wrap items-center justify-between gap-4`}>
-              <div className="min-w-0">
-                <p className="font-medium text-tinta">{therapy.name}</p>
-                <p className="mt-1 text-sm text-apagado">
-                  {therapy.isActive ? "Visible" : "Oculta"} · código {therapy.code}
-                  {therapy.shortName ? ` · corto «${therapy.shortName}»` : ""}
-                  {` · ${therapy.profiles} ${therapy.profiles === 1 ? "perfil" : "perfiles"}`}
-                </p>
-              </div>
-              <TherapyToggle therapyId={therapy.id} name={therapy.name} isActive={therapy.isActive} profiles={therapy.profiles} />
-            </li>
-          ))}
-        </ul>
-      </section>
+      <details className={`mt-8 ${BOX}`}>
+        <summary className={SUMMARY}>Terapias visibles ({visible.length})</summary>
+        <TherapyList rows={visible} />
+      </details>
+
+      <details className={`mt-4 ${BOX}`}>
+        <summary className={SUMMARY}>Terapias ocultas ({hidden.length})</summary>
+        {hidden.length === 0 ? <p className="mt-3 text-apagado">No hay terapias ocultas.</p> : <TherapyList rows={hidden} />}
+      </details>
     </>
   );
 }
