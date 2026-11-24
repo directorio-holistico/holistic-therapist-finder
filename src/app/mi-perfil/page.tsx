@@ -138,8 +138,8 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
             </p>
           )}
           <div className="mt-4 flex flex-wrap items-start gap-3">
-            <Link href="/mi-perfil/editar" className={PRIMARY}>{hasDraft ? "Continuar y enviar" : "Editar mi perfil"}</Link>
-            <Link href="/mi-perfil/contrasena" className={SECONDARY}>Cambiar mi contraseña</Link>
+            <Link href="/mi-perfil/editar" className={`${PRIMARY} w-52 justify-center`}>{hasDraft ? "Continuar y enviar" : "Editar perfil"}</Link>
+            <Link href="/mi-perfil/contrasena" className={`${SECONDARY} w-52 justify-center`}>Cambiar contraseña</Link>
             {hasDraft && <DiscardDraftButton />}
           </div>
         </section>
@@ -166,7 +166,7 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
       )}
       {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className={TEXT_LINK} href="/admin">Ir a administración</Link></p>}
       {(adminOnly || !person || !profile) && (
-        <p className="mt-6 text-sm"><Link className={TEXT_LINK} href="/mi-perfil/contrasena">Cambiar mi contraseña</Link></p>
+        <p className="mt-6 text-sm"><Link className={TEXT_LINK} href="/mi-perfil/contrasena">Cambiar contraseña</Link></p>
       )}
     </>
   );

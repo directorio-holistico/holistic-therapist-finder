@@ -105,7 +105,7 @@ const REASON_MAX = 1000; // the rejection reason accepts up to 1000 characters /
 export function suggestedReason(problems: readonly string[]): string {
   if (problems.length === 0) return "";
   const head = "No pudimos publicar tu perfil por lo siguiente:";
-  const tail = "Corregilo desde «Editar mi perfil» y volvé a enviarlo.";
+  const tail = "Corregilo desde «Editar perfil» y volvé a enviarlo.";
   let text = head;
   for (const problem of problems) {
     const next = `${text}\n- ${problem}`;
