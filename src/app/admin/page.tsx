@@ -61,6 +61,24 @@ async function FollowUpSummary() {
   );
 }
 
+async function TherapiesSummary() {
+  const { supabase } = await requireAdmin();
+  const [active, hidden] = await Promise.all([
+    supabase.from("therapies").select("id", { count: "exact", head: true }).eq("is_active", true),
+    supabase.from("therapies").select("id", { count: "exact", head: true }).eq("is_active", false),
+  ]);
+  if (active.error || hidden.error) throw new Error("Could not count the therapies / No se pudieron contar las terapias");
+  return (
+    <section className="mt-6 rounded-xl border border-linea bg-superficie p-5">
+      <h2 className="font-display text-xl font-semibold text-tinta">Catálogo de terapias</h2>
+      <p className="mt-1 text-apagado">Visibles: {active.count ?? 0}. Ocultas: {hidden.count ?? 0}.</p>
+      <Link href="/admin/terapias" className="mt-4 inline-flex min-h-11 items-center rounded-full bg-boton px-5 font-medium text-boton-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento">
+        Ver terapias
+      </Link>
+    </section>
+  );
+}
+
 export default function AdminHome() {
   return (
     <main>
@@ -73,6 +91,9 @@ export default function AdminHome() {
       </Suspense>
       <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <FollowUpSummary />
+      </Suspense>
+      <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
+        <TherapiesSummary />
       </Suspense>
     </main>
   );
