@@ -142,6 +142,26 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
           </div>
         </section>
       )}
+      {!adminOnly && person && profile && (
+        <section aria-labelledby="recordatorio" className={CARD}>
+          <h2 id="recordatorio" className={TITLE}>Para tener presente</h2>
+          <div className="mt-3 grid gap-4 text-tinta">
+            <p>
+              <strong className="font-semibold">Cómo se ordena la lista.</strong> Cuando alguien busca, primero ve a quienes atienden en su ciudad o zona;
+              después, a quienes atienden a distancia en su mismo país; y al final, a quienes atienden a distancia desde otros países. Dentro de cada
+              grupo van primero los perfiles con foto, después los que tienen las tarifas al día y, por último, se ordena por antigüedad de aprobación.
+              Para mejorar tu lugar, sumá tu foto y mantené tus tarifas al día.
+            </p>
+            <p>
+              <strong className="font-semibold">El lugar en la lista no se compra.</strong> No cobramos por aparecer más arriba ni por destacar un perfil.
+            </p>
+            <p>
+              <strong className="font-semibold">Faro Holístico no te va a pedir dinero.</strong> Si alguien te escribe por WhatsApp o por mail, o te envía
+              un enlace, y te pide plata en nuestro nombre, no somos nosotros. No pagues, no respondas y no compartas tu contraseña ni tus datos.
+            </p>
+          </div>
+        </section>
+      )}
       {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className={TEXT_LINK} href="/admin">Ir a administración</Link></p>}
       <p className="mt-6 text-sm"><Link className={TEXT_LINK} href="/mi-perfil/contrasena">Cambiar mi contraseña</Link></p>
     </>
