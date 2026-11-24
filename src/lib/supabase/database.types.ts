@@ -1549,6 +1549,20 @@ export type Database = {
         Args: { p_days: number; p_from: string }
         Returns: string
       }
+      admin_add_therapy: {
+        Args: {
+          p_code: string
+          p_is_active?: boolean
+          p_name: string
+          p_short_name?: string
+          p_sort_order?: number
+        }
+        Returns: number
+      }
+      admin_set_therapy_active: {
+        Args: { p_is_active: boolean; p_therapy_id: number }
+        Returns: undefined
+      }
       apply_revision_payload: {
         Args: { p_payload: Json; p_profile_id: string }
         Returns: undefined
