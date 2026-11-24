@@ -178,6 +178,8 @@ CheckDenied "call contains_contact_data(text)" (Get-Status "POST" "$base/rpc/con
 CheckDenied "call register_therapist(text, jsonb)" (Get-Status "POST" "$base/rpc/register_therapist" '{"p_full_name":"x","p_acceptances":{}}')
 CheckDenied "call set_offers_consent(boolean, text)" (Get-Status "POST" "$base/rpc/set_offers_consent" '{"p_value":false}')
 CheckDenied "call submit_revision(uuid)" (Get-Status "POST" "$base/rpc/submit_revision" ('{"p_revision_id":"' + $zeroUuid + '"}'))
+CheckDenied "call admin_add_therapy(...)" (Get-Status "POST" "$base/rpc/admin_add_therapy" '{"p_code":"zz_anon_probe","p_name":"zz anon probe"}')
+CheckDenied "call admin_set_therapy_active(integer, boolean)" (Get-Status "POST" "$base/rpc/admin_set_therapy_active" '{"p_therapy_id":1,"p_is_active":false}')
 foreach ($t in @("terms_acceptances", "profile_revisions", "therapist_profiles", "profile_therapies")) {
   Check "insert into $t" (Get-Status "POST" "$base/$t" "{}") $false
 }
