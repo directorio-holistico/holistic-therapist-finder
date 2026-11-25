@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { unstable_isUnrecognizedActionError } from "next/navigation";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useCallback, useState, useTransition } from "react";
 import { SearchableSelect } from "@/components/searchable-select";
 import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
@@ -101,6 +101,13 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
   // true from the first edit until the person saves or sends / true desde la primera edición hasta que guarda o envía
   const [dirty, setDirty] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  // a picture is chosen but not uploaded: saving or sending is blocked until the person uploads or cancels it / hay una imagen elegida sin subir: se bloquea guardar o enviar hasta que la suba o la cancele
+  const [photoChoosing, setPhotoChoosing] = useState(false);
+  const [photoWarn, setPhotoWarn] = useState(false);
+  const handlePhotoChoosing = useCallback((open: boolean) => {
+    setPhotoChoosing(open);
+    if (!open) setPhotoWarn(false);
+  }, []);
   // the "my therapy is not in the list" box starts open when a request is already written / la caja "mi terapia no está" arranca abierta si ya hay un pedido escrito
   const [suggestOpen, setSuggestOpen] = useState(defaults.suggestedTherapy !== "");
   const [discardError, setDiscardError] = useState("");
@@ -162,6 +169,11 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null;
+    if (photoChoosing) {
+      setPhotoWarn(true);
+      document.getElementById("sec-foto")?.scrollIntoView({ block: "center" });
+      return;
+    }
     // After a rejection, sending locks the profile until it is reviewed again: ask first, so a half-corrected profile is not sent by mistake.
     // Tras un rechazo, enviar bloquea el perfil hasta que se revise de nuevo: se pregunta antes, para no enviar a medias por error.
     if (submitter?.getAttribute("value") === "submit" && lastRejection && !window.confirm("¿Ya corregiste todo lo que te pedimos? Después de enviar no podés cambiar nada hasta que lo revisemos.")) return;
@@ -201,7 +213,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
         </div>
       </section>
 
-      <PhotoField initialNew={defaults.photoNew} initialRemove={defaults.photoRemove} initialPreviewUrl={pendingPhotoUrl} liveUrl={livePhotoUrl} lost={photoLost} onEdit={() => setDirty(true)} />
+      <PhotoField initialNew={defaults.photoNew} initialRemove={defaults.photoRemove} initialPreviewUrl={pendingPhotoUrl} liveUrl={livePhotoUrl} lost={photoLost} onChoosing={handlePhotoChoosing} warn={photoWarn} onEdit={() => setDirty(true)} />
 
       <section className={SECTION} aria-labelledby="sec-lugar">
         <h2 id="sec-lugar" className={SECTION_TITLE}>Dónde atendés</h2>

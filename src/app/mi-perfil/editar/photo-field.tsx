@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { clamp, CROP_OUTPUT, CROP_VIEW, drawRect, normalizeCrop, ZOOM_MAX, ZOOM_MIN, type Crop } from "@/lib/photo-crop";
-import { PHOTO_CONSENT_TEXT, PHOTO_ERRORS } from "@/lib/photo-rules";
+import { PHOTO_CONSENT_TEXT, PHOTO_ERRORS, PHOTO_UNCONFIRMED_MESSAGE } from "@/lib/photo-rules";
 import { discardPendingPhoto, uploadPhoto } from "./photo-actions";
 
 type Props = {
@@ -19,13 +19,15 @@ type Props = {
   liveUrl: string | null; // photo public today / foto pública hoy
   lost?: boolean; // the photo of the proposal is gone: tell the person / la foto de la propuesta ya no está: avisarle
   disabled?: boolean;
+  onChoosing?: (open: boolean) => void; // a picture is chosen and not uploaded yet / hay una imagen elegida y todavía sin subir
+  warn?: boolean; // the person tried to save or send with a picture not uploaded / la persona intentó guardar o enviar con una imagen sin subir
   onEdit?: () => void; // the person changed the photo choice: the form has unsent changes / la persona cambió la foto: el formulario tiene cambios sin enviar
 };
 
 type Picked = { url: string; image: HTMLImageElement };
 const STEP = 16;
 
-export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveUrl, lost, disabled, onEdit }: Props) {
+export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveUrl, lost, disabled, onChoosing, warn, onEdit }: Props) {
   const [newPath, setNewPath] = useState(initialNew);
   const [removeCurrent, setRemoveCurrent] = useState(initialRemove);
   const [previewUrl, setPreviewUrl] = useState(initialPreviewUrl);
@@ -38,6 +40,10 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
 
   // frees the browser memory used by the chosen picture / libera la memoria del navegador usada por la imagen elegida
   useEffect(() => () => { if (picked) URL.revokeObjectURL(picked.url); }, [picked]);
+
+  // tells the form while a chosen picture is waiting to be uploaded, so saving or sending cannot silently leave it out
+  // le avisa al formulario mientras una imagen elegida espera ser subida, para que guardar o enviar no la deje afuera sin avisar
+  useEffect(() => { onChoosing?.(picked !== null); }, [picked, onChoosing]);
 
   const shown = removeCurrent ? null : newPath ? previewUrl : liveUrl;
 
@@ -132,16 +138,16 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
             {lost && !newPath && !removeCurrent && (
               <p role="status" className="rounded-lg border border-aviso-borde bg-aviso-fondo p-3 text-aviso-texto">Tu foto anterior no se pudo conservar. Subila de nuevo, por favor.</p>
             )}
-            {newPath && <p role="status">Foto nueva lista, pero todavía no se envió. Apretá «Enviar a revisión» al final: la publicamos cuando la aprobemos.</p>}
+            {newPath && <p role="status"><strong>Paso 3 de 3:</strong> la foto está subida, pero todavía no se envió. Apretá «Enviar a revisión» al final: la publicamos cuando la aprobemos.</p>}
             {removeCurrent && <p role="status">Marcaste quitar tu foto, pero todavía no se envió. Apretá «Enviar a revisión» al final: la quitamos cuando se apruebe.</p>}
-            {!newPath && !removeCurrent && !liveUrl && <p>Todavía no tenés foto. Es opcional.</p>}
+            {!newPath && !removeCurrent && !liveUrl && <p>Todavía no tenés foto. Es opcional. <strong>Paso 1 de 3:</strong> elegí tu foto.</p>}
           </div>
         </div>
       )}
 
       {picked && window && (
         <div className="grid gap-3">
-          <p className="text-sm text-apagado">Arrastrá la foto (o usá las flechas) y ajustá el zoom hasta que quede bien dentro del círculo.</p>
+          <p className="text-sm text-apagado"><strong>Paso 2 de 3:</strong> arrastrá la foto (o usá las flechas) y ajustá el zoom hasta que quede bien dentro del círculo. Después tildá la autorización y apretá «Subir esta foto».</p>
           <div
             role="group" tabIndex={0} aria-label="Ventana de recorte: usá las flechas para mover la foto"
             onPointerDown={onPointerDown} onPointerMove={onPointerMove}
@@ -158,13 +164,13 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
             <input type="range" min={ZOOM_MIN} max={ZOOM_MAX} step={0.05} value={crop.zoom}
               onChange={(event) => move({ ...crop, zoom: clamp(Number(event.target.value), ZOOM_MIN, ZOOM_MAX) })} />
           </label>
-          <label className="flex items-start gap-3 text-tinta">
+          <label className="flex items-start gap-3 rounded-lg border border-linea bg-superficie p-3 text-tinta">
             <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} className="mt-1 h-5 w-5 accent-acento" />
             <span>{PHOTO_CONSENT_TEXT}</span>
           </label>
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={send} disabled={busy || disabled} className="inline-flex min-h-11 items-center justify-center rounded-full bg-boton px-5 font-medium text-boton-texto focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60">
-              {busy ? "Subiendo…" : "Usar esta foto"}
+              {busy ? "Subiendo…" : "Subir esta foto"}
             </button>
             <button type="button" onClick={() => { setPicked(null); setMessage(""); }} disabled={busy} className="inline-flex min-h-11 items-center justify-center rounded-full border border-tinta px-5 font-medium text-tinta hover:bg-superficie focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento disabled:opacity-60">Cancelar</button>
           </div>
@@ -184,6 +190,7 @@ export function PhotoField({ initialNew, initialRemove, initialPreviewUrl, liveU
         </div>
       )}
       <p className="text-sm text-apagado">Usá una foto tuya, de frente. No se aceptan logos ni fotos de otras personas. La revisamos antes de publicarla.</p>
+      {warn && picked && <p role="alert" className="text-sm font-medium text-peligro-texto">{PHOTO_UNCONFIRMED_MESSAGE}</p>}
       {message && <p role="alert" className="text-sm font-medium text-peligro-texto">{message}</p>}
     </section>
   );

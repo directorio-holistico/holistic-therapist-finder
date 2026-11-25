@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPendingPhotoPath, pendingPhotoPath, photoChangeOf, PHOTO_CONSENT_TEXT, PHOTO_CONSENT_VERSION } from "@/lib/photo-rules";
+import { isPendingPhotoPath, pendingPhotoPath, photoChangeOf, PHOTO_CONSENT_TEXT, PHOTO_CONSENT_VERSION, PHOTO_UNCONFIRMED_MESSAGE } from "@/lib/photo-rules";
 
 const PROFILE = "773f2832-c09f-4878-98e4-98bf190bff2c";
 const OTHER = "276ff3e7-f824-4e24-b6a8-ab6138b2019b";
@@ -54,5 +54,13 @@ describe("consent", () => {
   it("the text says whose photo it is and that it can be withdrawn / el texto dice de quién es la foto y que se puede retirar", () => {
     expect(PHOTO_CONSENT_TEXT).toMatch(/es mía/);
     expect(PHOTO_CONSENT_TEXT).toMatch(/retirar/);
+  });
+});
+
+describe("message for a picture chosen but not uploaded / mensaje para una imagen elegida pero sin subir", () => {
+  it("tells the person both ways out: upload it or cancel it", () => {
+    expect(PHOTO_UNCONFIRMED_MESSAGE).toMatch(/Subir esta foto/);
+    expect(PHOTO_UNCONFIRMED_MESSAGE).toMatch(/Cancelar/);
+    expect(PHOTO_UNCONFIRMED_MESSAGE).toMatch(/autorización/);
   });
 });

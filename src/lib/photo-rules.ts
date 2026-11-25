@@ -19,6 +19,11 @@ export const PHOTO_CONSENT_VERSION = "2026-11-a";
 export const PHOTO_CONSENT_TEXT =
   "Declaro que esta foto es mía y autorizo que se muestre en mi perfil público de Faro Holístico. Puedo retirar esta autorización cuando quiera quitando la foto.";
 
+// Shown when the person tries to save or send while a picture is chosen but not uploaded yet (otherwise it would be silently left out).
+// Se muestra cuando la persona intenta guardar o enviar con una imagen elegida pero todavía sin subir (si no, quedaría afuera sin avisar).
+export const PHOTO_UNCONFIRMED_MESSAGE =
+  "Elegiste una foto pero todavía no la subiste. Tildá la autorización y apretá «Subir esta foto» (o «Cancelar» si no la querés). Después guardá o enviá.";
+
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const UUID_RE = new RegExp(`^${UUID}$`, "i");
 const PENDING_PATH_RE = new RegExp(`^(${UUID})/(${UUID})\\.jpg$`, "i");
