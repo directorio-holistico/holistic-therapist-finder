@@ -1,9 +1,9 @@
 // The optional message the administrator leaves when approving a revision. Empty means "no message". The database checks it again
-// (1..1000 characters); this only gives a clear answer before the call.
+// (1..2000 characters); this only gives a clear answer before the call.
 // El mensaje opcional que deja el administrador al aprobar una revisión. Vacío significa "sin mensaje". La base lo vuelve a
-// comprobar (1..1000 caracteres); esto solo da una respuesta clara antes de la llamada.
+// comprobar (1..2000 caracteres); esto solo da una respuesta clara antes de la llamada.
 
-export const APPROVAL_NOTE_MAX = 1000;
+export const APPROVAL_NOTE_MAX = 2000;
 
 export type ApprovalNoteResult = { ok: true; value: string | null } | { ok: false; message: string };
 

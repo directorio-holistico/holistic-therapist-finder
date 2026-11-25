@@ -33,7 +33,7 @@ export function DecisionForms({ revisionId, canApprove, whyNot, linksToCheck, su
         <div className="grid gap-1">
           <label htmlFor="note" className={LABEL}>Mensaje para el terapeuta (opcional)</label>
           <p id="note-help" className="text-sm text-apagado">Lo ve en su perfil y puede eliminarlo. Dejalo vacío si no querés enviar nada.</p>
-          <textarea id="note" name="note" rows={5} maxLength={APPROVAL_NOTE_MAX} aria-describedby="note-help" className={FIELD} />
+          <textarea id="note" name="note" rows={10} maxLength={APPROVAL_NOTE_MAX} aria-describedby="note-help" className={FIELD} />
         </div>
         {whyNot && <p className="text-sm text-aviso-texto">{whyNot}</p>}
         {approveState.status === "error" && <p role="alert" className="text-peligro-texto">{approveState.message}</p>}
