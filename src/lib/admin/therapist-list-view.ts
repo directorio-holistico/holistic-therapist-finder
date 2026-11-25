@@ -174,11 +174,13 @@ export function nudgeBody(siteUrl: string): string {
   ].join("\n");
 }
 
-// "mailto:" link with the message already written; null when the address does not pass the check. / Enlace "mailto:" con el mensaje ya escrito; null si la dirección no pasa el control.
-export function nudgeMailto(email: string, siteUrl: string): string | null {
-  const base = emailHref(email);
-  if (!base) return null;
-  return `${base}?subject=${encodeURIComponent(NUDGE_SUBJECT)}&body=${encodeURIComponent(nudgeBody(siteUrl))}`;
+// Gmail "compose" link with the message already written (no dependence on the computer's default mail program); null when the
+// address does not pass the check. / Enlace de redacción de Gmail con el mensaje ya escrito (sin depender del programa de correo
+// predeterminado de la computadora); null si la dirección no pasa el control.
+export function nudgeGmailLink(email: string, siteUrl: string): string | null {
+  if (emailHref(email) === null) return null;
+  const query = `view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(NUDGE_SUBJECT)}&body=${encodeURIComponent(nudgeBody(siteUrl))}`;
+  return `https://mail.google.com/mail/?${query}`;
 }
 
 // Containers in the fixed order, each sorted by name; empty ones are left out. / Contenedores en orden fijo, cada uno por nombre; los vacíos no van.

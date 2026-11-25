@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import { SocialIcon } from "@/components/social-icon";
 import { flagSrc } from "@/lib/card-view";
 import { loadTherapistList } from "@/lib/admin/therapist-list";
-import { groupByState, nudgeMailto, type RatesState, type TherapistRow } from "@/lib/admin/therapist-list-view";
+import { groupByState, nudgeGmailLink, type RatesState, type TherapistRow } from "@/lib/admin/therapist-list-view";
 import { requireAdmin } from "@/lib/admin/guard";
 import { formatDate } from "@/lib/format";
 import { SITE_URL } from "@/lib/site";
@@ -41,7 +41,7 @@ function Row({ row }: { row: TherapistRow }) {
           <p className="break-all text-sm text-tinta">
             {row.email}
             {" · "}
-            <a href={nudgeMailto(row.email, SITE_URL) ?? undefined} className={`text-acento underline underline-offset-4 ${FOCUS}`}>
+            <a href={nudgeGmailLink(row.email, SITE_URL) ?? undefined} target="_blank" rel="noopener noreferrer" className={`text-acento underline underline-offset-4 ${FOCUS}`}>
               Escribirle
             </a>
           </p>

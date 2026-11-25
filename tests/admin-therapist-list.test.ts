@@ -3,7 +3,7 @@ import {
   countryIdOf,
   groupByState,
   nudgeBody,
-  nudgeMailto,
+  nudgeGmailLink,
   latestRevisionStatus,
   ratesStateOf,
   stateOf,
@@ -141,17 +141,17 @@ describe("account e-mail (only for people who never saved anything)", () => {
   });
 });
 
-describe("nudgeMailto", () => {
-  it("builds a mailto with the subject and the message encoded", () => {
-    const link = nudgeMailto("ana@example.test", "https://example.test");
+describe("nudgeGmailLink", () => {
+  it("builds a Gmail compose link with the address, subject and message encoded", () => {
+    const link = nudgeGmailLink("ana@example.test", "https://example.test");
     expect(link).not.toBeNull();
-    expect(link?.startsWith("mailto:ana@example.test?subject=")).toBe(true);
+    expect(link?.startsWith("https://mail.google.com/mail/?view=cm&fs=1&to=ana%40example.test&su=")).toBe(true);
     expect(link).toContain(encodeURIComponent("https://example.test/ingresar"));
     expect(decodeURIComponent(link?.split("&body=")[1] ?? "")).toBe(nudgeBody("https://example.test"));
   });
   it("gives null for an address that fails the check", () => {
-    expect(nudgeMailto("ana@example.test\nBcc: x@y.z", "https://example.test")).toBeNull();
-    expect(nudgeMailto("nada", "https://example.test")).toBeNull();
+    expect(nudgeGmailLink("ana@example.test\nBcc: x@y.z", "https://example.test")).toBeNull();
+    expect(nudgeGmailLink("nada", "https://example.test")).toBeNull();
   });
   it("makes no promises about cures, patients or money", () => {
     expect(nudgeBody("https://example.test")).not.toMatch(/cura|sana|pacientes|\$|gratis para siempre/i);
