@@ -6,7 +6,7 @@
 // comprobación solo cuando duda), manda el token a /api/reveal y muestra el teléfono y el mail. No se guarda nada en el navegador.
 
 import { useEffect, useRef, useState } from "react";
-import { emailHref, labelContactType, phoneHref, whatsappHref } from "@/lib/contact-links";
+import { emailHref, labelContactType, phoneHref, WHATSAPP_GREETING, whatsappHref } from "@/lib/contact-links";
 import { SocialIcon } from "@/components/social-icon";
 import { loadTurnstile } from "@/lib/turnstile-client";
 
@@ -97,20 +97,25 @@ export function ContactReveal({ profileId, siteKey }: Props) {
           <ul className="list-none space-y-2 p-0 text-tinta">
             {contacts.map((contact) => {
               const href = contact.type === "phone" ? phoneHref(contact.value) : contact.type === "email" ? emailHref(contact.value) : null;
-              const whatsapp = contact.type === "phone" && contact.whatsapp ? whatsappHref(contact.value) : null;
+              const whatsapp = contact.type === "phone" && contact.whatsapp ? whatsappHref(contact.value, WHATSAPP_GREETING) : null;
               return (
-                <li key={`${contact.type}-${contact.value}`} className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 sm:justify-start">
+                <li key={`${contact.type}-${contact.value}`} className="flex flex-col items-center gap-2 sm:items-start">
+                  {whatsapp && (
+                    <a
+                      className="inline-flex min-h-11 items-center gap-2 rounded-full bg-boton px-6 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+                      href={whatsapp}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <SocialIcon kind="whatsapp" size={18} />
+                      Escribir por WhatsApp
+                    </a>
+                  )}
                   <span className="inline-flex items-center gap-2">
                     {contact.type === "email" ? <MailIcon /> : <PhoneIcon />}
                     <span className="sr-only">{labelContactType(contact.type)}: </span>
                     {href ? <a className="underline" href={href}>{contact.value}</a> : <span>{contact.value}</span>}
                   </span>
-                  {whatsapp && (
-                    <a className="inline-flex items-center gap-2 underline" href={whatsapp} target="_blank" rel="noopener noreferrer">
-                      <span className="text-acento"><SocialIcon kind="whatsapp" size={18} /></span>
-                      WhatsApp
-                    </a>
-                  )}
                 </li>
               );
             })}

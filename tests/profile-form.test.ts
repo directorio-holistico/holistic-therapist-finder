@@ -48,6 +48,15 @@ describe("profile form", () => {
     }
   });
 
+  it("asks for international format only when WhatsApp is ticked / pide formato internacional solo si se tilda WhatsApp", () => {
+    const local = readProfileForm(form({ ...VALID, phone: "0298 15 4000000", phoneWhatsapp: "on" }), YEAR);
+    expect(local.success).toBe(false);
+    const withoutWhatsapp = readProfileForm(form({ ...VALID, phone: "0298 15 4000000" }), YEAR);
+    expect(withoutWhatsapp.success).toBe(true);
+    const international = readProfileForm(form({ ...VALID, phone: "+54 9 298 4000000", phoneWhatsapp: "on" }), YEAR);
+    expect(international.success).toBe(true);
+  });
+
   it("validates the phone like the database does", () => {
     expect(phoneIsValid("+54 (299) 555-0101")).toBe(true);
     expect(phoneIsValid("12345")).toBe(false);

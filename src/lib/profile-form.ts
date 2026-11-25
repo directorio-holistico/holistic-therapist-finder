@@ -6,6 +6,7 @@
 // revisión (apply_revision_payload y los triggers de las tablas); acá solo dan mensajes claros y temprano.
 
 import { z } from "zod";
+import { whatsappHref } from "@/lib/contact-links";
 import { titleCaseName } from "@/lib/name-case";
 
 export const LIMITS = {
@@ -293,6 +294,11 @@ export function buildProfileFormSchema(maxYear: number, currencyMinorUnits: Read
       photoRemove: z.boolean(),
     })
     .superRefine((value, ctx) => {
+      // WhatsApp link needs the number in international format; we never guess the country code for the therapist.
+      // El enlace de WhatsApp necesita el número en formato internacional; nunca le adivinamos el código de país a la persona.
+      if (value.phoneWhatsapp && phoneIsValid(value.phone) && whatsappHref(value.phone) === null) {
+        ctx.addIssue({ code: "custom", message: "Para WhatsApp escribí el número con + y el código de país (por ejemplo +54 9 298 4000000), o destildá «Atiendo WhatsApp».", path: ["phone"] });
+      }
       // therapies and rates / terapias y tarifas
       const slots = value.therapies.map((slot, index) => readTherapySlot(slot, index));
       const seen = new Set<number>();

@@ -340,6 +340,7 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
           <input type="checkbox" name="phoneWhatsapp" defaultChecked={defaults.phoneWhatsapp} className="h-5 w-5 accent-acento" />
           Atiendo WhatsApp en este número
         </label>
+        <p className={HELP}>Para que aparezca el botón de WhatsApp, escribí el número con + y el código de país, por ejemplo +54 9 298 4000000.</p>
         <div className="grid gap-1">
           <label htmlFor="email" className={LABEL}>Mail de contacto (opcional)</label>
           <input id="email" name="email" type="email" inputMode="email" autoComplete="email" maxLength={254}

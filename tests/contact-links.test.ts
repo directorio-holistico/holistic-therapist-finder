@@ -1,6 +1,6 @@
 // Links from a revealed contact: only safe shapes become links. / Enlaces de un contacto revelado: solo las formas seguras.
 import { describe, expect, it } from "vitest";
-import { emailHref, labelContactType, phoneHref, whatsappHref } from "../src/lib/contact-links";
+import { emailHref, labelContactType, phoneHref, WHATSAPP_GREETING, whatsappHref } from "../src/lib/contact-links";
 
 describe("contact links", () => {
   it("builds a tel: link from a phone", () => {
@@ -18,6 +18,12 @@ describe("contact links", () => {
     expect(whatsappHref("+54 298 400 0000")).toBe("https://wa.me/542984000000");
     expect(whatsappHref("298 400 0000")).toBeNull();
     expect(whatsappHref("+54 abc")).toBeNull();
+  });
+
+  it("adds the fixed greeting, URL-encoded, and never to an invalid number / agrega el saludo fijo codificado y nunca a un número inválido", () => {
+    expect(whatsappHref("+54 298 400 0000", WHATSAPP_GREETING)).toBe(`https://wa.me/542984000000?text=${encodeURIComponent(WHATSAPP_GREETING)}`);
+    expect(whatsappHref("298 400 0000", WHATSAPP_GREETING)).toBeNull();
+    expect(WHATSAPP_GREETING).not.toMatch(/[0-9@]|https?:/);
   });
 
   it("builds a mailto: link only from a plain address", () => {
