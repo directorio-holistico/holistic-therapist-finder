@@ -1,13 +1,15 @@
 // Admin list of therapists. PURE code (no database), so it can be tested.
 // SECURITY: names and phones were typed by the therapist, so they are only ever shown as text. The phone number is NEVER shown here:
 // the only thing built from it is a WhatsApp link, and only when the person marked WhatsApp and the number has the "+" country code
-// (same strict check as the public page). The account e-mail is not read at all.
+// (same strict check as the public page). The account e-mail is shown ONLY for people who registered and never saved anything
+// (state "unpublished"): for them it is the only way to reach the person. For every other state it is not even kept in the row.
 // Lista de terapeutas para administración. Código PURO (sin base), para poder probarlo.
 // SEGURIDAD: nombres y teléfonos los escribió el terapeuta, así que solo se muestran como texto. El número de teléfono NUNCA se muestra
 // acá: lo único que se arma con él es un enlace de WhatsApp, y solo si la persona marcó WhatsApp y el número lleva el "+" del país
-// (mismo control estricto que la página pública). El mail de la cuenta ni siquiera se lee.
+// (mismo control estricto que la página pública). El mail de la cuenta se muestra SOLO de quien se registró y nunca guardó nada
+// (estado "unpublished"): para esa persona es la única forma de contactarla. En los demás estados ni siquiera queda en la fila.
 
-import { whatsappHref } from "@/lib/contact-links";
+import { emailHref, whatsappHref } from "@/lib/contact-links";
 
 export type TherapistState = "pending" | "published" | "rejected" | "draft" | "unpublished" | "paused" | "suspended";
 export type RatesState = "current" | "expired" | "none";
@@ -32,7 +34,7 @@ export type ProfileStub = {
   location_id: number | null;
   rates_confirmed_at: string | null;
 };
-export type PersonStub = { id: string; full_name: string | null; created_at: string; erased_at: string | null };
+export type PersonStub = { id: string; full_name: string | null; email: string | null; created_at: string; erased_at: string | null };
 export type ContactStub = { profile_id: string; contact_type_id: number; value: string; accepts_whatsapp: boolean };
 export type RevisionLite = { profile_id: string; status_id: number; created_at: string };
 
@@ -48,6 +50,7 @@ export type TherapistRow = {
   note: string | null;
   whatsappLink: string | null;
   hasPhone: boolean;
+  email: string | null; // only for "unpublished" / solo para "unpublished"
 };
 
 const timeOf = (iso: string | null): number => (iso === null ? Number.NaN : Date.parse(iso));
@@ -136,6 +139,7 @@ export function toTherapistRow(input: {
   const profileName = profile.display_name === null ? "" : clean(profile.display_name, 120);
   const personName = person.full_name === null ? "" : clean(person.full_name, 120);
   const whatsapp = whatsappOf(input.contacts, input.phoneTypeId);
+  const accountEmail = person.email === null ? "" : clean(person.email, 160);
   return {
     profileId: profile.id,
     name: profileName || personName || "Sin nombre",
@@ -148,7 +152,33 @@ export function toTherapistRow(input: {
     note: decided.note,
     whatsappLink: whatsapp.link,
     hasPhone: whatsapp.hasPhone,
+    email: decided.state === "unpublished" && emailHref(accountEmail) !== null ? accountEmail : null,
   };
+}
+
+// Fixed message for people who registered and never filled in their profile. No promises, no health claims, nothing about money.
+// Mensaje fijo para quien se registró y nunca completó su perfil. Sin promesas, sin afirmaciones de salud, nada de dinero.
+export const NUDGE_SUBJECT = "Tu perfil en Faro Holístico quedó a medio camino";
+export function nudgeBody(siteUrl: string): string {
+  return [
+    "Hola,",
+    "",
+    "Te escribo desde Faro Holístico, el directorio gratuito de terapeutas holísticos. Vi que te registraste, pero todavía no cargaste los datos de tu perfil, por eso aún no aparecés en las búsquedas.",
+    "",
+    `Completarlo lleva pocos minutos: ingresás con este mismo mail en ${siteUrl}/ingresar, entrás a "Mi perfil" y completás tus terapias, tu ciudad y una forma de contacto. Lo revisamos antes de publicarlo y, una vez aprobado, las personas que busquen podrán encontrarte.`,
+    "",
+    "Si tenés dudas o algo te frenó, respondé este mail y te ayudo.",
+    "",
+    "Un abrazo,",
+    "Ariel · Faro Holístico",
+  ].join("\n");
+}
+
+// "mailto:" link with the message already written; null when the address does not pass the check. / Enlace "mailto:" con el mensaje ya escrito; null si la dirección no pasa el control.
+export function nudgeMailto(email: string, siteUrl: string): string | null {
+  const base = emailHref(email);
+  if (!base) return null;
+  return `${base}?subject=${encodeURIComponent(NUDGE_SUBJECT)}&body=${encodeURIComponent(nudgeBody(siteUrl))}`;
 }
 
 // Containers in the fixed order, each sorted by name; empty ones are left out. / Contenedores en orden fijo, cada uno por nombre; los vacíos no van.

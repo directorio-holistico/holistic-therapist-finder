@@ -1,7 +1,9 @@
 // Reads the therapist list with the ADMINISTRATOR's session (RLS applies; no service role). Several small queries, no nested joins.
-// It reads only what the page shows: no e-mail, no phone number (just whether a WhatsApp link can be built).
+// It reads only what the page shows: no phone number (just whether a WhatsApp link can be built); the account e-mail is read but
+// the view keeps it only for people who never saved anything.
 // Lee la lista de terapeutas con la sesión del ADMINISTRADOR (rige RLS; sin service role). Varias consultas chicas, sin joins anidados.
-// Lee solo lo que muestra la página: ni mail ni número de teléfono (solo si se puede armar un enlace de WhatsApp).
+// Lee solo lo que muestra la página: ni número de teléfono (solo si se puede armar un enlace de WhatsApp); el mail de la cuenta se lee
+// pero la vista lo conserva solo de quien nunca guardó nada.
 
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -87,7 +89,7 @@ export async function loadTherapistList(client: Client): Promise<TherapistList> 
 
   const people = new Map<string, PersonStub>();
   for (const ids of chunksOf([...new Set(profiles.map((profile) => profile.person_id))], CHUNK)) {
-    const { data, error } = await client.from("people").select("id, full_name, created_at, erased_at").in("id", ids).limit(CHUNK);
+    const { data, error } = await client.from("people").select("id, full_name, email, created_at, erased_at").in("id", ids).limit(CHUNK);
     if (error) return fail("the people", error.message);
     for (const row of data) people.set(row.id, row);
   }

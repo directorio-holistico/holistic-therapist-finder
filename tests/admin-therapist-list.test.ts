@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   countryIdOf,
   groupByState,
+  nudgeBody,
+  nudgeMailto,
   latestRevisionStatus,
   ratesStateOf,
   stateOf,
@@ -15,7 +17,7 @@ import {
 const NOW = Date.parse("2026-11-25T12:00:00Z");
 const PHONE = 1;
 const profile = (extra: Partial<ProfileStub> = {}): ProfileStub => ({ id: "p1", person_id: "u1", display_name: "Ana Prueba", status_id: 2, location_id: 10, rates_confirmed_at: "2026-10-01T10:00:00Z", ...extra });
-const person = (extra: Partial<PersonStub> = {}): PersonStub => ({ id: "u1", full_name: "Ana P. Persona", created_at: "2026-09-01T10:00:00Z", erased_at: null, ...extra });
+const person = (extra: Partial<PersonStub> = {}): PersonStub => ({ id: "u1", full_name: "Ana P. Persona", email: "ana@example.test", created_at: "2026-09-01T10:00:00Z", erased_at: null, ...extra });
 const contact = (value: string, whatsapp: boolean, type = PHONE): ContactStub => ({ profile_id: "p1", contact_type_id: type, value, accepts_whatsapp: whatsapp });
 const build = (extra: Partial<Parameters<typeof toTherapistRow>[0]> = {}) =>
   toTherapistRow({ profile: profile(), person: person(), profileCode: "published", revisionCode: "approved", countryIso: "AR", countryName: "Argentina", contacts: [], phoneTypeId: PHONE, months: 6, nowMs: NOW, ...extra });
@@ -123,6 +125,36 @@ describe("toTherapistRow", () => {
   });
   it("strips control characters from the name", () => {
     expect(build({ profile: profile({ display_name: "Ana‮\u0000 Prueba" }) })?.name).toBe("Ana Prueba");
+  });
+});
+
+describe("account e-mail (only for people who never saved anything)", () => {
+  it("shows it for 'unpublished' and for no other state", () => {
+    expect(build({ profileCode: "unpublished", revisionCode: null })?.email).toBe("ana@example.test");
+    for (const [profileCode, revisionCode] of [["published", "approved"], ["unpublished", "rejected"], ["unpublished", "draft"], ["unpublished", "pending_review"], ["paused", null], ["suspended", null]] as const) {
+      expect(build({ profileCode, revisionCode })?.email).toBeNull();
+    }
+  });
+  it("drops an address that does not look like an e-mail", () => {
+    expect(build({ profileCode: "unpublished", revisionCode: null, person: person({ email: "no es un mail" }) })?.email).toBeNull();
+    expect(build({ profileCode: "unpublished", revisionCode: null, person: person({ email: null }) })?.email).toBeNull();
+  });
+});
+
+describe("nudgeMailto", () => {
+  it("builds a mailto with the subject and the message encoded", () => {
+    const link = nudgeMailto("ana@example.test", "https://example.test");
+    expect(link).not.toBeNull();
+    expect(link?.startsWith("mailto:ana@example.test?subject=")).toBe(true);
+    expect(link).toContain(encodeURIComponent("https://example.test/ingresar"));
+    expect(decodeURIComponent(link?.split("&body=")[1] ?? "")).toBe(nudgeBody("https://example.test"));
+  });
+  it("gives null for an address that fails the check", () => {
+    expect(nudgeMailto("ana@example.test\nBcc: x@y.z", "https://example.test")).toBeNull();
+    expect(nudgeMailto("nada", "https://example.test")).toBeNull();
+  });
+  it("makes no promises about cures, patients or money", () => {
+    expect(nudgeBody("https://example.test")).not.toMatch(/cura|sana|pacientes|\$|gratis para siempre/i);
   });
 });
 

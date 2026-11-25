@@ -1,15 +1,16 @@
 // All therapists at a glance, one container per state. Read-only: nothing here changes what a therapist wrote.
-// The phone number and the e-mail are NOT shown; the WhatsApp icon is the only way to reach the person from here.
+// The phone number is NOT shown; the WhatsApp icon is the way to reach the person. The e-mail shows only for "unpublished" (nothing else to reach them by).
 // Todos los terapeutas de un vistazo, un contenedor por estado. Solo lectura: nada de acá cambia lo que escribió el terapeuta.
-// El número de teléfono y el mail NO se muestran; el ícono de WhatsApp es la única forma de contactar a la persona desde acá.
+// El número de teléfono NO se muestra; el ícono de WhatsApp es la forma de contactar. El mail solo se ve en "unpublished" (no hay otra forma).
 
 import { Suspense } from "react";
 import { SocialIcon } from "@/components/social-icon";
 import { flagSrc } from "@/lib/card-view";
 import { loadTherapistList } from "@/lib/admin/therapist-list";
-import { groupByState, type RatesState, type TherapistRow } from "@/lib/admin/therapist-list-view";
+import { groupByState, nudgeMailto, type RatesState, type TherapistRow } from "@/lib/admin/therapist-list-view";
 import { requireAdmin } from "@/lib/admin/guard";
 import { formatDate } from "@/lib/format";
+import { SITE_URL } from "@/lib/site";
 
 const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento";
 const RATES_LABEL: Record<RatesState, string> = { current: "al día", expired: "vencidos", none: "sin cargar" };
@@ -36,6 +37,15 @@ function Row({ row }: { row: TherapistRow }) {
           Registro: {registered} · Precios: {prices ? `${prices} (${RATES_LABEL[row.rates]})` : RATES_LABEL[row.rates]}
         </p>
         {row.note && <p className="text-sm text-aviso-texto">{row.note}</p>}
+        {row.email && (
+          <p className="break-all text-sm text-tinta">
+            {row.email}
+            {" · "}
+            <a href={nudgeMailto(row.email, SITE_URL) ?? undefined} className={`text-acento underline underline-offset-4 ${FOCUS}`}>
+              Escribirle
+            </a>
+          </p>
+        )}
       </div>
       {row.whatsappLink ? (
         <a
@@ -68,7 +78,7 @@ async function List() {
       <p className="mt-2 text-apagado">Total: {rows.length}</p>
       {groups.length === 0 && <p className="mt-4 text-apagado">Todavía no hay terapeutas registrados.</p>}
       {groups.map((group) => (
-        <details key={group.state} open className="mt-4 rounded-xl border border-linea bg-superficie">
+        <details key={group.state} className="mt-4 rounded-xl border border-linea bg-superficie">
           <summary className={`flex min-h-11 cursor-pointer items-center px-4 py-2 font-display text-xl font-semibold text-tinta ${FOCUS}`}>
             {group.title} <span className="ml-2 text-apagado">({group.rows.length})</span>
           </summary>
@@ -88,7 +98,7 @@ export default function TherapistsPage() {
     <main>
       <h1 className="mt-6 font-display text-3xl font-semibold text-tinta">Terapeutas</h1>
       <p className="mt-2 text-apagado">
-        Registro: cuándo se registró. Precios: la última vez que confirmó sus precios. El ícono abre WhatsApp si la persona lo marcó y cargó el número con el código de país.
+        Registro: cuándo se registró. Precios: la última vez que confirmó sus precios. El ícono abre WhatsApp si la persona lo marcó y cargó el número con el código de país. El mail solo se muestra de quien se registró y nunca guardó nada.
       </p>
       <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
         <List />
