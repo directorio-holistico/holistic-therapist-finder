@@ -18,8 +18,8 @@ insert into public.therapist_profiles (id, person_id, status_id, approved_at, lo
          'Original ' || k
   from unnest(array['a1','b2']) k;
 insert into public.profile_contacts (profile_id, contact_type_id, value)
-  select ('20000000-0000-0000-0000-0000000039' || k)::uuid, (select id from public.contact_types where code = 'email'), k || '@example.test'
-  from unnest(array['a1','b2']) k;
+  select ('20000000-0000-0000-0000-0000000039' || k)::uuid, (select id from public.contact_types where code = 'phone'), '+54 351 555 0' || n
+  from unnest(array['a1','b2'], array['391','392']) as u(k, n);
 update public.therapist_profiles set status_id = (select id from public.profile_statuses where code = 'published')
   where id in ('20000000-0000-0000-0000-0000000039a1', '20000000-0000-0000-0000-0000000039b2');
 
@@ -60,13 +60,13 @@ $$;
 reset role;
 reset session authorization;
 
--- 3) ad (administrator): a message over 1000 characters is refused and nothing changes; a blank one counts as no message
--- 3) ad (admin): un mensaje de más de 1000 caracteres se rechaza y no cambia nada; uno en blanco cuenta como sin mensaje
+-- 3) ad (administrator): a message over 2000 characters is refused and nothing changes; a blank one counts as no message
+-- 3) ad (admin): un mensaje de más de 2000 caracteres se rechaza y no cambia nada; uno en blanco cuenta como sin mensaje
 set role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-0000000039ad","role":"authenticated"}', true);
 do $$
 begin
-  begin perform public.approve_revision('30000000-0000-0000-0000-0000000039b2', repeat('x', 1001)); raise exception 'a 1001-character message must be refused';
+  begin perform public.approve_revision('30000000-0000-0000-0000-0000000039b2', repeat('x', 2001)); raise exception 'a 2001-character message must be refused';
   exception when sqlstate '22023' then null; end;
 end
 $$;
@@ -182,6 +182,17 @@ begin
   begin
     update public.profile_revisions set approval_note = 'no corresponde' where id = '30000000-0000-0000-0000-0000000039c3';
     raise exception 'an open revision must not carry a message';
+  exception when check_violation then null; end;
+end
+$$;
+
+-- 8) the length limit is 2000: the table takes 2000 and refuses 2001 (on the approved revision a1) / el tope es 2000: la tabla acepta 2000 y rechaza 2001
+do $$
+begin
+  update public.profile_revisions set approval_note = repeat('x', 2000) where id = '30000000-0000-0000-0000-0000000039a1';
+  begin
+    update public.profile_revisions set approval_note = repeat('x', 2001) where id = '30000000-0000-0000-0000-0000000039a1';
+    raise exception 'a 2001-character message must be refused by the table';
   exception when check_violation then null; end;
 end
 $$;
