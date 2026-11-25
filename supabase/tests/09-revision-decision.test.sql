@@ -390,7 +390,7 @@ $$;
 do $$
 declare f text;
 begin
-  foreach f in array array['public.approve_revision(uuid)', 'public.reject_revision(uuid,text)'] loop
+  foreach f in array array['public.approve_revision(uuid,text)', 'public.reject_revision(uuid,text)'] loop
     if not has_function_privilege('authenticated', f, 'EXECUTE') then raise exception 'authenticated cannot execute %', f; end if;
     if has_function_privilege('anon', f, 'EXECUTE') or has_function_privilege('service_role', f, 'EXECUTE') then
       raise exception 'anon or service_role can execute %', f;
