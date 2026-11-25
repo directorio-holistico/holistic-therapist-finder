@@ -60,6 +60,66 @@ export function audienceIds(catalogs: FormCatalogs): AudienceIds | null {
   return own && other ? { own, other } : null;
 }
 
+// The values of the LIVE profile (what is stored in the profile tables today), in the shape of the form. Used by the editor and by the preview.
+// Los valores del perfil VIGENTE (lo que hoy está guardado en las tablas del perfil), con la forma del formulario. Lo usan el editor y la vista previa.
+export type LiveProfileRow = {
+  id: string;
+  display_name: string | null;
+  headline: string | null;
+  about: string | null;
+  zone: string | null;
+  practice_start_year: number | null;
+  location_id: number | null;
+};
+
+export async function loadLiveDefaults(client: Client, profile: LiveProfileRow, contactTypes: ContactTypeIds, audiences: AudienceIds): Promise<FormDefaults> {
+  const [languages, modes, formats, contacts, therapies, rates] = await Promise.all([
+    client.from("profile_languages").select("language_id").eq("profile_id", profile.id).limit(100),
+    client.from("profile_therapy_service_modes").select("therapy_id, service_mode_id").eq("profile_id", profile.id).limit(1000),
+    client.from("profile_therapy_session_formats").select("therapy_id, session_format_id").eq("profile_id", profile.id).limit(1000),
+    client.from("profile_contacts").select("contact_type_id, value, accepts_whatsapp").eq("profile_id", profile.id).limit(100),
+    client.from("profile_therapies").select("therapy_id, description, session_minutes").eq("profile_id", profile.id).order("therapy_id").limit(100),
+    client.from("profile_therapy_rates").select("therapy_id, rate_audience_id, amount, currency_id").eq("profile_id", profile.id).limit(100),
+  ]);
+  for (const result of [languages, modes, formats, contacts, therapies, rates]) if (result.error) fail("the profile data / los datos del perfil", result.error.message);
+  const contact = (id: number) => contacts.data?.find((row) => row.contact_type_id === id);
+  const rateRows = rates.data ?? [];
+  const rateOf = (therapyId: number, audienceId: number) => rateRows.find((row) => row.therapy_id === therapyId && row.rate_audience_id === audienceId);
+  return {
+    displayName: profile.display_name ?? "",
+    headline: profile.headline ?? "",
+    about: profile.about ?? "",
+    zone: profile.zone ?? "",
+    practiceStartYear: profile.practice_start_year != null ? String(profile.practice_start_year) : "",
+    cityId: profile.location_id,
+    languages: (languages.data ?? []).map((row) => row.language_id),
+    phone: contact(contactTypes.phone)?.value ?? "",
+    phoneWhatsapp: contact(contactTypes.phone)?.accepts_whatsapp ?? false,
+    email: contact(contactTypes.email)?.value ?? "",
+    website: contact(contactTypes.website)?.value ?? "",
+    instagram: contact(contactTypes.instagram)?.value ?? "",
+    facebook: contact(contactTypes.facebook)?.value ?? "",
+    tiktok: contact(contactTypes.tiktok)?.value ?? "",
+    youtube: contact(contactTypes.youtube)?.value ?? "",
+    therapies: padTherapies(
+      (therapies.data ?? []).map((row) => ({
+        therapyId: row.therapy_id,
+        description: row.description ?? "",
+        minutes: row.session_minutes != null ? String(row.session_minutes) : "",
+        rateOwn: String(rateOf(row.therapy_id, audiences.own)?.amount ?? ""),
+        rateOther: String(rateOf(row.therapy_id, audiences.other)?.amount ?? ""),
+        serviceModes: (modes.data ?? []).filter((item) => item.therapy_id === row.therapy_id).map((item) => item.service_mode_id),
+        sessionFormats: (formats.data ?? []).filter((item) => item.therapy_id === row.therapy_id).map((item) => item.session_format_id),
+      })),
+    ),
+    currencyOwn: rateRows.find((row) => row.rate_audience_id === audiences.own)?.currency_id ?? null,
+    currencyOther: rateRows.find((row) => row.rate_audience_id === audiences.other)?.currency_id ?? null,
+    photoNew: "",
+    photoRemove: false,
+    suggestedTherapy: "",
+  };
+}
+
 // An administrator can READ every row of these tables (policy *_select_admin), so every "my own data" query is filtered by the
 // logged-in person explicitly: without the filter, an administrator who is also a therapist would get several rows.
 // Un administrador puede LEER todas las filas de estas tablas (política *_select_admin), por eso cada consulta de "mis datos"
@@ -128,51 +188,7 @@ export async function loadProfileEditor(client: Client, authUserId: string): Pro
       suggestedTherapy: open.data ? (open.data.suggested_therapy ?? "") : rejectedSuggestion,
     });
   } else {
-    const [languages, modes, formats, contacts, therapies, rates] = await Promise.all([
-      client.from("profile_languages").select("language_id").eq("profile_id", profile.data.id).limit(100),
-      client.from("profile_therapy_service_modes").select("therapy_id, service_mode_id").eq("profile_id", profile.data.id).limit(1000),
-      client.from("profile_therapy_session_formats").select("therapy_id, session_format_id").eq("profile_id", profile.data.id).limit(1000),
-      client.from("profile_contacts").select("contact_type_id, value, accepts_whatsapp").eq("profile_id", profile.data.id).limit(100),
-      client.from("profile_therapies").select("therapy_id, description, session_minutes").eq("profile_id", profile.data.id).order("therapy_id").limit(100),
-      client.from("profile_therapy_rates").select("therapy_id, rate_audience_id, amount, currency_id").eq("profile_id", profile.data.id).limit(100),
-    ]);
-    for (const result of [languages, modes, formats, contacts, therapies, rates]) if (result.error) fail("the profile data / los datos del perfil", result.error.message);
-    const contact = (id: number) => contacts.data?.find((row) => row.contact_type_id === id);
-    const rateRows = rates.data ?? [];
-    const rateOf = (therapyId: number, audienceId: number) => rateRows.find((row) => row.therapy_id === therapyId && row.rate_audience_id === audienceId);
-    defaults = {
-      displayName: profile.data.display_name ?? "",
-      headline: profile.data.headline ?? "",
-      about: profile.data.about ?? "",
-      zone: profile.data.zone ?? "",
-      practiceStartYear: profile.data.practice_start_year != null ? String(profile.data.practice_start_year) : "",
-      cityId: profile.data.location_id,
-      languages: (languages.data ?? []).map((row) => row.language_id),
-      phone: contact(contactTypes.phone)?.value ?? "",
-      phoneWhatsapp: contact(contactTypes.phone)?.accepts_whatsapp ?? false,
-      email: contact(contactTypes.email)?.value ?? "",
-      website: contact(contactTypes.website)?.value ?? "",
-      instagram: contact(contactTypes.instagram)?.value ?? "",
-      facebook: contact(contactTypes.facebook)?.value ?? "",
-      tiktok: contact(contactTypes.tiktok)?.value ?? "",
-      youtube: contact(contactTypes.youtube)?.value ?? "",
-      therapies: padTherapies(
-        (therapies.data ?? []).map((row) => ({
-          therapyId: row.therapy_id,
-          description: row.description ?? "",
-          minutes: row.session_minutes != null ? String(row.session_minutes) : "",
-          rateOwn: String(rateOf(row.therapy_id, audiences.own)?.amount ?? ""),
-          rateOther: String(rateOf(row.therapy_id, audiences.other)?.amount ?? ""),
-          serviceModes: (modes.data ?? []).filter((item) => item.therapy_id === row.therapy_id).map((item) => item.service_mode_id),
-          sessionFormats: (formats.data ?? []).filter((item) => item.therapy_id === row.therapy_id).map((item) => item.session_format_id),
-        })),
-      ),
-      currencyOwn: rateRows.find((row) => row.rate_audience_id === audiences.own)?.currency_id ?? null,
-      currencyOther: rateRows.find((row) => row.rate_audience_id === audiences.other)?.currency_id ?? null,
-      photoNew: "",
-      photoRemove: false,
-      suggestedTherapy: "",
-    };
+    defaults = await loadLiveDefaults(client, profile.data, contactTypes, audiences);
   }
 
   const request = await client.from("location_requests").select("region_id, city_name").eq("profile_id", profile.data.id).is("resolved_at", null).maybeSingle();

@@ -46,7 +46,7 @@ function fail(what: string, message: string): never {
   throw new Error(`Could not read ${what} / No se pudo leer ${what}: ${message}`);
 }
 
-async function getLanguageId(client: Client): Promise<number> {
+export async function getLanguageId(client: Client): Promise<number> {
   const { data, error } = await client
     .from("languages")
     .select("id")

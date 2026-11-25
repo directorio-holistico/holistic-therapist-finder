@@ -409,6 +409,16 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
             className={`col-span-2 ${PRIMARY}`}>
             {pending ? "Enviando…" : "Enviar a revisión"}
           </button>
+          {/* the preview shows what is SAVED: it is off while there is something unsaved or a picture waiting to be uploaded / la vista previa muestra lo GUARDADO: está apagada mientras haya algo sin guardar o una imagen sin subir */}
+          {dirty || state.status === "error" || photoChoosing || pending ? (
+            <button type="button" disabled className={`col-span-2 ${SECONDARY}`}>
+              Ver vista previa (guardá primero)
+            </button>
+          ) : (
+            <Link href="/mi-perfil/vista-previa" target="_blank" rel="noopener noreferrer" className={`col-span-2 ${SECONDARY}`}>
+              Ver vista previa<span className="sr-only"> (se abre en otra pestaña)</span>
+            </Link>
+          )}
           {(hasDraft || dirty) && (
             <button type="button" onClick={handleDiscard} disabled={pending || discarding}
               className={`col-span-2 ${SECONDARY}`}>

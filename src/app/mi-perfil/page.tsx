@@ -154,6 +154,8 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
           )}
           <div className="mt-4 flex flex-wrap items-start gap-3">
             <Link href="/mi-perfil/editar" className={`${PRIMARY} w-52 justify-center`}>{hasDraft ? "Continuar y enviar" : "Editar perfil"}</Link>
+            <Link href="/mi-perfil/vista-previa" className={`${SECONDARY} w-52 justify-center`}>Ver cómo queda</Link>
+            {status?.code === "published" && <Link href={`/terapeuta/${profile.id}`} className={`${SECONDARY} w-52 justify-center`}>Ver perfil publicado</Link>}
             <Link href="/mi-perfil/contrasena" className={`${SECONDARY} w-52 justify-center`}>Cambiar contraseña</Link>
             {hasDraft && <DiscardDraftButton />}
           </div>

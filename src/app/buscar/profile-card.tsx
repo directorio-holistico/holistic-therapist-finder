@@ -10,7 +10,9 @@ import type { SearchCard } from "@/lib/search";
 
 const MAX_THERAPIES = 3;
 
-export function ProfileCard({ card }: { card: SearchCard }) {
+// preview: the therapist's own preview. The button does not go anywhere (the public page may not exist yet) and a pending photo comes as a ready address.
+// preview: la vista previa propia del terapeuta. El botón no lleva a ningún lado (la página pública puede no existir todavía) y una foto pendiente llega como dirección lista.
+export function ProfileCard({ card, preview }: { card: SearchCard; preview?: { photoUrl?: string | null } }) {
   const { shown, hidden } = capItems(card.therapyShorts, MAX_THERAPIES);
   return (
     <article className="relative flex min-w-0 flex-col items-center rounded-2xl border border-linea bg-superficie p-6 text-center shadow-sm motion-safe:transition-shadow motion-safe:hover:shadow-md">
@@ -18,7 +20,7 @@ export function ProfileCard({ card }: { card: SearchCard }) {
       {/* Avatar centered; the mode icons stack vertically at its right. / Avatar centrado; los íconos de modalidad apilados a su derecha. */}
       <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center">
         <span aria-hidden="true" />
-        <Avatar name={card.displayName} photoPath={card.photoPath} size="lg" />
+        <Avatar name={card.displayName} photoPath={card.photoPath} photoUrl={preview?.photoUrl} size="lg" />
         {card.serviceModes.length > 0 && (
           <ul className="flex flex-col items-start gap-2 pl-3" aria-label="Modo de atención">
             {card.serviceModes.map((mode) => (
@@ -43,13 +45,22 @@ export function ProfileCard({ card }: { card: SearchCard }) {
         </ul>
       )}
       {card.place && <p className="mt-3 mb-5 text-sm text-apagado">{card.place}</p>}
-      <Link
-        className="mt-auto inline-flex min-h-10 items-center justify-center rounded-full bg-boton px-8 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
-        href={`/terapeuta/${card.profileId}`}
-        aria-label={`Ver perfil de ${card.displayName}`}
-      >
-        Ver perfil
-      </Link>
+      {preview ? (
+        <span
+          aria-disabled="true"
+          className="mt-auto inline-flex min-h-10 items-center justify-center rounded-full bg-boton px-8 text-sm font-semibold text-boton-texto opacity-60"
+        >
+          Ver perfil
+        </span>
+      ) : (
+        <Link
+          className="mt-auto inline-flex min-h-10 items-center justify-center rounded-full bg-boton px-8 text-sm font-semibold text-boton-texto hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-acento"
+          href={`/terapeuta/${card.profileId}`}
+          aria-label={`Ver perfil de ${card.displayName}`}
+        >
+          Ver perfil
+        </Link>
+      )}
     </article>
   );
 }
