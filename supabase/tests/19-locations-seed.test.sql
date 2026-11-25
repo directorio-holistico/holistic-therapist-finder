@@ -33,7 +33,9 @@ begin
     raise exception 'duplicated location name under the same parent';
   end if;
   -- spot checks / controles puntuales
-  if not exists (select 1 from public.location_translations where name = 'Ciudad Autónoma de Buenos Aires') then raise exception 'CABA missing'; end if;
+  -- the region is publicly called "CABA" since 25/11/2026 / la región se llama públicamente "CABA" desde el 25/11/2026
+  if not exists (select 1 from public.location_translations where name = 'CABA') then raise exception 'CABA missing'; end if;
+  if exists (select 1 from public.location_translations where name = 'Ciudad Autónoma de Buenos Aires') then raise exception 'old CABA name still there'; end if;
   if not exists (select 1 from public.location_translations where name = 'Ciudad de México') then raise exception 'CDMX missing'; end if;
   if not exists (select 1 from public.location_translations where name in ('Ceuta')) or
      not exists (select 1 from public.location_translations where name in ('Melilla')) then raise exception 'Ceuta/Melilla missing'; end if;

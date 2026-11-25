@@ -31,11 +31,11 @@ begin
               group by c.parent_id, lower(translate(ct.name, 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunAEIOUUN')) having count(*) > 1) then
     raise exception 'a city name is repeated inside a province';
   end if;
-  -- Ciudad Autónoma de Buenos Aires stays a single city / la Ciudad Autónoma de Buenos Aires sigue siendo una sola ciudad
+  -- CABA (Ciudad Autónoma de Buenos Aires) stays a single city / CABA (Ciudad Autónoma de Buenos Aires) sigue siendo una sola ciudad
   if (select count(*) from public.locations c
         join public.location_translations rt on rt.location_id = c.parent_id and rt.language_id = v_es
-       where c.level_id = v_city and rt.name = 'Ciudad Autónoma de Buenos Aires') <> 1 then
-    raise exception 'Ciudad Autonoma de Buenos Aires must have exactly one city';
+       where c.level_id = v_city and rt.name = 'CABA') <> 1 then
+    raise exception 'CABA must have exactly one city';
   end if;
   -- no Delta islands or streams / sin islas ni arroyos del Delta
   if exists (select 1 from public.locations c
