@@ -21,7 +21,7 @@ select jsonb_build_object(
   'olivos', (select count(*) from city where norm = 'olivos'),
   'martinez', (select count(*) from city where norm = 'martinez'),
   'beccar', (select count(*) from city where norm = 'beccar'),
-  'ciudades_en_caba', (select count(*) from city c join public.location_translations t on t.location_id = c.parent_id and t.language_id = (select id from es) where t.name = 'Ciudad Autónoma de Buenos Aires'),
+  'ciudades_en_caba', (select count(*) from city c join public.location_translations t on t.location_id = c.parent_id and t.language_id = (select id from es) where t.name = 'CABA'),
   'por_region_top', (select jsonb_agg(x order by x.ciudades desc) from (
       select t.name as region, count(*) as ciudades from city c
         join public.location_translations t on t.location_id = c.parent_id and t.language_id = (select id from es)
