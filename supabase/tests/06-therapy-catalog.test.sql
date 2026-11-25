@@ -53,6 +53,8 @@ begin
   if not exists (select 1 from public.therapy_translations where name = 'Reiki') then raise exception 'anon cannot see Reiki'; end if;
   if not exists (select 1 from public.therapy_translations where name like 'LNT%') then raise exception 'anon cannot see LNT'; end if;
   if not exists (select 1 from public.therapy_translations where name = 'Constelaciones') then raise exception 'anon cannot see Constelaciones'; end if;
+  -- added on 25/11/2026: active, with its Spanish name, visible to visitors / agregada el 25/11/2026: activa, con nombre en español, visible para los visitantes
+  if (select count(*) from public.therapies t join public.therapy_translations tt on tt.therapy_id = t.id where t.code = 'astrology' and tt.name = 'Astrología') <> 1 then raise exception 'anon cannot see the active therapy Astrología'; end if;
   if (select count(*) from public.therapy_translations where name in ('Masaje tailandés / Masaje Thai', 'Masaje con calor y elementos', 'Ventosas y moxibustión / Cupping', 'Shiatsu', 'Masajes Terapéuticos', 'Reflexología')) <> 6 then raise exception 'anon cannot see the massage therapies'; end if;
   -- reactivated on 19/11/2026 (Acupuntura, Homeopatía, Fitoterapia) and added the same day (Terapia vibracional, Facilitador de procesos sociales)
   -- reactivadas el 19/11/2026 (Acupuntura, Homeopatía, Fitoterapia) y agregadas ese día (Terapia vibracional, Facilitador de procesos sociales)
