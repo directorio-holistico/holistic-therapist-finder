@@ -34,3 +34,6 @@ Rules / Reglas:
 1. Never mix two words for one concept (for example, `therapy_id` in one table and `treatment_id` in another).
 2. Catalogs (therapies, statuses, languages, contact types...) are tables with an `id`, never enums or fixed `CHECK` lists.
 3. Dates are `timestamptz` in UTC.
+4. Therapy names: Spanish name first; if the therapy is also well known by another name or spelling (English or otherwise), add it after " / ", with at most 2 names (3 only if really needed). Example: "Biorretroalimentación / Biofeedback". Cards show the short name (`short_name`), which is always shorter than the full name. A clarification is not an alternate name and stays in parentheses: "Acupuntura (Medicina Tradicional China)". No synonym table until Phase 2.
+   Nombres de terapia: primero el nombre en español; si la terapia también se conoce por otro nombre o grafía (inglés u otro), se agrega después de " / ", con máximo 2 nombres (3 solo si hace falta). Ejemplo: "Biorretroalimentación / Biofeedback". Las tarjetas muestran el nombre corto (`short_name`), siempre más corto que el completo. Una aclaración no es un nombre alternativo y va entre paréntesis: "Acupuntura (Medicina Tradicional China)". Sin tabla de sinónimos hasta la Fase 2.
+

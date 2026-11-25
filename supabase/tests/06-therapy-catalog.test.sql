@@ -53,7 +53,7 @@ begin
   if not exists (select 1 from public.therapy_translations where name = 'Reiki') then raise exception 'anon cannot see Reiki'; end if;
   if not exists (select 1 from public.therapy_translations where name like 'LNT%') then raise exception 'anon cannot see LNT'; end if;
   if not exists (select 1 from public.therapy_translations where name = 'Constelaciones') then raise exception 'anon cannot see Constelaciones'; end if;
-  if (select count(*) from public.therapy_translations where name in ('Masaje tailandés', 'Masaje con calor y elementos', 'Ventosas y moxibustión', 'Shiatsu', 'Masajes Terapéuticos', 'Reflexología')) <> 6 then raise exception 'anon cannot see the massage therapies'; end if;
+  if (select count(*) from public.therapy_translations where name in ('Masaje tailandés / Masaje Thai', 'Masaje con calor y elementos', 'Ventosas y moxibustión / Cupping', 'Shiatsu', 'Masajes Terapéuticos', 'Reflexología')) <> 6 then raise exception 'anon cannot see the massage therapies'; end if;
   -- reactivated on 19/11/2026 (Acupuntura, Homeopatía, Fitoterapia) and added the same day (Terapia vibracional, Facilitador de procesos sociales)
   -- reactivadas el 19/11/2026 (Acupuntura, Homeopatía, Fitoterapia) y agregadas ese día (Terapia vibracional, Facilitador de procesos sociales)
   if (select count(*) from public.therapy_translations where name in ('Acupuntura (Medicina Tradicional China)', 'Homeopatía', 'Fitoterapia', 'Terapia vibracional', 'Facilitador de procesos sociales')) <> 5 then raise exception 'anon cannot see the reactivated or new therapies'; end if;
@@ -62,9 +62,15 @@ begin
   if (select count(*) from public.therapy_translations where name in ('Focusing', 'Reimpronta del origen', 'Retiros y viajes')) <> 3 then raise exception 'anon cannot see Focusing, Reimpronta del origen or Retiros y viajes'; end if;
   -- added or reactivated on 20/11/2026 (Yoga, Tai Chi, Qi Gong, Ayurveda, Quiropraxia); the old combined name and the old name of Quiropraxia are gone
   -- agregadas o reactivadas el 20/11/2026 (Yoga, Tai Chi, Qi Gong, Ayurveda, Quiropraxia); el nombre combinado viejo y el nombre viejo de Quiropraxia ya no están
-  if (select count(*) from public.therapy_translations where name in ('Yoga', 'Tai Chi', 'Qi Gong', 'Ayurveda', 'Quiropraxia')) <> 5 then raise exception 'anon cannot see Yoga, Tai Chi, Qi Gong, Ayurveda or Quiropraxia'; end if;
+  if (select count(*) from public.therapy_translations where name in ('Yoga', 'Tai Chi / Taichi', 'Qi Gong / Qigong', 'Ayurveda', 'Quiropraxia / Quiropráctica')) <> 5 then raise exception 'anon cannot see Yoga, Tai Chi, Qi Gong, Ayurveda or Quiropraxia'; end if;
   if exists (select 1 from public.therapy_translations where name in ('Yoga y Tai Chi / Qi Gong', 'Quiropráctica')) then raise exception 'an old name (combined yoga or Quiropráctica) is still there'; end if;
   if exists (select 1 from public.therapy_translations where name = 'Constelaciones familiares') then raise exception 'the old name Constelaciones familiares is still there'; end if;
+  -- alternate names of 25/11/2026 ("Spanish / alternate"): Biofeedback, Biodescodificación, Access Bars; the short name is what cards show
+  -- nombres alternativos del 25/11/2026 ("español / alternativo"): Biofeedback, Biodescodificación, Access Bars; el nombre corto es lo que muestran las tarjetas
+  -- Biorretroalimentación is inactive in the local seed (it was activated in production), so it is not counted here
+  -- Biorretroalimentación está inactiva en el seed local (se activó en producción), por eso no se cuenta acá
+  if (select count(*) from public.therapy_translations where name in ('BioDecodificación / Biodescodificación', 'Barras de Access / Access Bars')) <> 2 then raise exception 'anon cannot see the active therapies with an alternate name'; end if;
+  if exists (select 1 from public.therapy_translations where name in ('Biorretroalimentación', 'BioDecodificación', 'Barras de Access', 'Qi Gong', 'Tai Chi', 'Quiropraxia', 'Masaje tailandés', 'Ventosas y moxibustión')) then raise exception 'an old name without its alternate name is still there'; end if;
 end
 $$;
 reset role;

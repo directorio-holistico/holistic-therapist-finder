@@ -68,3 +68,25 @@ describe("filterOptions", () => {
     expect(idsOf("pro soc")).toEqual([6]);
   });
 });
+
+describe("names with an alternate name / nombres con otro nombre", () => {
+  const options = [
+    { id: 1, name: "Biorretroalimentación / Biofeedback" },
+    { id: 2, name: "BioDecodificación / Biodescodificación" },
+    { id: 3, name: "Barras de Access / Access Bars" },
+    { id: 4, name: "Qi Gong / Qigong" },
+  ];
+  const ids = (q: string) => filterOptions(options, q).map((o) => o.id);
+  it("finds by either name / encuentra por cualquiera de los dos nombres", () => {
+    expect(ids("bior")).toEqual([1]);
+    expect(ids("biof")).toEqual([1]);
+    expect(ids("biodes")).toEqual([2]);
+    expect(ids("access bars")).toEqual([3]);
+    expect(ids("qigong")).toEqual([4]);
+  });
+  it("the slash does not break the match / la barra no rompe la búsqueda", () => {
+    expect(ids("bio")).toEqual([1, 2]);
+    expect(ids("biofeedback")).toEqual([1]);
+  });
+});
+
