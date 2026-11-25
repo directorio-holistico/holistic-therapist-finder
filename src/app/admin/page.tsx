@@ -39,6 +39,14 @@ const FollowUpIcon = () => (
     <path d="M12 7v5l3 2" />
   </Icon>
 );
+const TherapistsIcon = () => (
+  <Icon>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+    <path d="M16 4.5a3.5 3.5 0 0 1 0 7" />
+    <path d="M18 14.2a6.5 6.5 0 0 1 3.5 5.8" />
+  </Icon>
+);
 const TherapiesIcon = () => (
   <Icon>
     <path d="M8 6h13M8 12h13M8 18h13" />
@@ -100,6 +108,17 @@ async function FollowUpSummary() {
   );
 }
 
+async function TherapistsSummary() {
+  const { supabase } = await requireAdmin();
+  const count = await supabase.from("therapist_profiles").select("id", { count: "exact", head: true });
+  if (count.error) throw new Error(`Could not count the therapists / No se pudieron contar los terapeutas: ${count.error.message}`);
+  return (
+    <Tile href="/admin/terapeutas" title="Terapeutas" icon={<TherapistsIcon />}>
+      Registrados: {count.count ?? 0}
+    </Tile>
+  );
+}
+
 async function TherapiesSummary() {
   const { supabase } = await requireAdmin();
   const [active, hidden] = await Promise.all([
@@ -127,6 +146,9 @@ export default function AdminHome() {
         </Suspense>
         <Suspense fallback={<TileFallback />}>
           <FollowUpSummary />
+        </Suspense>
+        <Suspense fallback={<TileFallback />}>
+          <TherapistsSummary />
         </Suspense>
         <Suspense fallback={<TileFallback />}>
           <TherapiesSummary />

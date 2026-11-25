@@ -13,6 +13,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <Link href="/admin/revisiones" className="inline-flex min-h-11 items-center text-acento underline underline-offset-4">Revisiones</Link>
         <Link href="/admin/denuncias" className="inline-flex min-h-11 items-center text-acento underline underline-offset-4">Denuncias</Link>
         <Link href="/admin/seguimiento" className="inline-flex min-h-11 items-center text-acento underline underline-offset-4">Seguimiento</Link>
+        <Link href="/admin/terapeutas" className="inline-flex min-h-11 items-center text-acento underline underline-offset-4">Terapeutas</Link>
         <Link href="/admin/terapias" className="inline-flex min-h-11 items-center text-acento underline underline-offset-4">Terapias</Link>
         {/* a way out of the panel: an administrator account has no other page with a "Salir" button / una salida del panel: una cuenta de administración no tiene otra página con botón "Salir" */}
         <div className="ml-auto flex items-center gap-2">
