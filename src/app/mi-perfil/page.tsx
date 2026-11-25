@@ -43,6 +43,20 @@ const STATUS_STYLES: Record<string, string> = {
   erased: "border-neutro-borde bg-neutro-fondo text-neutro-texto",
 };
 
+// Small decorative icons for the buttons (the text always goes with them). / Íconos chicos y decorativos para los botones (el texto siempre los acompaña).
+const ICON = { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 24 24", width: 18, height: 18, fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true, focusable: false };
+const EyeIcon = () => (
+  <svg {...ICON}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+const ArrowOutIcon = () => (
+  <svg {...ICON}>
+    <path d="M7 17 17 7M8 7h9v9" />
+  </svg>
+);
+
 type Supabase = Awaited<ReturnType<typeof createServerSupabase>>;
 
 // The state of the latest change the person made (draft, pending_review, approved, rejected...). It tells them where they are, and a
@@ -134,58 +148,69 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
           <Link href="/mi-perfil/alta" className={`mt-4 ${PRIMARY}`}>Crear mi perfil</Link>
         </section>
       ) : (
-        <section className={CARD}>
-          <h2 className={TITLE}>{profile.display_name ?? person.full_name}</h2>
-          {profile.headline && <p className="mt-2 text-tinta">{profile.headline}</p>}
-          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-apagado">
-            Estado: <span className={`${BADGE} ${STATUS_STYLES[status?.code ?? ""] ?? STATUS_STYLES.erased}`}>{STATUS_LABELS[status?.code ?? ""] ?? "—"}</span>
-            {profile.approved_at ? ` · aprobado el ${formatDate(profile.approved_at)}` : ""}
-          </p>
-          {revisionCode === "pending_review" && (
-            <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-apagado">
-              Cambios: <span className={`${BADGE} border-aviso-borde bg-aviso-fondo text-aviso-texto`}>En revisión</span> Te avisamos cuando estén revisados.
-            </p>
-          )}
-          {savedDraft && hasDraft && <p role="status" className="mt-3 text-sm font-medium text-ok-texto">Guardamos tu borrador.</p>}
-          {hasDraft && (
-            <p role="note" className="mt-3 rounded-lg border border-aviso-borde bg-aviso-fondo p-3 text-sm text-aviso-texto">
-              Tenés cambios guardados como borrador que todavía no se enviaron a revisión. Mientras no los envíes, nadie los ve.
-            </p>
-          )}
-          <div className="mt-4 flex flex-wrap items-start gap-3">
-            <Link href="/mi-perfil/editar" className={`${PRIMARY} w-52 justify-center`}>{hasDraft ? "Continuar y enviar" : "Editar perfil"}</Link>
-            <Link href="/mi-perfil/vista-previa" className={`${SECONDARY} w-52 justify-center`}>Ver cómo queda</Link>
-            {status?.code === "published" && <Link href={`/terapeuta/${profile.id}`} className={`${SECONDARY} w-52 justify-center`}>Ver perfil publicado</Link>}
-            <Link href="/mi-perfil/contrasena" className={`${SECONDARY} w-52 justify-center`}>Cambiar contraseña</Link>
-            {hasDraft && <DiscardDraftButton />}
+        <>
+          <section className={CARD}>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h2 className={TITLE}>{profile.display_name ?? person.full_name}</h2>
+              <span className={`${BADGE} ${STATUS_STYLES[status?.code ?? ""] ?? STATUS_STYLES.erased}`}>{STATUS_LABELS[status?.code ?? ""] ?? "—"}</span>
+            </div>
+            {profile.headline && <p className="mt-2 text-sm text-apagado">{profile.headline}</p>}
+            {profile.approved_at && <p className="mt-1 text-sm text-apagado">Aprobado el {formatDate(profile.approved_at)}</p>}
+            {revisionCode === "pending_review" && (
+              <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-apagado">
+                Cambios: <span className={`${BADGE} border-aviso-borde bg-aviso-fondo text-aviso-texto`}>En revisión</span> Te avisamos cuando estén revisados.
+              </p>
+            )}
+            {savedDraft && hasDraft && <p role="status" className="mt-3 text-sm font-medium text-ok-texto">Guardamos tu borrador.</p>}
+            {hasDraft && (
+              <p role="note" className="mt-3 rounded-lg border border-aviso-borde bg-aviso-fondo p-3 text-sm text-aviso-texto">
+                Tenés cambios guardados como borrador que todavía no se enviaron a revisión. Mientras no los envíes, nadie los ve.
+              </p>
+            )}
+          </section>
+          {/* The actions sit OUTSIDE the card: one main action, then the two ways of looking at the profile. / Las acciones van FUERA de la tarjeta: una principal y luego las dos formas de mirar el perfil. */}
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <Link href="/mi-perfil/editar" className={`${PRIMARY} col-span-2 justify-center`}>{hasDraft ? "Continuar y enviar" : "Editar perfil"}</Link>
+            <Link href="/mi-perfil/vista-previa" className={`${SECONDARY} ${status?.code === "published" ? "" : "col-span-2 "}justify-center gap-2 px-3`}>
+              <EyeIcon />
+              Vista previa
+            </Link>
+            {status?.code === "published" && (
+              <Link href={`/terapeuta/${profile.id}`} className={`${SECONDARY} justify-center gap-2 px-3`}>
+                <ArrowOutIcon />
+                Ver en el sitio
+              </Link>
+            )}
+            {hasDraft && <div className="col-span-2"><DiscardDraftButton /></div>}
           </div>
-        </section>
+        </>
       )}
       {!adminOnly && person && profile && approvalNote && <ApprovalNote revisionId={approvalNote.id} text={approvalNote.text} />}
       {!adminOnly && person && profile && (
-        <section aria-labelledby="recordatorio" className={CARD}>
+        <section aria-labelledby="recordatorio" className="mt-8">
           <h2 id="recordatorio" className={TITLE}>Para tener presente</h2>
-          <div className="mt-3 grid gap-4 text-tinta">
-            <p>
-              <strong className="font-semibold">Cómo se ordena la lista.</strong> Cuando alguien busca, primero ve a quienes atienden en su ciudad o zona;
-              después, a quienes atienden a distancia en su mismo país; y al final, a quienes atienden a distancia desde otros países. Dentro de cada
-              grupo van primero los perfiles con foto, después los que tienen las tarifas al día y, por último, se ordena por antigüedad de aprobación.
-              Para mejorar tu lugar, sumá tu foto y mantené tus tarifas al día.
+          <details className="mt-3 rounded-xl border border-linea bg-superficie p-4 text-tinta">
+            <summary className={`cursor-pointer font-semibold ${FOCUS}`}>Cómo se ordena la lista</summary>
+            <p className="mt-3">
+              Cuando alguien busca, primero ve a quienes atienden en su ciudad o zona; después, a quienes atienden a distancia en su mismo país; y al
+              final, a quienes atienden a distancia desde otros países. Dentro de cada grupo van primero los perfiles con foto, después los que tienen
+              las tarifas al día y, por último, se ordena por antigüedad de aprobación. Para mejorar tu lugar, sumá tu foto y mantené tus tarifas al día.
             </p>
+          </details>
+          {/* Same look as the notice at the foot of every page: small, quiet, with the key phrase in bold. / Mismo aspecto que el aviso al pie de cada página: chico, discreto, con la frase clave en negrita. */}
+          <aside aria-label="Avisos sobre dinero" className="mt-6 border-t border-linea pt-4 text-sm text-apagado">
             <p>
-              <strong className="font-semibold">El lugar en la lista no se compra.</strong> No cobramos por aparecer más arriba ni por destacar un perfil.
+              <strong className="font-semibold text-tinta">El lugar en la lista no se compra.</strong> No cobramos por aparecer más arriba ni por destacar un perfil.
             </p>
-            <p>
-              <strong className="font-semibold">Faro Holístico no te va a pedir dinero.</strong> Si alguien te escribe por WhatsApp o por mail, o te envía
+            <p className="mt-1">
+              <strong className="font-semibold text-tinta">Faro Holístico no te va a pedir dinero.</strong> Si alguien te escribe por WhatsApp o por mail, o te envía
               un enlace, y te pide plata en nuestro nombre, no somos nosotros. No pagues, no respondas y no compartas tu contraseña ni tus datos.
             </p>
-          </div>
+          </aside>
         </section>
       )}
       {isAdmin === true && !adminOnly && <p className="mt-4 text-sm"><Link className={TEXT_LINK} href="/admin">Ir a administración</Link></p>}
-      {(adminOnly || !person || !profile) && (
-        <p className="mt-6 text-sm"><Link className={TEXT_LINK} href="/mi-perfil/contrasena">Cambiar contraseña</Link></p>
-      )}
+      <p className="mt-6 text-sm"><Link className={TEXT_LINK} href="/mi-perfil/contrasena">Cambiar contraseña</Link></p>
     </>
   );
 }
