@@ -6,6 +6,7 @@ import { useActionState, useCallback, useState, useTransition } from "react";
 import { SearchableSelect } from "@/components/searchable-select";
 import type { ChildOption, CatalogOption, FormCatalogs } from "@/lib/catalogs";
 import { labelLanguage, labelRateAudience, labelServiceMode, labelSessionFormat } from "@/lib/labels";
+import { PHOTO_UNCONFIRMED_MESSAGE } from "@/lib/photo-rules";
 import { countText, LIMITS, type FormDefaults } from "@/lib/profile-form";
 import { runGuarded, STALE_MESSAGE } from "@/lib/stale-action";
 import { discardDraft } from "../discard-draft-action";
@@ -119,6 +120,9 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
   const noCities = regionId !== null && cityOptions.length === 0;
   const typedCity = cityMissing || noCities;
   const invalid = (field: string) => state.status === "error" && state.fields.includes(field);
+  // The reason why nothing moved forward, shown right above the buttons (always on screen) and not only far away in its own section.
+  // El motivo por el que no se avanzó, justo arriba de los botones (siempre a la vista) y no solo lejos, en su propia sección.
+  const blockMessage = photoWarn && photoChoosing ? PHOTO_UNCONFIRMED_MESSAGE : state.status === "error" ? state.message : "";
 
   if (state.status === "submitted") {
     return (
@@ -391,7 +395,23 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
 
       {/* always reachable: the buttons stay at the bottom of the screen while there is something unsent / siempre a mano: los botones quedan al pie mientras haya algo sin enviar */}
       <div className="sticky bottom-0 -mx-2 grid gap-2 border-t border-linea bg-fondo px-2 py-3">
-        {(dirty || state.status === "error") && (
+        {blockMessage !== "" && (
+          <div role="alert" className="grid gap-2 rounded-lg border border-peligro-borde bg-peligro-fondo p-2 text-sm font-medium text-peligro-texto">
+            <p>No se pudo avanzar. {blockMessage}</p>
+            {photoWarn && photoChoosing && (
+              <button type="button" onClick={() => document.getElementById("sec-foto")?.scrollIntoView({ block: "center" })}
+                className={SECONDARY}>
+                Ir a la foto
+              </button>
+            )}
+            {state.status === "error" && blockMessage === STALE_MESSAGE && (
+              <button type="button" onClick={() => window.location.reload()} className={SECONDARY}>
+                Recargar la página
+              </button>
+            )}
+          </div>
+        )}
+        {blockMessage === "" && (dirty || state.status === "error") && (
           <p role="status" className="rounded-lg border border-aviso-borde bg-aviso-fondo p-2 text-sm text-aviso-texto">
             Tenés cambios sin enviar. Seguí corrigiendo todo lo que quieras y, cuando termines, apretá «Enviar a revisión». Si salís de esta pantalla antes, se pierden.
           </p>
@@ -427,15 +447,10 @@ export function ProfileForm({ defaults, catalogs, countries, regions, cities, in
           )}
         </div>
         {discardError && <p role="alert" className="text-peligro-texto">{discardError}</p>}
-        <p role={state.status === "error" ? "alert" : "status"} aria-live="polite"
-          className={state.status === "error" ? "text-peligro-texto" : "text-tinta"}>
-          {state.message}
-        </p>
-        {state.message === STALE_MESSAGE && (
-          <button type="button" onClick={() => window.location.reload()}
-            className={SECONDARY}>
-            Recargar la página
-          </button>
+        {state.status !== "error" && (
+          <p role="status" aria-live="polite" className="text-tinta">
+            {state.message}
+          </p>
         )}
       </div>
     </form>
