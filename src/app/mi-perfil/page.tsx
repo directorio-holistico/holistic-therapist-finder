@@ -193,8 +193,9 @@ async function Account({ searchParams }: { searchParams: Promise<Record<string, 
             <summary className={`cursor-pointer font-semibold ${FOCUS}`}>Cómo se ordena la lista</summary>
             <p className="mt-3">
               Cuando alguien busca, primero ve a quienes atienden en su ciudad o zona; después, a quienes atienden a distancia en su mismo país; y al
-              final, a quienes atienden a distancia desde otros países. Dentro de cada grupo van primero los perfiles con foto, después los que tienen
-              las tarifas al día y, por último, se ordena por antigüedad de aprobación. Para mejorar tu lugar, sumá tu foto y mantené tus tarifas al día.
+              final, a quienes atienden a distancia desde otros países. Dentro de cada grupo van primero los perfiles con foto y después los que tienen
+              las tarifas al día. En la página principal, sin filtros, el orden entre perfiles parecidos cambia todos los días para que todos tengan su lugar;
+              cuando se busca con filtros, se ordena por antigüedad de aprobación. Para mejorar tu lugar, sumá tu foto y mantené tus tarifas al día.
             </p>
           </details>
           {/* Same look as the notice at the foot of every page: small, quiet, with the key phrase in bold. / Mismo aspecto que el aviso al pie de cada página: chico, discreto, con la frase clave en negrita. */}
