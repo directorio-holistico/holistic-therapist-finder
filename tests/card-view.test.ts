@@ -37,13 +37,14 @@ describe("starRingGradient", () => {
 });
 
 describe("flagSrc", () => {
-  it("returns the file of the three launch countries, whatever the case or spaces", () => {
+  it("returns the file of each launch country, whatever the case or spaces", () => {
     expect(flagSrc("AR")).toBe("/flags/ar.svg");
     expect(flagSrc(" mx ")).toBe("/flags/mx.svg");
     expect(flagSrc("es")).toBe("/flags/es.svg");
+    expect(flagSrc("cl")).toBe("/flags/cl.svg");
   });
   it("returns null when there is no flag, instead of building a path", () => {
-    expect(flagSrc("CL")).toBeNull();
+    expect(flagSrc("BR")).toBeNull();
     expect(flagSrc("../x")).toBeNull();
     expect(flagSrc("")).toBeNull();
     expect(flagSrc(null)).toBeNull();
