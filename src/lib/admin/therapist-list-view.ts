@@ -10,6 +10,7 @@
 // (estado "unpublished"): para esa persona es la única forma de contactarla. En los demás estados ni siquiera queda en la fila.
 
 import { emailHref, whatsappHref } from "@/lib/contact-links";
+import { phoneOf } from "@/lib/admin/followup-view";
 
 export type TherapistState = "pending" | "published" | "rejected" | "draft" | "unpublished" | "paused" | "suspended";
 export type RatesState = "current" | "expired" | "none";
@@ -33,10 +34,11 @@ export type ProfileStub = {
   status_id: number;
   location_id: number | null;
   rates_confirmed_at: string | null;
+  approved_at: string | null; // first publication, never overwritten / primera publicación, nunca se pisa
 };
 export type PersonStub = { id: string; full_name: string | null; email: string | null; created_at: string; erased_at: string | null };
 export type ContactStub = { profile_id: string; contact_type_id: number; value: string; accepts_whatsapp: boolean };
-export type RevisionLite = { profile_id: string; status_id: number; created_at: string };
+export type RevisionLite = { id: string; profile_id: string; status_id: number; created_at: string };
 
 export type TherapistRow = {
   profileId: string;
@@ -44,6 +46,7 @@ export type TherapistRow = {
   countryIso: string | null;
   countryName: string | null;
   registeredAt: string;
+  approvedAt: string | null;
   ratesConfirmedAt: string | null;
   rates: RatesState;
   state: TherapistState;
@@ -56,16 +59,16 @@ export type TherapistRow = {
 const timeOf = (iso: string | null): number => (iso === null ? Number.NaN : Date.parse(iso));
 const clean = (value: string, max: number): string => value.replace(/[\p{Cc}\p{Cf}]/gu, "").trim().slice(0, max);
 
-// For each profile, the status id of its LATEST revision, ignoring discarded ones (a discarded draft is as if it never existed).
-// De cada perfil, el id de estado de su ÚLTIMA revisión, sin contar las descartadas (un borrador descartado es como si no existiera).
-export function latestRevisionStatus(rows: readonly RevisionLite[], discardedId: number | null): Map<string, number> {
+// For each profile, its LATEST revision (with its id and status), ignoring discarded ones (a discarded draft is as if it never existed).
+// De cada perfil, su ÚLTIMA revisión (con su id y estado), sin contar las descartadas (un borrador descartado es como si no existiera).
+export function latestRevisions(rows: readonly RevisionLite[], discardedId: number | null): Map<string, RevisionLite> {
   const latest = new Map<string, RevisionLite>();
   for (const row of rows) {
     if (discardedId !== null && row.status_id === discardedId) continue;
     const current = latest.get(row.profile_id);
     if (!current || timeOf(row.created_at) > timeOf(current.created_at)) latest.set(row.profile_id, row);
   }
-  return new Map([...latest].map(([profileId, row]) => [profileId, row.status_id]));
+  return latest;
 }
 
 // One container per therapist. The profile status decides first; a published profile stays "Publicado" even when it has a change
@@ -131,6 +134,10 @@ export function toTherapistRow(input: {
   phoneTypeId: number | null;
   months: number;
   nowMs: number;
+  // Contents of the latest revision, only for pending / rejected / draft: their phone is not live yet.
+  // Contenido de la última revisión, solo para en espera / rechazados / borradores: su teléfono todavía no está vigente.
+  revisionPayload?: unknown;
+  contactTypeCodes?: ReadonlyMap<number, string>;
 }): TherapistRow | null {
   const { profile, person } = input;
   if (!person || person.erased_at !== null) return null; // erased people are not listed / a quien se dio de baja no se lo lista
@@ -138,7 +145,10 @@ export function toTherapistRow(input: {
   if (!decided) return null;
   const profileName = profile.display_name === null ? "" : clean(profile.display_name, 120);
   const personName = person.full_name === null ? "" : clean(person.full_name, 120);
-  const whatsapp = whatsappOf(input.contacts, input.phoneTypeId);
+  // Not published yet: the phone lives in the revision, not in the profile contacts. / Sin publicar todavía: el teléfono vive en la revisión, no en los contactos del perfil.
+  const fromRevision = decided.state === "pending" || decided.state === "rejected" || decided.state === "draft";
+  const revisionPhone = fromRevision ? phoneOf(input.revisionPayload, input.contactTypeCodes ?? new Map<number, string>()) : null;
+  const whatsapp = fromRevision ? { link: revisionPhone?.whatsappLink ?? null, hasPhone: revisionPhone !== null } : whatsappOf(input.contacts, input.phoneTypeId);
   const accountEmail = person.email === null ? "" : clean(person.email, 160);
   return {
     profileId: profile.id,
@@ -146,6 +156,7 @@ export function toTherapistRow(input: {
     countryIso: input.countryIso,
     countryName: input.countryName,
     registeredAt: person.created_at,
+    approvedAt: profile.approved_at,
     ratesConfirmedAt: profile.rates_confirmed_at,
     rates: ratesStateOf(profile.rates_confirmed_at, input.months, input.nowMs),
     state: decided.state,
@@ -183,11 +194,47 @@ export function nudgeGmailLink(email: string, siteUrl: string): string | null {
   return `https://mail.google.com/mail/?${query}`;
 }
 
-// Containers in the fixed order, each sorted by name; empty ones are left out. / Contenedores en orden fijo, cada uno por nombre; los vacíos no van.
+const ms = (iso: string | null): number => {
+  const t = timeOf(iso);
+  return Number.isNaN(t) ? 0 : t;
+};
+const byName = (a: TherapistRow, b: TherapistRow): number => a.name.localeCompare(b.name, "es");
+
+// Containers in the fixed order; empty ones are left out. "Publicados" go by the ORIGINAL publication date (approved_at is set on the
+// first approval and never overwritten), the most recent first; every other container goes by name.
+// Contenedores en orden fijo; los vacíos no van. "Publicados" va por la fecha ORIGINAL de publicación (approved_at se fija en la primera
+// aprobación y nunca se pisa), la más reciente primero; los demás contenedores, por nombre.
 export function groupByState(rows: readonly TherapistRow[]): { state: TherapistState; title: string; rows: TherapistRow[] }[] {
   return STATE_ORDER.map((state) => ({
     state,
     title: STATE_TITLES[state],
-    rows: rows.filter((row) => row.state === state).sort((a, b) => a.name.localeCompare(b.name, "es")),
+    rows: rows.filter((row) => row.state === state).sort(state === "published" ? (a, b) => ms(b.approvedAt) - ms(a.approvedAt) || byName(a, b) : byName),
   })).filter((group) => group.rows.length > 0);
+}
+
+// ---- Filter by name and country (the address carries it: ?q=...&pais=AR) / Filtro por nombre y país (lo lleva la dirección) ----
+// Letters without accents or capitals, so "marti" finds "Martina" and "nicolas" finds "Nicolás". / Letras sin tildes ni mayúsculas.
+export const fold = (text: string): string => text.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+
+export type ListFilter = { q: string; country: string };
+type RawValue = string | string[] | undefined;
+
+export function parseListFilter(raw: { q?: RawValue; pais?: RawValue }): ListFilter {
+  const one = (value: RawValue): string => (Array.isArray(value) ? (value[0] ?? "") : (value ?? ""));
+  const country = one(raw.pais).trim().toUpperCase();
+  return { q: clean(one(raw.q), 80), country: /^[A-Z]{2}$/.test(country) ? country : "" };
+}
+
+export const isFiltering = (filter: ListFilter): boolean => filter.q !== "" || filter.country !== "";
+
+export function filterRows(rows: readonly TherapistRow[], filter: ListFilter): TherapistRow[] {
+  const needle = fold(filter.q);
+  return rows.filter((row) => (needle === "" || fold(row.name).includes(needle)) && (filter.country === "" || row.countryIso === filter.country));
+}
+
+// Countries that appear in the list, by name, for the selector. / Países que aparecen en la lista, por nombre, para el selector.
+export function countryOptions(rows: readonly TherapistRow[]): { iso: string; name: string }[] {
+  const found = new Map<string, string>();
+  for (const row of rows) if (row.countryIso !== null && !found.has(row.countryIso)) found.set(row.countryIso, row.countryName ?? row.countryIso);
+  return [...found].map(([iso, name]) => ({ iso, name })).sort((a, b) => a.name.localeCompare(b.name, "es"));
 }

@@ -12,7 +12,8 @@ import type { Database } from "@/lib/supabase/database.types";
 import { chunksOf } from "@/lib/admin/followup-view";
 import {
   countryIdOf,
-  latestRevisionStatus,
+  latestRevisions,
+  stateOf,
   toTherapistRow,
   type ContactStub,
   type PersonStub,
@@ -45,9 +46,10 @@ export async function loadTherapistList(client: Client): Promise<TherapistList> 
   const revisionCode = new Map(revisionStatuses.data.map((row) => [row.id, row.code]));
   const discardedId = revisionStatuses.data.find((row) => row.code === "discarded")?.id ?? null;
 
-  const contactTypes = await client.from("contact_types").select("id, code").eq("code", "phone").limit(5);
+  const contactTypes = await client.from("contact_types").select("id, code").limit(50);
   if (contactTypes.error) return fail("the contact types", contactTypes.error.message);
-  const phoneTypeId = contactTypes.data[0]?.id ?? null;
+  const phoneTypeId = contactTypes.data.find((row) => row.code === "phone")?.id ?? null;
+  const contactTypeCodes = new Map(contactTypes.data.map((row) => [row.id, row.code]));
 
   const validity = await client.rpc("rates_validity_months");
   if (validity.error || typeof validity.data !== "number") return fail("the rates validity setting", validity.error?.message ?? "not a number");
@@ -59,7 +61,7 @@ export async function loadTherapistList(client: Client): Promise<TherapistList> 
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const { data, error } = await client
       .from("therapist_profiles")
-      .select("id, person_id, display_name, status_id, location_id, rates_confirmed_at")
+      .select("id, person_id, display_name, status_id, location_id, rates_confirmed_at, approved_at")
       .order("created_at", { ascending: true })
       .order("id", { ascending: true })
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
@@ -76,7 +78,7 @@ export async function loadTherapistList(client: Client): Promise<TherapistList> 
   for (let page = 0; page < MAX_PAGES; page += 1) {
     const { data, error } = await client
       .from("profile_revisions")
-      .select("profile_id, status_id, created_at")
+      .select("id, profile_id, status_id, created_at")
       .order("created_at", { ascending: false })
       .order("id", { ascending: true })
       .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
@@ -85,7 +87,7 @@ export async function loadTherapistList(client: Client): Promise<TherapistList> 
     if (data.length < PAGE_SIZE) break;
     if (page === MAX_PAGES - 1) complete = false;
   }
-  const latest = latestRevisionStatus(revisions, discardedId);
+  const latest = latestRevisions(revisions, discardedId);
 
   const people = new Map<string, PersonStub>();
   for (const ids of chunksOf([...new Set(profiles.map((profile) => profile.person_id))], CHUNK)) {
@@ -137,21 +139,39 @@ export async function loadTherapistList(client: Client): Promise<TherapistList> 
     }
   }
 
+  // Pending, rejected and draft profiles keep their phone in the latest revision (the live contacts are still empty).
+  // Los perfiles en espera, rechazados y borradores guardan su teléfono en la última revisión (los contactos vigentes siguen vacíos).
+  const payloadIds: string[] = [];
+  for (const profile of profiles) {
+    const last = latest.get(profile.id);
+    if (!last) continue;
+    const decided = stateOf(profileCode.get(profile.status_id) ?? null, revisionCode.get(last.status_id) ?? null);
+    if (decided && (decided.state === "pending" || decided.state === "rejected" || decided.state === "draft")) payloadIds.push(last.id);
+  }
+  const payloads = new Map<string, unknown>();
+  for (const ids of chunksOf(payloadIds, CHUNK)) {
+    const { data, error } = await client.from("profile_revisions").select("id, payload").in("id", ids).limit(CHUNK);
+    if (error) return fail("the revision contents", error.message);
+    for (const row of data) payloads.set(row.id, row.payload);
+  }
+
   const rows: TherapistRow[] = [];
   for (const profile of profiles) {
     const countryId = countryIdOf(profile.location_id, parents);
-    const statusId = latest.get(profile.id);
+    const lastRevision = latest.get(profile.id);
     const row = toTherapistRow({
       profile,
       person: people.get(profile.person_id),
       profileCode: profileCode.get(profile.status_id) ?? null,
-      revisionCode: statusId === undefined ? null : (revisionCode.get(statusId) ?? null),
+      revisionCode: lastRevision === undefined ? null : (revisionCode.get(lastRevision.status_id) ?? null),
       countryIso: countryId === null ? null : (isoOf.get(countryId) ?? null),
       countryName: countryId === null ? null : (countryNames.get(countryId) ?? null),
       contacts: contacts.get(profile.id) ?? [],
       phoneTypeId,
       months,
       nowMs,
+      revisionPayload: lastRevision === undefined ? undefined : payloads.get(lastRevision.id),
+      contactTypeCodes,
     });
     if (row) rows.push(row);
   }

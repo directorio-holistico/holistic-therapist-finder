@@ -4,7 +4,10 @@ import {
   groupByState,
   nudgeBody,
   nudgeGmailLink,
-  latestRevisionStatus,
+  countryOptions,
+  filterRows,
+  latestRevisions,
+  parseListFilter,
   ratesStateOf,
   stateOf,
   toTherapistRow,
@@ -16,7 +19,7 @@ import {
 
 const NOW = Date.parse("2026-11-25T12:00:00Z");
 const PHONE = 1;
-const profile = (extra: Partial<ProfileStub> = {}): ProfileStub => ({ id: "p1", person_id: "u1", display_name: "Ana Prueba", status_id: 2, location_id: 10, rates_confirmed_at: "2026-10-01T10:00:00Z", ...extra });
+const profile = (extra: Partial<ProfileStub> = {}): ProfileStub => ({ id: "p1", person_id: "u1", display_name: "Ana Prueba", status_id: 2, location_id: 10, rates_confirmed_at: "2026-10-01T10:00:00Z", approved_at: "2026-09-10T10:00:00Z", ...extra });
 const person = (extra: Partial<PersonStub> = {}): PersonStub => ({ id: "u1", full_name: "Ana P. Persona", email: "ana@example.test", created_at: "2026-09-01T10:00:00Z", erased_at: null, ...extra });
 const contact = (value: string, whatsapp: boolean, type = PHONE): ContactStub => ({ profile_id: "p1", contact_type_id: type, value, accepts_whatsapp: whatsapp });
 const build = (extra: Partial<Parameters<typeof toTherapistRow>[0]> = {}) =>
@@ -44,17 +47,18 @@ describe("stateOf (one container per therapist)", () => {
   });
 });
 
-describe("latestRevisionStatus", () => {
+describe("latestRevisions", () => {
   it("takes the newest revision of each profile and ignores discarded ones", () => {
     const rows = [
-      { profile_id: "a", status_id: 1, created_at: "2026-11-01T10:00:00Z" },
-      { profile_id: "a", status_id: 4, created_at: "2026-11-05T10:00:00Z" },
-      { profile_id: "a", status_id: 5, created_at: "2026-11-09T10:00:00Z" }, // discarded, newer
-      { profile_id: "b", status_id: 2, created_at: "2026-11-02T10:00:00Z" },
+      { id: "r1", profile_id: "a", status_id: 1, created_at: "2026-11-01T10:00:00Z" },
+      { id: "r2", profile_id: "a", status_id: 4, created_at: "2026-11-05T10:00:00Z" },
+      { id: "r3", profile_id: "a", status_id: 5, created_at: "2026-11-09T10:00:00Z" }, // discarded, newer
+      { id: "r4", profile_id: "b", status_id: 2, created_at: "2026-11-02T10:00:00Z" },
     ];
-    const result = latestRevisionStatus(rows, 5);
-    expect(result.get("a")).toBe(4);
-    expect(result.get("b")).toBe(2);
+    const result = latestRevisions(rows, 5);
+    expect(result.get("a")?.id).toBe("r2");
+    expect(result.get("a")?.status_id).toBe(4);
+    expect(result.get("b")?.id).toBe("r4");
   });
 });
 
@@ -168,5 +172,67 @@ describe("groupByState", () => {
     const groups = groupByState(rows);
     expect(groups.map((group) => group.state)).toEqual(["pending", "published"]);
     expect(groups[1]?.rows.map((row) => row.name)).toEqual(["Álvaro", "Zoe"]);
+  });
+});
+
+describe("published containers go by the ORIGINAL publication date", () => {
+  it("puts the most recently published first and breaks ties by name", () => {
+    const rows = [
+      build({ profile: profile({ id: "a", display_name: "Beta", approved_at: "2026-10-01T10:00:00Z" }) }),
+      build({ profile: profile({ id: "b", display_name: "Alfa", approved_at: "2026-11-20T10:00:00Z" }) }),
+      build({ profile: profile({ id: "c", display_name: "Zeta", approved_at: "2026-10-01T10:00:00Z" }) }),
+    ].filter((row) => row !== null);
+    expect(groupByState(rows)[0]?.rows.map((row) => row.name)).toEqual(["Alfa", "Beta", "Zeta"]);
+  });
+});
+
+describe("phone of a profile that is not published yet (it lives in the revision)", () => {
+  const types = new Map([[PHONE, "phone"]]);
+  const payload = { contacts: [{ contact_type_id: PHONE, value: "+54 9 11 5555 1234", accepts_whatsapp: true }] };
+  it("takes the WhatsApp link from the latest revision for rejected, pending and draft", () => {
+    for (const revisionCode of ["rejected", "pending_review", "draft"]) {
+      const row = build({ profileCode: "unpublished", revisionCode, revisionPayload: payload, contactTypeCodes: types });
+      expect(row?.whatsappLink).toBe("https://wa.me/5491155551234");
+      expect(row?.hasPhone).toBe(true);
+      expect(JSON.stringify(row)).not.toContain("5555 1234");
+    }
+  });
+  it("says there is a phone but no WhatsApp when it is not marked, and no phone when there is none", () => {
+    const unmarked = { contacts: [{ contact_type_id: PHONE, value: "+54 9 11 5555 1234", accepts_whatsapp: false }] };
+    expect(build({ profileCode: "unpublished", revisionCode: "rejected", revisionPayload: unmarked, contactTypeCodes: types })).toMatchObject({ whatsappLink: null, hasPhone: true });
+    expect(build({ profileCode: "unpublished", revisionCode: "rejected", revisionPayload: { contacts: [] }, contactTypeCodes: types })).toMatchObject({ whatsappLink: null, hasPhone: false });
+    expect(build({ profileCode: "unpublished", revisionCode: "rejected" })).toMatchObject({ whatsappLink: null, hasPhone: false });
+  });
+  it("keeps using the live contacts for a published profile, whatever its latest revision says", () => {
+    const row = build({ profileCode: "published", revisionCode: "rejected", contacts: [contact("+54 9 11 5555 1234", true)], revisionPayload: { contacts: [] }, contactTypeCodes: types });
+    expect(row?.whatsappLink).toBe("https://wa.me/5491155551234");
+  });
+});
+
+describe("filter by name and country", () => {
+  const rows = [
+    build({ profile: profile({ id: "a", display_name: "Nicolás Vazquez" }), countryIso: "AR", countryName: "Argentina" }),
+    build({ profile: profile({ id: "b", display_name: "Martina Pece" }), countryIso: "AR", countryName: "Argentina" }),
+    build({ profile: profile({ id: "c", display_name: "Mayte Belmonte" }), countryIso: "ES", countryName: "España" }),
+    build({ profile: profile({ id: "d", display_name: "Sin País" }), countryIso: null, countryName: null }),
+  ].filter((row) => row !== null);
+  it("finds by part of the name without caring about accents or capitals", () => {
+    expect(filterRows(rows, { q: "nicolas", country: "" }).map((row) => row.name)).toEqual(["Nicolás Vazquez"]);
+    expect(filterRows(rows, { q: "MART", country: "" }).map((row) => row.name)).toEqual(["Martina Pece"]);
+    expect(filterRows(rows, { q: "", country: "" })).toHaveLength(4);
+  });
+  it("filters by country and combines both filters", () => {
+    expect(filterRows(rows, { q: "", country: "ES" }).map((row) => row.name)).toEqual(["Mayte Belmonte"]);
+    expect(filterRows(rows, { q: "ma", country: "AR" }).map((row) => row.name)).toEqual(["Martina Pece"]);
+    expect(filterRows(rows, { q: "xyz", country: "" })).toEqual([]);
+  });
+  it("offers only the countries that appear, by name", () => {
+    expect(countryOptions(rows)).toEqual([{ iso: "AR", name: "Argentina" }, { iso: "ES", name: "España" }]);
+  });
+  it("cleans what comes from the address", () => {
+    expect(parseListFilter({ q: "  ana\u0000 ", pais: "es" })).toEqual({ q: "ana", country: "ES" });
+    expect(parseListFilter({ q: ["uno", "dos"], pais: "ARG" })).toEqual({ q: "uno", country: "" });
+    expect(parseListFilter({ pais: "';--" })).toEqual({ q: "", country: "" });
+    expect(parseListFilter({ q: "a".repeat(200) }).q).toHaveLength(80);
   });
 });

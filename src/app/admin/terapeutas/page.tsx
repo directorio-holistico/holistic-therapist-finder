@@ -7,7 +7,7 @@ import { Suspense } from "react";
 import { SocialIcon } from "@/components/social-icon";
 import { flagSrc } from "@/lib/card-view";
 import { loadTherapistList } from "@/lib/admin/therapist-list";
-import { groupByState, nudgeGmailLink, type RatesState, type TherapistRow } from "@/lib/admin/therapist-list-view";
+import { countryOptions, filterRows, groupByState, isFiltering, nudgeGmailLink, parseListFilter, type ListFilter, type RatesState, type TherapistRow } from "@/lib/admin/therapist-list-view";
 import { requireAdmin } from "@/lib/admin/guard";
 import { formatDate } from "@/lib/format";
 import { SITE_URL } from "@/lib/site";
@@ -64,21 +64,52 @@ function Row({ row }: { row: TherapistRow }) {
   );
 }
 
-async function List() {
+type SearchParams = Promise<{ q?: string | string[]; pais?: string | string[] }>;
+
+// Plain GET form: the filter lives in the address, so it can be shared and survives a reload. / Formulario GET simple: el filtro vive en la dirección.
+function FilterForm({ filter, countries }: { filter: ListFilter; countries: { iso: string; name: string }[] }) {
+  return (
+    <form method="get" className="mt-4 flex flex-wrap items-end gap-3">
+      <div className="flex flex-col gap-1">
+        <label htmlFor="q" className="text-sm text-apagado">Nombre</label>
+        <input id="q" name="q" type="search" defaultValue={filter.q} maxLength={80} className={`min-h-11 rounded-lg border border-linea bg-superficie px-3 text-tinta ${FOCUS}`} />
+      </div>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="pais" className="text-sm text-apagado">País</label>
+        <select id="pais" name="pais" defaultValue={filter.country} className={`min-h-11 rounded-lg border border-linea bg-superficie px-3 text-tinta ${FOCUS}`}>
+          <option value="">Todos</option>
+          {countries.map((country) => (
+            <option key={country.iso} value={country.iso}>{country.name}</option>
+          ))}
+        </select>
+      </div>
+      <button type="submit" className={`min-h-11 rounded-lg bg-acento px-4 font-medium text-white ${FOCUS}`}>Filtrar</button>
+      {isFiltering(filter) && (
+        <a href="/admin/terapeutas" className={`inline-flex min-h-11 items-center text-acento underline underline-offset-4 ${FOCUS}`}>Quitar filtro</a>
+      )}
+    </form>
+  );
+}
+
+async function List({ searchParams }: { searchParams: SearchParams }) {
   const { supabase } = await requireAdmin();
-  const { rows, complete } = await loadTherapistList(supabase);
+  const filter = parseListFilter(await searchParams);
+  const { rows: all, complete } = await loadTherapistList(supabase);
+  const filtering = isFiltering(filter);
+  const rows = filterRows(all, filter);
   const groups = groupByState(rows);
   return (
     <>
+      <FilterForm filter={filter} countries={countryOptions(all)} />
       {!complete && (
         <p role="status" className="mt-4 rounded-lg border border-aviso-borde bg-aviso-fondo p-3 text-aviso-texto">
           Se leyó solo una parte de los registros: la lista puede estar incompleta.
         </p>
       )}
-      <p className="mt-2 text-apagado">Total: {rows.length}</p>
-      {groups.length === 0 && <p className="mt-4 text-apagado">Todavía no hay terapeutas registrados.</p>}
+      <p className="mt-2 text-apagado">{filtering ? `Resultados: ${rows.length} de ${all.length}` : `Total: ${all.length}`}</p>
+      {groups.length === 0 && <p className="mt-4 text-apagado">{filtering ? "Ningún terapeuta coincide con el filtro." : "Todavía no hay terapeutas registrados."}</p>}
       {groups.map((group) => (
-        <details key={group.state} className="mt-4 rounded-xl border border-linea bg-superficie">
+        <details key={group.state} open={filtering} className="mt-4 rounded-xl border border-linea bg-superficie">
           <summary className={`flex min-h-11 cursor-pointer items-center px-4 py-2 font-display text-xl font-semibold text-tinta ${FOCUS}`}>
             {group.title} <span className="ml-2 text-apagado">({group.rows.length})</span>
           </summary>
@@ -93,15 +124,15 @@ async function List() {
   );
 }
 
-export default function TherapistsPage() {
+export default function TherapistsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main>
       <h1 className="mt-6 font-display text-3xl font-semibold text-tinta">Terapeutas</h1>
       <p className="mt-2 text-apagado">
-        Registro: cuándo se registró. Precios: la última vez que confirmó sus precios. El ícono abre WhatsApp si la persona lo marcó y cargó el número con el código de país. El mail solo se muestra de quien se registró y nunca guardó nada.
+        Registro: cuándo se registró. Precios: la última vez que confirmó sus precios. El ícono abre WhatsApp si la persona lo marcó y cargó el número con el código de país. El mail solo se muestra de quien se registró y nunca guardó nada. Publicados: del más reciente al más antiguo según su primera publicación.
       </p>
       <Suspense fallback={<p className="mt-4 text-apagado">Cargando…</p>}>
-        <List />
+        <List searchParams={searchParams} />
       </Suspense>
     </main>
   );
