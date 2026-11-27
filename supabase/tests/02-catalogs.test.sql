@@ -81,8 +81,8 @@ begin
   if (select count(*) from public.therapy_translations where name = 'Activa __') <> 1 then
     raise exception 'anon cannot read the translation of an active therapy';
   end if;
-  if (select count(*) from public.currencies) <> 5 then
-    raise exception 'anon should see the 5 currencies';
+  if (select count(*) from public.currencies) <> 6 then
+    raise exception 'anon should see the 6 currencies';
   end if;
 end
 $$;

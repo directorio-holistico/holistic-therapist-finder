@@ -42,6 +42,7 @@ describe("flagSrc", () => {
     expect(flagSrc(" mx ")).toBe("/flags/mx.svg");
     expect(flagSrc("es")).toBe("/flags/es.svg");
     expect(flagSrc("cl")).toBe("/flags/cl.svg");
+    expect(flagSrc("uy")).toBe("/flags/uy.svg");
   });
   it("returns null when there is no flag, instead of building a path", () => {
     expect(flagSrc("BR")).toBeNull();

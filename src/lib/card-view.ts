@@ -20,7 +20,7 @@ export function capItems<T>(items: readonly T[], max: number): { shown: T[]; hid
 
 // Countries that have a flag file in public/flags (own copies from flag-icons, MIT). Add a code here when the file is added.
 // Países con archivo de bandera en public/flags (copias propias de flag-icons, MIT). Sumar el código acá al agregar el archivo.
-const FLAG_CODES: ReadonlySet<string> = new Set(["AR", "MX", "ES", "CL"]);
+const FLAG_CODES: ReadonlySet<string> = new Set(["AR", "MX", "ES", "CL", "UY"]);
 
 /** Public path of the flag for an ISO country code, or null when there is none. / Ruta pública de la bandera de un código ISO de país, o null si no hay. */
 export function flagSrc(iso: string | null | undefined): string | null {
